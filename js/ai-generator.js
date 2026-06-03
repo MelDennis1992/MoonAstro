@@ -1,4 +1,4 @@
-// Moteur Astrologique et de Guidance Émotionnelle de Moonly (Astrologie & Numérologie)
+// Moteur Astrologique et de Guidance Émotionnelle de Moon Astro (Astrologie & Numérologie)
 
 const ZODIAC_SIGNS = [
   { name: "Capricorne", symbol: "♑", dates: "22 déc. - 19 jan.", element: "Terre", ruler: "Saturne" },
@@ -184,10 +184,191 @@ function calculateNumerologyFromName(fullName) {
 
 // --- FIN DU NOUVEAU MODULE DE NUMÉROLOGIE ---
 
+// Helper de Gemmologie Céleste : Calcule la pierre de chance
+function getLuckyGemstone(element, lpNumber) {
+  const gems = {
+    Feu: [
+      { symbol: "🔥💎", name: "Rubis Impérial", desc: "Pierre de feu sacrée. Elle amplifie le courage, le charisme naturel et protège activement le chakra du cœur." },
+      { symbol: "👁️💎", name: "Œil de Tigre", desc: "Bouclier protecteur terrestre. Elle renforce la confiance en soi, la concentration et dissipe les peurs limitantes." },
+      { symbol: "☀️💎", name: "Cornaline", desc: "Pierre de vitalité vibrante. Elle stimule la créativité débordante, la passion saine et la force d'action." }
+    ],
+    Terre: [
+      { symbol: "💚💎", name: "Émeraude Sacrée", desc: "Symbole de renaissance. Elle apporte l'abondance matérielle, guérit les blessures émotionnelles et favorise l'ancrage." },
+      { symbol: "🟢💎", name: "Jade Céleste", desc: "Pierre d'harmonie et de chance. Elle élimine les blocages mentaux et invite la paix intérieure et la prospérité." },
+      { symbol: "⚡💎", name: "Quartz Fumé", desc: "Merveilleux ancrage spirituel. Elle transmute les tensions nerveuses en force tranquille et pragmatique." }
+    ],
+    Air: [
+      { symbol: "🌌💎", name: "Lapis-Lazuli", desc: "Pierre de vérité divine. Elle ouvre le chakra de la gorge, amplifie la communication fluide et la sagesse spirituelle." },
+      { symbol: "❄️💎", name: "Aigue-Marine", desc: "Cristal d'apaisement. Elle clarifie le mental encombré, facilite l'expression honnête et adoucit la nervosité." },
+      { symbol: "🔮💎", name: "Améthyste Violette", desc: "Guide de méditation. Elle purifie l'esprit, favorise les intuitions fulgurantes et calme l'agitation mentale." }
+    ],
+    Eau: [
+      { symbol: "🌙💎", name: "Pierre de Lune", desc: "Cristal d'intuition pure. Elle se synchronise avec vos marées émotionnelles pour révéler vos talents secrets." },
+      { symbol: "💙💎", name: "Saphir Mystique", desc: "Pierre de sérénité absolue. Elle renforce la paix de l'esprit, la loyauté et la connexion aux énergies subtiles." },
+      { symbol: "🛡️💎", name: "Labradorite Protectrice", desc: "Bouclier des empathes. Elle absorbe les énergies négatives d'autrui pour préserver votre propre cocon vibratoire." }
+    ]
+  };
+
+  const list = gems[element] || gems.Eau;
+  return list[Math.abs(lpNumber) % list.length];
+}
+
+// High-precision astronomical engine
+function computeAstrology(birthDateStr, birthTimeStr, latitude, longitude) {
+  if (!birthDateStr) {
+    return {
+      sun: ZODIAC_SIGNS[3], // Bélier
+      moon: ZODIAC_SIGNS[6], // Cancer
+      ascendant: ZODIAC_SIGNS[9] // Balance
+    };
+  }
+
+  // Parse birth date (YYYY-MM-DD)
+  const dateParts = birthDateStr.split("-");
+  const year = parseInt(dateParts[0]);
+  const month = parseInt(dateParts[1]);
+  const day = parseInt(dateParts[2]);
+
+  // Parse birth time, default to 12:00 if missing or empty
+  let hours = 12;
+  let minutes = 0;
+  if (birthTimeStr) {
+    const timeParts = birthTimeStr.split(":");
+    hours = parseInt(timeParts[0]);
+    minutes = parseInt(timeParts[1]) || 0;
+  }
+
+  // Coordinates defaults (Paris) if missing
+  const lat = typeof latitude === "number" ? latitude : 48.8566;
+  const lon = typeof longitude === "number" ? longitude : 2.3522;
+
+  // Approximate timezone offset based on longitude
+  const tzOffset = Math.round(lon / 15);
+  
+  // Calculate UT time
+  let utHours = hours - tzOffset;
+  let utMinutes = minutes;
+  let utDay = day;
+  let utMonth = month;
+  let utYear = year;
+
+  // Adjust overflow/underflow in UT time conversion
+  if (utHours < 0) {
+    utHours += 24;
+    utDay -= 1;
+  } else if (utHours >= 24) {
+    utHours -= 24;
+    utDay += 1;
+  }
+
+  if (utDay < 1) {
+    utMonth -= 1;
+    if (utMonth < 1) {
+      utMonth = 12;
+      utYear -= 1;
+    }
+    const daysInMonth = new Date(utYear, utMonth, 0).getDate();
+    utDay = daysInMonth;
+  } else {
+    const daysInMonth = new Date(utYear, utMonth, 0).getDate();
+    if (utDay > daysInMonth) {
+      utDay = 1;
+      utMonth += 1;
+      if (utMonth > 12) {
+        utMonth = 1;
+        utYear += 1;
+      }
+    }
+  }
+
+  // Calculate Julian Date (JD)
+  let Y = utYear;
+  let M = utMonth;
+  const D = utDay + (utHours + utMinutes / 60) / 24;
+
+  if (M <= 2) {
+    Y -= 1;
+    M += 12;
+  }
+
+  const A = Math.floor(Y / 100);
+  const B = Math.floor(A / 4);
+  const C = 2 - A + B;
+  const E = Math.floor(365.25 * (Y + 4716));
+  const F = Math.floor(30.6001 * (M + 1));
+  const jd = C + D + E + F - 1524.5;
+
+  const d = jd - 2451545.0; // days since J2000.0
+  const T = d / 36525; // centuries since J2000.0
+
+  // 1. Sun Longitude
+  const L = (280.466 + 36000.770 * T) % 360;
+  const g = (357.529 + 35999.050 * T) % 360;
+  const gRad = (g * Math.PI) / 180;
+  let sunLong = (L + 1.915 * Math.sin(gRad) + 0.020 * Math.sin(2 * gRad)) % 360;
+  if (sunLong < 0) sunLong += 360;
+
+  // 2. Moon Longitude (perturbational model of orbit)
+  const L_prime = (218.316 + 13.176396 * d) % 360;
+  const M_prime = (134.963 + 13.064993 * d) % 360;
+  const D_elong = (297.850 + 12.190749 * d) % 360;
+  const M_sun = (357.529 + 0.9856003 * d) % 360;
+  const F_node = (93.272 + 13.229350 * d) % 360;
+
+  const lpRad = (L_prime * Math.PI) / 180;
+  const mpRad = (M_prime * Math.PI) / 180;
+  const deRad = (D_elong * Math.PI) / 180;
+  const msRad = (M_sun * Math.PI) / 180;
+  const fnRad = (F_node * Math.PI) / 180;
+
+  let deltaLong = 6.289 * Math.sin(mpRad) +
+                   1.274 * Math.sin(2 * deRad - mpRad) +
+                   0.658 * Math.sin(2 * deRad) +
+                   0.214 * Math.sin(2 * mpRad) -
+                   0.186 * Math.sin(msRad) -
+                   0.114 * Math.sin(2 * fnRad) +
+                   0.057 * Math.sin(2 * deRad - mpRad - msRad);
+
+  let moonLong = (L_prime + deltaLong) % 360;
+  if (moonLong < 0) moonLong += 360;
+
+  // 3. Ascendant
+  // Greenwich Mean Sidereal Time (GMST) in degrees
+  const gmst = (280.46061837 + 360.98564736629 * d) % 360;
+  const lst = (gmst + lon) % 360;
+  const lstRad = (lst * Math.PI) / 180;
+  const eps = 23.439 - 0.0000004 * d; // Obliquity of ecliptic
+  const epsRad = (eps * Math.PI) / 180;
+  const phiRad = (lat * Math.PI) / 180;
+
+  const y_asc = Math.cos(lstRad);
+  const x_asc = -Math.sin(lstRad) * Math.cos(epsRad) - Math.tan(phiRad) * Math.sin(epsRad);
+  let ascLong = Math.atan2(y_asc, x_asc) * 180 / Math.PI;
+  if (ascLong < 0) ascLong += 360;
+
+  // Map longitudes to zodiac signs (0 degrees is Bélier)
+  const getZodiacSign = (longVal) => {
+    const idx = Math.floor(longVal / 30);
+    const signIdx = (idx + 3) % 12;
+    return ZODIAC_SIGNS[signIdx];
+  };
+
+  return {
+    sun: getZodiacSign(sunLong),
+    moon: getZodiacSign(moonLong),
+    ascendant: getZodiacSign(ascLong)
+  };
+}
+
 // Generate Custom Astrological & Numerological Report
 function generatePersonalizedReport(answers) {
   const name = answers.name || "Ami(e) Cosmique";
-  const zodiac = getZodiacInfo(answers.birthDate);
+  
+  // High-accuracy astronomical calculations
+  const astro = computeAstrology(answers.birthDate, answers.birthTime, answers.latitude, answers.longitude);
+  const zodiac = astro.sun; // Signe Solaire
+  const moon = astro.moon; // Signe Lunaire
+  const ascendant = astro.ascendant.name; // String identifier for backwards compatibility
   
   // Calculate dynamic Chemin de Vie
   const lifePath = calculateLifePath(answers.birthDate);
@@ -213,6 +394,24 @@ function generatePersonalizedReport(answers) {
     energyDescription = "Vous traversez une phase alchimique de purification et de métamorphose. Le cosmos vous invite à libérer les anciennes mémoires, à guérir vos blessures de cœur et à restaurer votre cocon protecteur pour renaître plus fort(e).";
     energyScore = 65;
   }
+
+  // Enrichissement de description via le quiz sur les voyages
+  if (answers.travelResourcing === "mountain") {
+    energyDescription += " Votre attrait pour le silence des cimes et la solitude des montagnes révèle un esprit contemplatif, ayant régulièrement besoin de s'isoler pour élever son niveau de conscience.";
+  } else if (answers.travelResourcing === "ocean") {
+    energyDescription += " Le ressac de l'océan et la fluidité marine vous appellent : cela dénote un besoin vital d'harmoniser vos marées émotionnelles dans un cadre ouvert et infini.";
+  } else if (answers.travelResourcing === "forest") {
+    energyDescription += " Votre attrait pour la canopée et la nature sauvage met en lumière votre grand besoin d'ancrage terrestre et de stabilité organique.";
+  } else if (answers.travelResourcing === "culture") {
+    energyDescription += " La quête de ruines sacrées et d'explorations historiques montre que votre âme recherche un sens profond et des enseignements spirituels à travers les époques.";
+  }
+
+  // Enrichissement via la sensibilité lunaire
+  if (answers.lunarPhaseSensitivity === "high") {
+    energyDescription += " Votre très forte réceptivité aux lunaisons confirme une grande intuition, en résonance directe avec les cycles cosmiques de la Pleine Lune.";
+  } else if (answers.lunarPhaseSensitivity === "moderate") {
+    energyDescription += " Les phases lunaires influencent ponctuellement votre sommeil et vos rêves, signe d'un alignement naturel avec les biorythmes de la nature.";
+  }
   
   // Calculate strengths & blockages based on profile & zodiac elements & behavior answers
   let mainStrength = "Intuition aiguisée et empathie protectrice.";
@@ -230,6 +429,17 @@ function generatePersonalizedReport(answers) {
   } else if (zodiac.element === "Eau") {
     mainStrength = "Profondeur émotionnelle hors pair, empathie naturelle et instinct très protecteur.";
     blocker = "Hypersensibilité aux critiques et nostalgie d'un passé révolu.";
+  }
+
+  // Intégration du trait de caractère du quiz dans les forces
+  if (answers.characterTrait === "courageous") {
+    mainStrength = "Détermination héroïque, capacité à agir avec bravoure et à surmonter les obstacles.";
+  } else if (answers.characterTrait === "empathic") {
+    mainStrength = "Empathie universelle, douceur relationnelle et grand sens du soin apporté aux autres âmes.";
+  } else if (answers.characterTrait === "analytical") {
+    mainStrength = "Rigueur d'esprit, clarté analytique impeccable et sagesse face aux situations complexes.";
+  } else if (answers.characterTrait === "creative") {
+    mainStrength = "Créativité sans bornes, liberté d'esprit inspirante et originalité assumée.";
   }
 
   // ENRICHISSEMENT COMPORTEMENTAL : Comportement social
@@ -251,32 +461,21 @@ function generatePersonalizedReport(answers) {
     blocker = "Un besoin excessif de contrôle sur votre entourage né de la peur d'être trahi(e).";
   }
 
-  // Astrological Ascendant calculation logic simulation
-  let ascendant = "Balance";
-  if (answers.birthTime) {
-    const hours = parseInt(answers.birthTime.split(":")[0]);
-    if (hours >= 6 && hours < 10) ascendant = "Lion";
-    else if (hours >= 10 && hours < 14) ascendant = "Scorpion";
-    else if (hours >= 14 && hours < 18) ascendant = "Verseau";
-    else if (hours >= 18 && hours < 22) ascendant = "Taureau";
-    else ascendant = "Poissons";
-  } else {
-    // Generate one pseudo-randomly based on name length
-    const signs = ["Bélier", "Taureau", "Gémeaux", "Cancer", "Lion", "Vierge", "Balance", "Scorpion", "Sagittaire", "Capricorne", "Verseau", "Poissons"];
-    ascendant = signs[(name.length + zodiac.name.length) % 12];
-  }
+  // Calculer la pierre de chance céleste (Gemmologie)
+  const luckyGemstone = getLuckyGemstone(zodiac.element, lifePath.number);
 
   // Simulated AI Texts for report
   const favorableMonth = ["Septembre", "Octobre", "Novembre", "Décembre", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août"][(name.length + zodiac.name.length + 3) % 12];
   const luckyNumber = (name.length * zodiac.name.length + 7) % 99 + 1;
 
-  // Create beautiful Daily Horoscope Contents
+  // Create daily horoscope contents
   const dailyHoroscope = generateDailyHoroscope(name, zodiac, answers, lifePath);
   
   return {
     name,
-    zodiac,
-    ascendant,
+    zodiac, // Sun sign
+    moon,   // Moon sign
+    ascendant, // Ascendant string
     energyProfile,
     energyDescription,
     energyScore,
@@ -286,7 +485,8 @@ function generatePersonalizedReport(answers) {
     luckyNumber,
     dailyHoroscope,
     lifePath,
-    numerologyName
+    numerologyName,
+    luckyGemstone
   };
 }
 
@@ -398,13 +598,63 @@ function generateDailyHoroscope(name, zodiac, answers, lifePath) {
   };
 }
 
-// Generate weekly/monthly forecasts for Premium Dashboard
+// Generate weekly/monthly forecasts dynamically based on calendar dates
 function generateForecasts(report) {
   const zodiac = report.zodiac;
-  const name = report.name;
+  const lp = report.lifePath ? report.lifePath.number : 7;
+  const currentDate = new Date();
+  
+  // 1. Calculate Current Week Number
+  const firstDayOfYear = new Date(currentDate.getFullYear(), 0, 1);
+  const pastDaysOfYear = (currentDate - firstDayOfYear) / 86400000;
+  const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
 
-  const weekly = `Cette semaine s'annonce riche en synchronicités pour les natifs du ${zodiac.name}. Les premiers jours seront axés sur la restructuration de vos finances ou de votre lieu de vie. Le milieu de semaine verra un rapprochement affectif majeur, facilité par un bel aspect protecteur de Vénus. Dimanche, profitez d'une lune introspective pour méditer et poser vos intentions pour le cycle à venir.`;
-  const monthly = `Le mois de juin 2026 sera marqué par une transition alchimique d'envergure. Votre planète régente, ${zodiac.ruler}, entame un transit harmonieux qui va débloquer des situations professionnelles en suspens depuis le printemps. C'est le moment d'oser prendre des risques mesurés et de faire confiance à votre intuition. Côté cœur, l'été s'annonce chaleureux et passionné.`;
+  // 2. Get Current Month & Year details
+  const monthName = currentDate.toLocaleDateString("fr-FR", { month: "long" }); // ex: "juin"
+  const monthCapitalized = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  const yearNum = currentDate.getFullYear(); // ex: 2026
+
+  // 3. Dynamic Weekly Sentences database to combine
+  const weeklyIntro = [
+    `Pour cette semaine ${weekNum}, les natifs du ${zodiac.name} entrent dans une phase d'alignement vibratoire favorisée par les transits de leur planète régente ${zodiac.ruler}.`,
+    `Les courants célestes de la semaine ${weekNum} vous invitent solennellement à faire le tri dans vos relations, natifs du ${zodiac.name}.`,
+    `Sous l'influence d'un aspect harmonieux de votre planète ${zodiac.ruler}, la semaine ${weekNum} s'annonce riche en révélations intérieures pour vous.`
+  ][(weekNum + zodiac.name.length) % 3];
+
+  const weeklyMid = [
+    `Votre Chemin de Vie ${lp} indique que le milieu de semaine sera parfait pour initier des discussions sérieuses ou concrétiser des projets professionnels mis en attente. Un élan créatif inattendu se manifestera.`,
+    `Le climat de cette semaine indique un besoin urgent de poser des limites. Votre vibration de Chemin de Vie ${lp} vous aidera à dire non avec bienveillance mais fermeté face aux sollicitations excessives.`,
+    `L'alignement astral actuel soutient votre sphère financière. Grâce à votre vibration active de Chemin de Vie ${lp}, une opportunité concrète ou une bonne intuition commerciale va se présenter.`
+  ][(weekNum + lp) % 3];
+
+  const weeklyEnd = [
+    `Le week-end se prêtera magnifiquement à un rituel de reconnexion corporelle. Ralentissez, offrez-vous du silence et laissez les réponses cosmiques venir à vous naturellement.`,
+    `Profitez du week-end pour purifier votre cocon énergétique. Une marche en nature ou une déconnexion des écrans dimanche soir rechargera parfaitement vos batteries célestes.`,
+    `La fin de semaine sera marquée par une belle complicité. Que vous soyez en couple ou célibataire, ouvrez votre cœur et laissez les synchronicités opérer sous la lune.`
+  ][(weekNum) % 3];
+
+  const weekly = `${weeklyIntro} ${weeklyMid} ${weeklyEnd}`;
+
+  // 4. Dynamic Monthly Sentences database to combine
+  const monthlyIntro = [
+    `Le mois de ${monthCapitalized} ${yearNum} s'annonce comme un véritable carrefour d'éveil pour les natifs du ${zodiac.name}. Votre planète ${zodiac.ruler} amorce un grand transit qui va illuminer votre ciel.`,
+    `Une transition alchimique d'envergure marque le mois de ${monthCapitalized} ${yearNum} pour vous. Sous le regard bienveillant de ${zodiac.ruler}, les verrous émotionnels du passé commencent à se dissoudre.`,
+    `L'énergie dominante de ${monthCapitalized} ${yearNum} sera centrée sur l'expansion professionnelle et l'affirmation de soi pour les natifs du ${zodiac.name}.`
+  ][(currentDate.getMonth() + zodiac.name.length) % 3];
+
+  const monthlyCore = [
+    `Ce mois-ci, le cosmos vous met au défi de dépasser vos croyances limitantes. C'est le moment idéal pour lancer de nouveaux projets ambitieux ou entamer une reconversion. La chance vous accompagne.`,
+    `Les astres favorisent les rituels de guérison du cœur. Vous ressentirez un besoin viscéral d'aligner vos actions extérieures avec vos désirs d'âme secrets. Écoutez votre intuition sans douter.`,
+    `Votre météo astrale mensuelle indique une superbe fluidité matérielle. Les blocages récents s'estompent au profit d'une belle abondance, portée par un excellent magnétisme céleste.`
+  ][(currentDate.getMonth() + lp) % 3];
+
+  const monthlyOutro = [
+    `Côté cœur, la fin du mois vous réserve des moments chaleureux et profonds. Laissez de côté le besoin de contrôle et savourez l'instant présent.`,
+    `Prenez soin de votre corps tout au long du mois. C'est en respectant vos limites physiques que vous parviendrez à maintenir ce haut taux vibratoire.`,
+    `La lunaison de fin de mois agira comme un projecteur sur vos ambitions secrètes. Osez briller sans excuses et accueillez le succès qui vient vers vous.`
+  ][(currentDate.getMonth()) % 3];
+
+  const monthly = `${monthlyIntro} ${monthlyCore} ${monthlyOutro}`;
 
   return { weekly, monthly };
 }

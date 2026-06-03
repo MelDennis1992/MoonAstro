@@ -168,16 +168,15 @@ const QUIZ_QUESTIONS = [
     ]
   },
   {
-    id: "innerColor",
-    category: "Météo Intérieure",
-    question: "Quelle couleur résonne le plus avec votre humeur d'aujourd'hui ?",
+    id: "colorAttraction",
+    category: "Signature Céleste",
+    question: "Quelle nuance de couleur vous appelle pour votre équilibre intérieur ?",
     type: "choice",
     options: [
-      { value: "blue", text: "Bleu crépuscule (Besoin de calme)" },
-      { value: "yellow", text: "Jaune solaire (Optimisme & Action)" },
-      { value: "purple", text: "Violet mystique (Introspection)" },
-      { value: "green", text: "Vert canopée (Besoin de nature)" },
-      { value: "grey", text: "Gris brume (Flou & Fatigue)" }
+      { value: "violet", text: "Le Violet céleste (Méditation)" },
+      { value: "gold", text: "L'Or sablé (Éclat & Vitalité)" },
+      { value: "green", text: "Le Vert émeraude (Régénération)" },
+      { value: "blue", text: "Le Bleu nuit (Apaisement)" }
     ]
   },
   {
@@ -255,15 +254,15 @@ const QUIZ_QUESTIONS = [
     ]
   },
   {
-    id: "synchronicitesMeet",
-    category: "Comportement Social",
-    question: "Quelle place donnez-vous au destin dans vos rencontres ?",
+    id: "travelResourcing",
+    category: "Exploration & Cycles",
+    question: "Quel type d'environnement de voyage ressource le plus profondément votre esprit ?",
     type: "choice",
     options: [
-      { value: "crucial", text: "Cruciale, rien n'arrive par hasard" },
-      { value: "moderate", text: "Intéressante, mais nous créons nos opportunités" },
-      { value: "hazard", text: "Je crois plutôt au hasard bien fait" },
-      { value: "logic", text: "Je ne crois qu'aux choix logiques" }
+      { value: "mountain", text: "Le silence des sommets et l'isolement des montagnes" },
+      { value: "ocean", text: "Le ressac de l'océan et la chaleur du littoral" },
+      { value: "forest", text: "La canopée forestière et l'ancrage dans la nature brute" },
+      { value: "culture", text: "L'effervescence culturelle et l'exploration de ruines sacrées" }
     ]
   },
   {
@@ -477,15 +476,15 @@ const QUIZ_QUESTIONS = [
     ]
   },
   {
-    id: "complimentReaction",
-    category: "Estime de Soi",
-    question: "Comment réagissez-vous lorsqu'on vous fait un compliment sincère ?",
+    id: "characterTrait",
+    category: "Paysage Intérieur",
+    question: "Si vos proches devaient résumer votre tempérament profond en un mot :",
     type: "choice",
     options: [
-      { value: "minimize", text: "Je le minimise immédiatement par gêne" },
-      { value: "gratitude", text: "Je l'accepte avec gratitude et un sourire" },
-      { value: "doubt", text: "Je doute secrètement de son honnêteté" },
-      { value: "return", text: "Je me sens obligé(e) de renvoyer un compliment" }
+      { value: "courageous", text: "Déterminé(e) et courageux(se)" },
+      { value: "empathic", text: "Bienveillant(e) et empathique" },
+      { value: "analytical", text: "Calme et réfléchi(e)" },
+      { value: "creative", text: "Original(e) et libre" }
     ]
   },
   {
@@ -502,6 +501,30 @@ const QUIZ_QUESTIONS = [
   },
 
   // --- ÉTAPE 6 : PARAMÈTRES DE GUIDANCE & CÉLÉBRATION ---
+  {
+    id: "lunarPhaseSensitivity",
+    category: "Guidance & Routine",
+    question: "Ressentez-vous l'influence des phases de la Lune sur vos émotions ou votre sommeil ?",
+    type: "choice",
+    options: [
+      { value: "high", text: "Oui, très fortement (surtout à la Pleine Lune)" },
+      { value: "moderate", text: "Légèrement, mon sommeil est parfois perturbé" },
+      { value: "curious", text: "Pas consciemment, mais je souhaite l'observer" },
+      { value: "none", text: "Non, je ne ressens aucun impact particulier" }
+    ]
+  },
+  {
+    id: "gemstoneIntention",
+    category: "Guidance & Routine",
+    question: "Quelle pierre ou gemme précieuse résonne le plus avec votre intention de guérison actuelle ?",
+    type: "choice",
+    options: [
+      { value: "amethyst", text: "L'Améthyste (Sérénité & Clarté spirituelle)" },
+      { value: "rose_quartz", text: "Le Quartz Rose (Amour inconditionnel & Apaisement)" },
+      { value: "citrine", text: "La Citrine (Abondance & Rayonnement personnel)" },
+      { value: "tiger_eye", text: "L'Œil de Tigre (Protection & Force d'action)" }
+    ]
+  },
   {
     id: "guidanceTime",
     category: "Guidance & Routine",
@@ -529,7 +552,7 @@ const QUIZ_QUESTIONS = [
   {
     id: "guidanceTone",
     category: "Guidance & Routine",
-    question: "Quel ton de guidance attendez-vous de notre intelligence artificielle ?",
+    question: "Quel ton de guidance attendez-vous de notre oracle ?",
     type: "choice",
     options: [
       { value: "priestess", text: "La Prêtresse Mystique (poétique et spirituelle)" },
@@ -571,25 +594,5 @@ const QUIZ_QUESTIONS = [
       { value: "connect", text: "En me connectant avec des personnes chères" },
       { value: "normal", text: "C'est une nuit comme les autres pour moi" }
     ]
-  },
-  {
-    id: "discoveryChannel",
-    category: "Guidance & Routine",
-    question: "Comment avez-vous découvert Moonly ?",
-    type: "choice",
-    options: [
-      { value: "recommend", text: "Recommandation spirituelle / Bouche à oreille" },
-      { value: "social", text: "Réseaux sociaux (Instagram, TikTok)" },
-      { value: "search", text: "Recherche sur le web" },
-      { value: "other", text: "Par un autre chemin mystérieux" }
-    ]
-  },
-  {
-    id: "email",
-    category: "Guidance & Routine",
-    question: "Dernier pas : où l'Oracle doit-il envoyer votre dossier astrologique ?",
-    type: "text",
-    placeholder: "Votre adresse e-mail...",
-    label: "E-mail"
   }
 ];

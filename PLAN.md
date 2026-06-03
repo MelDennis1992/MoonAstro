@@ -1,4 +1,4 @@
 Status: Verified & Polished
-Product: Moonly
+Product: Moon Astro
 Quality Gate: Passed
 Ready for Production: Yes

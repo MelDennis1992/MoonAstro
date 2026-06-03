@@ -3,9 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moonly — Horoscope Personnel & Guidance Spirituelle par IA</title>
-  <meta name="description" content="Découvrez votre énergie astrologique quotidienne et bénéficiez d'une guidance personnalisée grâce à l'astrologie moderne et l'intelligence artificielle de Moonly.">
+  <title>Moon Astro — Horoscope Personnel & Guidance Spirituelle Céleste</title>
+  <meta name="description" content="Découvrez votre énergie astrologique quotidienne et bénéficiez d'une guidance personnalisée grâce à l'astrologie moderne et aux calculs cosmiques de Moon Astro.">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -19,7 +22,7 @@
           <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" opacity="0.3"/>
           <circle cx="12" cy="12" r="2" fill="var(--accent-gold)"/>
         </svg>
-        <span class="logo-text logo-font">Moonly</span>
+        <span class="logo-text logo-font">Moon Astro</span>
       </a>
       <div id="premium-badge-container" style="display: none;">
         <span class="premium-badge">Premium</span>
@@ -35,7 +38,7 @@
           <div class="moon-crescent"></div>
         </div>
         <h1 class="hero-tagline">Découvrez votre guidance céleste personnelle.</h1>
-        <p class="hero-sub">Moonly fusionne l'astrologie traditionnelle avec l'intelligence artificielle pour vous offrir un compagnon quotidien unique adapté à votre énergie.</p>
+        <p class="hero-sub">Moon Astro fusionne l'astrologie traditionnelle avec les calculs cosmiques avancés pour vous offrir un compagnon quotidien unique adapté à votre énergie.</p>
       </div>
 
       <div class="pilars">
@@ -58,7 +61,7 @@
             </svg>
           </div>
           <div class="pilar-text">
-            <h3>Guidance quotidienne par IA</h3>
+            <h3>Guidance quotidienne sur mesure</h3>
             <p>Une lecture astrologique et émotionnelle rédigée pour vous chaque matin.</p>
           </div>
         </div>
@@ -77,9 +80,10 @@
       </div>
 
       <button id="btn-start-quiz" class="btn btn-primary" style="margin-bottom: 12px;">Découvrir mon énergie</button>
+      <button id="btn-client-access" class="btn btn-secondary" style="margin-bottom: 24px; border: 1px solid rgba(197, 160, 89, 0.3); color: var(--accent-gold-dark);">Espace Client (Se connecter)</button>
       
       <div class="page-footer">
-        <div>Propulsé par Moonly IA — Astrologie & Bien-être</div>
+        <div>Propulsé par Moon Astro — Astrologie & Bien-être</div>
         <div>
           <a href="#terms" id="link-terms-landing">Conditions Générales</a> &bull; 
           <a href="#terms" id="link-privacy-landing">Politique de Confidentialité</a>
@@ -123,17 +127,22 @@
           <label class="quiz-input-label">Adresse Email</label>
           <input type="email" id="reg-email" class="quiz-input" placeholder="exemple@domaine.com" required>
         </div>
-        <div class="quiz-input-group">
+        <div class="quiz-input-group" style="position: relative;">
           <label class="quiz-input-label">Mot de passe</label>
           <input type="password" id="reg-password" class="quiz-input" placeholder="••••••••" required>
+          <a href="#" id="forgot-password-link" style="font-size: 11px; color: var(--accent-gold-dark); text-align: right; text-decoration: none; display: none; margin-top: 4px; font-weight: 500;">Mot de passe oublié ?</a>
         </div>
         <div class="quiz-input-group" style="flex-direction: row; align-items: flex-start; gap: 10px; margin-top: 8px;">
           <input type="checkbox" id="reg-consent" style="margin-top: 4px; cursor: pointer; width: auto;" required>
           <label for="reg-consent" style="font-size: 12px; color: var(--text-muted); cursor: pointer; line-height: 1.4; font-family: var(--font-sans);">
-            J'accepte explicitement le traitement de mes coordonnées natales (date, heure, lieu) et de mes ressentis psycho-comportementaux pour la génération et la sauvegarde de mon thème astral Moonly.
+            J'accepte explicitement le traitement de mes coordonnées natales (date, heure, lieu) et de mes ressentis psycho-comportementaux pour la génération et la sauvegarde de mon thème astral Moon Astro.
           </label>
         </div>
-        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Calculer mon thème astral</button>
+        <button type="submit" id="btn-register-submit" class="btn btn-primary" style="margin-top: 10px;">Calculer mon thème astral</button>
+        <p style="text-align: center; margin-top: 15px; font-size: 13px; color: var(--text-muted); font-family: var(--font-sans);">
+          Déjà un compte ? 
+          <a href="#" id="toggle-auth-mode" style="color: var(--accent-gold-dark); font-weight: 600; text-decoration: none;">Se connecter</a>
+        </p>
       </form>
       
       <p class="terms-text">En continuant, vous acceptez nos <a href="#terms">Conditions d'Utilisation</a> et certifiez avoir lu notre <a href="#terms">Charte de Confidentialité</a>.</p>
@@ -161,7 +170,7 @@
     <section id="result" class="page">
       <div class="result-header">
         <h2 class="serif-font">Votre Ciel Astral est Prêt, <span id="res-username">Ami</span></h2>
-        <p class="hero-sub" style="margin: 0 auto;">L'intelligence artificielle a synthétisé vos cycles cosmiques.</p>
+        <p class="hero-sub" style="margin: 0 auto;">Les calculs cosmiques ont synthétisé vos cycles astrologiques.</p>
       </div>
 
       <div class="energy-badge-large">
@@ -174,10 +183,14 @@
           <svg viewBox="0 0 24 24"><path d="M12 2.24L14.47 7.3l5.57.8-4.02 3.93.95 5.56-4.97-2.62-4.97 2.62.95-5.56-4.02-3.93 5.57-.8L12 2.24z"/></svg>
           Votre Identité Céleste
         </h3>
-        <div class="grid-key-stats">
+        <div class="grid-key-stats" style="grid-template-columns: repeat(3, 1fr);">
           <div class="stat-mini-card">
             <span class="stat-mini-label">Signe Solaire</span>
             <span id="res-sun" class="stat-mini-val">Cancer ♋</span>
+          </div>
+          <div class="stat-mini-card">
+            <span class="stat-mini-label">Signe Lunaire</span>
+            <span id="res-moon" class="stat-mini-val">Taureau ♉</span>
           </div>
           <div class="stat-mini-card">
             <span class="stat-mini-label">Ascendant</span>
@@ -230,6 +243,21 @@
         </div>
       </div>
 
+      <!-- Aperçu Gemmologie Céleste (Garantie de confiance gratuite !) -->
+      <div class="card" style="margin-top: 10px; border-color: rgba(212, 175, 55, 0.25); background: radial-gradient(circle at top right, #FFFFFF, #FAF9F5); border-radius: 16px;">
+        <h3 class="result-section-title" style="color: var(--accent-gold-dark);">
+          <svg viewBox="0 0 24 24" style="fill: var(--accent-gold); width:18px; height:18px; margin-right:6px;"><path d="M12 2L2 22h20L12 2zm0 3.99L19.53 19H4.47L12 5.99z"/></svg>
+          Votre Pierre Céleste & Gemmologie
+        </h3>
+        <div style="display: flex; gap: 14px; align-items: center; margin-top: 10px;">
+          <div id="res-gem-icon" style="font-size: 32px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">💎</div>
+          <div>
+            <h4 id="res-gem-name" style="margin: 0; font-size: 15px; color: var(--primary-midnight); font-family: var(--font-serif-title); font-weight: 600;">Améthyste Sacrée</h4>
+            <p id="res-gem-desc" style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); line-height: 1.4;">Chargement de votre pierre astrologique protectrice...</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Locked Teaser leading to Paywall -->
       <div class="teaser-locked-container">
         <div class="blur-overlay">
@@ -241,7 +269,7 @@
             <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
           </div>
           <h3 class="lock-title serif-font">Rapport Complet Verrouillé</h3>
-          <p class="lock-desc">Débloquez votre horoscope quotidien par IA, vos conseils amour, carrière et vos cycles de lune.</p>
+          <p class="lock-desc">Débloquez votre horoscope quotidien personnalisé, vos conseils amour, carrière et vos cycles de lune.</p>
           <button id="btn-go-to-paywall" class="btn btn-gold">Accéder à mon Horoscope Complet</button>
         </div>
       </div>
@@ -264,7 +292,7 @@
       <div class="paywall-features card">
         <div class="pw-feature-row">
           <svg class="pw-feature-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-          <span>Horoscope quotidien 100% personnalisé par IA</span>
+          <span>Horoscope quotidien 100% personnalisé pour vous</span>
         </div>
         <div class="pw-feature-row">
           <svg class="pw-feature-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
@@ -444,22 +472,45 @@
           <p id="dash-daily-warning" style="font-size: 14px; color: var(--text-dark); line-height: 1.5;">Soyez prudent(e) aujourd'hui quant à...</p>
         </div>
 
-        <div class="lucky-stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <!-- Gemmologie & Pierre de Chance Premium (Unlocked!) -->
+        <div class="card" style="margin-top: 16px; border-color: rgba(212, 175, 55, 0.25); background: radial-gradient(circle at top right, #FFFFFF, #FAF9F5); border-radius: 16px;">
+          <h3 class="result-section-title" style="color: var(--accent-gold-dark);">
+            <svg viewBox="0 0 24 24" style="fill: var(--accent-gold); width:18px; height:18px; margin-right:6px;"><path d="M12 2L2 22h20L12 2zm0 3.99L19.53 19H4.47L12 5.99z"/></svg>
+            ✦ Votre Pierre Céleste & Gemmologie
+          </h3>
+          <div style="display: flex; gap: 14px; align-items: center; margin-top: 10px;">
+            <div id="dash-gem-icon" style="font-size: 32px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">💎</div>
+            <div>
+              <h4 id="dash-gem-name" style="margin: 0; font-size: 15px; color: var(--primary-midnight); font-family: var(--font-serif-title); font-weight: 600;">Améthyste Sacrée</h4>
+              <p id="dash-gem-desc" style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); line-height: 1.4;">Chargement de votre pierre de protection...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lucky-stats-grid">
           <div class="lucky-box" style="border-color: rgba(212, 175, 55, 0.25); background: radial-gradient(circle at top right, #FFFFFF, #FAF7F0);">
             <span class="lucky-label" style="color: var(--accent-gold-dark); font-weight: 600;">Chemin de Vie</span>
             <span id="dash-lifepath" class="lucky-val" style="color: var(--primary-midnight);">✦</span>
           </div>
           <div class="lucky-box">
             <span class="lucky-label">Chiffre Clé</span>
-            <span id="dash-lucky-number" class="lucky-val">7</span>
+            <span id="dash-lucky-number" class="lucky-val">✦</span>
           </div>
           <div class="lucky-box">
             <span class="lucky-label">Mois Favorable</span>
-            <span id="dash-lucky-month" class="lucky-val">Août</span>
+            <span id="dash-lucky-month" class="lucky-val">✦</span>
+          </div>
+          <div class="lucky-box">
+            <span class="lucky-label">Signe Solaire</span>
+            <span id="dash-sun-sign" class="lucky-val">✦</span>
+          </div>
+          <div class="lucky-box">
+            <span class="lucky-label">Signe Lunaire</span>
+            <span id="dash-moon-sign" class="lucky-val">✦</span>
           </div>
           <div class="lucky-box">
             <span class="lucky-label">Ascendant</span>
-            <span id="dash-ascendant" class="lucky-val">Lion ♌</span>
+            <span id="dash-ascendant" class="lucky-val">✦</span>
           </div>
         </div>
       </div>
@@ -497,7 +548,7 @@
 
     <!-- 9. USER SETTINGS & PROFILE -->
     <section id="settings" class="page">
-      <h2 class="serif-font" style="margin-bottom: 6px;">Votre Profil Moonly</h2>
+      <h2 class="serif-font" style="margin-bottom: 6px;">Votre Profil Moon Astro</h2>
       <p class="hero-sub" style="margin-bottom: 24px; margin-top: -4px;">Gérez vos coordonnées natales et configurez vos alertes spirituelles.</p>
 
       <!-- Natal Information Card -->
@@ -519,9 +570,12 @@
               <label class="quiz-input-label">Heure de naissance</label>
               <input type="time" id="set-birthtime" class="quiz-input">
             </div>
-            <div class="quiz-input-group">
+            <div class="quiz-input-group" style="position: relative;">
               <label class="quiz-input-label">Lieu de naissance</label>
               <input type="text" id="set-birthplace" class="quiz-input" required>
+              <div id="settings-birthplace-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
+              <div id="settings-birthplace-coordinates" style="margin-top: 10px; font-size: 13px; color: var(--accent-gold-dark); text-align: center; font-weight: 500; display: none;"></div>
+              <div id="settings-birthplace-map" style="height: 160px; margin-top: 10px; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.2); display: none;"></div>
             </div>
           </div>
           <button type="submit" class="btn btn-secondary" style="padding: 12px; font-size: 14px; border-radius: 12px;">Mettre à jour mon thème astral</button>
@@ -563,6 +617,18 @@
         </div>
       </div>
 
+      <!-- Sécurité & Mot de passe -->
+      <div class="card">
+        <h3 class="settings-section-title">Sécurité & Mot de passe</h3>
+        <form id="form-settings-password" class="register-form" onsubmit="return false;" style="margin-top: 10px;">
+          <div class="quiz-input-group">
+            <label class="quiz-input-label">Nouveau mot de passe</label>
+            <input type="password" id="set-password" class="quiz-input" placeholder="Nouveau mot de passe (min. 6 caractères)" required>
+          </div>
+          <button type="submit" id="btn-update-password" class="btn btn-secondary" style="padding: 12px; font-size: 14px; border-radius: 12px; margin-top: 12px;">Changer mon mot de passe</button>
+        </form>
+      </div>
+
       <!-- Account Settings -->
       <div class="card">
         <h3 class="settings-section-title">Abonnement & Compte</h3>
@@ -595,11 +661,11 @@
       <div class="card" style="font-size: 13px; line-height: 1.6; color: var(--text-muted); display: flex; flex-direction: column; gap: 16px;">
         <div>
           <h3 style="font-size: 15px; color: var(--primary-midnight); margin-bottom: 6px;">1. Protection des Données Personnelles (RGPD)</h3>
-          <p>Moonly s'engage à protéger l'ensemble des données personnelles collectées lors de votre onboarding. Vos coordonnées de naissance (date, heure, lieu) et vos états d'esprit émotionnels ne servent qu'à faire tourner nos algorithmes astrologiques locaux de manière anonyme. Aucune revente de données n'est effectuée.</p>
+          <p>Moon Astro s'engage à protéger l'ensemble des données personnelles collectées lors de votre onboarding. Vos coordonnées de naissance (date, heure, lieu) et vos états d'esprit émotionnels ne servent qu'à faire tourner nos algorithmes astrologiques locaux de manière anonyme. Aucune revente de données n'est effectuée.</p>
         </div>
         <div>
           <h3 style="font-size: 15px; color: var(--primary-midnight); margin-bottom: 6px;">2. Clause de Non-Responsabilité Médicale ou Professionnelle</h3>
-          <p>Les lectures astrales, horoscopes, conseils spirituels et analyses de l'intelligence artificielle générés par Moonly sont proposés uniquement à titre de divertissement, d'introspection et de bien-être personnel. Ils ne sauraient en aucun cas remplacer un avis ou un diagnostic médical, psychologique, juridique, financier ou professionnel.</p>
+          <p>Les lectures astrales, horoscopes, conseils spirituels et analyses personnalisées générées par Moon Astro sont proposés uniquement à titre de divertissement, d'introspection et de bien-être personnel. Ils ne sauraient en aucun cas remplacer un avis ou un diagnostic médical, psychologique, juridique, financier ou professionnel.</p>
         </div>
         <div>
           <h3 style="font-size: 15px; color: var(--primary-midnight); margin-bottom: 6px;">3. Conditions d'Abonnement et Remboursements</h3>
@@ -647,7 +713,7 @@
       </div>
 
       <div class="stripe-summary">
-        <span class="stripe-sum-title" id="stripe-plan-title">Abonnement Mensuel Moonly</span>
+        <span class="stripe-sum-title" id="stripe-plan-title">Abonnement Mensuel Moon Astro</span>
         <span class="stripe-sum-price" id="stripe-plan-price">9,99 €</span>
       </div>
 

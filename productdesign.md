@@ -1,31 +1,31 @@
-# Document de Conception Produit (PRD) — Moonly
+# Document de Conception Produit (PRD) — Moon Astro
 
 > [!NOTE]
-> **Moonly** est une webapp d’horoscope personnalisé par intelligence artificielle au positionnement ultra-premium. Conçue à l'origine comme une expérience web immersive, son architecture technique et son design sont optimisés pour une transition fluide vers des applications mobiles natives iOS et Android.
+> **Moon Astro** est une webapp d’horoscope personnalisé par moteur astrologique au positionnement ultra-premium. Conçue à l'origine comme une expérience web immersive, son architecture technique et son design sont optimisés pour une transition fluide vers des applications mobiles natives iOS et Android.
 
 ---
 
 ## 1. Vision & Positionnement Stratégique
 
-### 1.1. La Vision Moonly
-À l'intersection de la spiritualité millénaire et de l'intelligence artificielle générative de pointe, Moonly propose une approche renouvelée de l'astrologie. Loin des clichés et des horoscopes génériques des journaux, Moonly offre une guidance ultra-personnalisée, évolutive et intimement liée aux états émotionnels réels de l’utilisateur.
+### 1.1. La Vision Moon Astro
+À l'intersection de la spiritualité millénaire et de l'moteur astrologique générative de pointe, Moon Astro propose une approche renouvelée de l'astrologie. Loin des clichés et des horoscopes génériques des journaux, Moon Astro offre une guidance ultra-personnalisée, évolutive et intimement liée aux états émotionnels réels de l’utilisateur.
 
-L'objectif est d'offrir une expérience de "bien-être spirituel moderne" (Spiritual Wellness), douce, introspective et haut de gamme. Moonly agit comme un miroir de l'âme et un compagnon quotidien pour naviguer dans la vie moderne avec plus de clarté.
+L'objectif est d'offrir une expérience de "bien-être spirituel moderne" (Spiritual Wellness), douce, introspective et haut de gamme. Moon Astro agit comme un miroir de l'âme et un compagnon quotidien pour naviguer dans la vie moderne avec plus de clarté.
 
 ### 1.2. Positionnement "Mystical Premium"
-Moonly se distingue par une identité de marque et un design d’une élégance rare, baptisé **Mystical Premium**.
+Moon Astro se distingue par une identité de marque et un design d’une élégance rare, baptisé **Mystical Premium**.
 
 ```mermaid
 graph TD
     A[Astrologie Traditionnelle] -->|Trop rigide / Clichés| C(Le Marché)
     B[Apps de Pleine Conscience] -->|Trop cliniques / Froides| C
-    C --> D{Moonly}
+    C --> D{Moon Astro}
     D -->|Spiritualité Moderne| E[Expérience Mystique Douce]
-    D -->|IA Avancée| F[Guidance Hyper-Personnalisée]
+    D -->|Calculs Cosmiques| F[Guidance Hyper-Personnalisée]
     D -->|Identité Visuelle| G[Design Lunaire Premium]
 ```
 
-* **Le Light Mode Lunaire** : Contrairement à la majorité des applications d'astrologie qui imposent des thèmes sombres et lourds, Moonly prend le contre-pied avec un design lumineux, apaisant et épuré. Le fond oscille entre des blancs de lin et des crèmes de soie, évoquant la clarté bienveillante de la Lune.
+* **Le Light Mode Lunaire** : Contrairement à la majorité des applications d'astrologie qui imposent des thèmes sombres et lourds, Moon Astro prend le contre-pied avec un design lumineux, apaisant et épuré. Le fond oscille entre des blancs de lin et des crèmes de soie, évoquant la clarté bienveillante de la Lune.
 * **Palette Chromatique** :
   * *Fond Principal* : Crème Sacrée (`#FAF8F5`) / Blanc Pur (`#FFFFFF`)
   * *Accents Principaux* : Violet Lunaire (`#6D5B97` / `#534370`), Bleu Nuit Mystique (`#1C2541`)
@@ -53,13 +53,13 @@ graph TD
 1. **La Fluidité Absolue** : Toutes les transitions de pages et de cartes utilisent des courbes de bézier personnalisées (`cubic-bezier(0.25, 1, 0.5, 1)`) pour donner une sensation de légèreté et d'élasticité.
 2. **Le Défilement Rituel** : Lors du passage d'une section à une autre (notamment dans le quiz), les éléments s'estompent et glissent doucement vers le haut (*fade-in slide-up*), créant un rythme méditatif.
 3. **Reflets Dorés Dynamiques** : Les boutons d'action clés (comme le paywall ou la validation finale) possèdent un effet de reflet doré qui glisse sur le bouton de manière subtile toutes les 5 secondes.
-4. **Chargement Astrologique** : Pendant la génération des résultats par l'IA, l'utilisateur voit une animation élégante représentant les phases de la Lune se succéder dans un halo doré, accompagnée de phrases d'introspection poétiques.
+4. **Chargement Astrologique** : Pendant la génération des résultats par l'Oracle, l'utilisateur voit une animation élégante représentant les phases de la Lune se succéder dans un halo doré, accompagnée de phrases d'introspection poétiques.
 
 ---
 
 ## 3. Le Quiz Immersif : L'Onboarding Holistique
 
-Le quiz de Moonly n'est pas un simple formulaire administratif : c'est un **rituel d'onboarding**. Il comporte **environ 50 questions** structurées en 6 grandes étapes thématiques pour cartographier le profil complet de l'utilisateur.
+Le quiz de Moon Astro n'est pas un simple formulaire administratif : c'est un **rituel d'onboarding**. Il comporte **environ 50 questions** structurées en 6 grandes étapes thématiques pour cartographier le profil complet de l'utilisateur.
 
 ```mermaid
 polyline
@@ -126,25 +126,25 @@ polyline
 42. **À quel point parvenez-vous à écouter et respecter les limites physiques de votre corps ?** (Boutons : J'écoute chaque signal avec déférence / Je ne l'écoute que lorsqu'il tombe malade / Je le pousse souvent au-delà de ses forces / J'ai du mal à décoder ses messages)
 
 #### Étape 6 : Paramètres de Guidance & Célébration (8 questions)
-*Objectif : Personnaliser le ton de l'IA, les heures de notification, les thématiques prioritaires et les modes de communication.*
+*Objectif : Personnaliser le ton de l'Oracle, les heures de notification, les thématiques prioritaires et les modes de communication.*
 43. **À quel moment de votre rituel quotidien souhaitez-vous recevoir votre guidance ?** (Boutons : Au lever du jour pour impulser mon énergie / À la pause méridionale pour me recentrer / Au crépuscule pour faire le bilan / De manière aléatoire au fil des astres)
-44. **Quelles thématiques de vie souhaitez-vous voir traitées en priorité par l'IA ?** (Boutons : Amour & Harmonie Relationnelle / Alignement Professionnel & Succès / Paix Intérieure & Équilibre Mental / Cycles Lunaires & Rituels Spirituels)
-45. **Quelle posture ou ton de guidance attendez-vous de notre intelligence artificielle ?** (Boutons : La Prêtresse Mystique (poétique, intuitive, métaphorique) / La Psychologue Astrologue (analytique, clinique, structurée) / L'Amie Bienveillante (douce, chaleureuse, accessible) / Le Mentor Spirituel (direct, inspirant, orienté action))
+44. **Quelles thématiques de vie souhaitez-vous voir traitées en priorité par l'Oracle ?** (Boutons : Amour & Harmonie Relationnelle / Alignement Professionnel & Succès / Paix Intérieure & Équilibre Mental / Cycles Lunaires & Rituels Spirituels)
+45. **Quelle posture ou ton de guidance attendez-vous de notre moteur astrologique ?** (Boutons : La Prêtresse Mystique (poétique, intuitive, métaphorique) / La Psychologue Astrologue (analytique, clinique, structurée) / L'Amie Bienveillante (douce, chaleureuse, accessible) / Le Mentor Spirituel (direct, inspirant, orienté action))
 46. **Acceptez-vous de recevoir des notifications d'alerte lors des phases astrologiques intenses (ex: transits majeurs, éclipses, Mercure rétrograde) ?** (Boutons : Oui, je veux être alerté(e) immédiatement / Uniquement si l'impact est positif et harmonieux / Non, je préfère vivre dans l'instant présent)
 47. **Quels canaux de transmission préférez-vous pour vos oracles ?** (Boutons : Notifications Push immersives / E-mail complet récapitulatif / Les deux pour un suivi optimal)
 48. **Comment préférez-vous célébrer les soirs de Pleine Lune ?** (Boutons : Par un rituel d'écriture et de libération / Par une méditation silencieuse d'ancrage / En me connectant avec des proches / C'est une nuit normale pour moi)
-49. **Comment avez-vous entendu parler de Moonly pour la première fois ?** (Boutons : Recommandation d'un proche / Réseaux sociaux célestes / Recherche Google / Autre chemin mystérieux)
+49. **Comment avez-vous entendu parler de Moon Astro pour la première fois ?** (Boutons : Recommandation d'un proche / Réseaux sociaux célestes / Recherche Google / Autre chemin mystérieux)
 50. **Dernier pas du rituel : où l'Oracle doit-il envoyer votre thème astral et votre analyse de Chemin de Vie ?** (Saisie texte E-mail)
 
 ---
 
-## 4. Moteur d'IA & Génération des Résultats
+## 4. Moteur Astrologique & Génération des Résultats
 
-Une fois les 50 questions complétées, le moteur d'IA de Moonly s'active. L’algorithme croise les calculs astronomiques de naissance (position des planètes, maisons, aspects) avec le nom de naissance complet pour la numérologie, et intègre les réponses psycho-comportementales obtenues lors du quiz.
+Une fois les 50 questions complétées, le moteur astrologique de Moon Astro s'active. L’algorithme croise les calculs astronomiques de naissance (position des planètes, maisons, aspects) avec le nom de naissance complet pour la numérologie, et intègre les réponses psycho-comportementales obtenues lors du quiz.
 
 ```mermaid
 flowchart TD
-    SubData[Données Astronomiques: Date, Heure, Lieu] --> AI_Engine{Moteur d'IA Moonly}
+    SubData[Données Astronomiques: Date, Heure, Lieu] --> AI_Engine{Moteur Astrologique Moon Astro}
     QuizData[Données Psycho-Comportementales & Relations: 50 Questions] --> AI_Engine
     NameData[Nom Complet de Naissance] --> AI_Engine
     AI_Engine -->|Génération Structurée| Out1[Profil Énergétique Dominant]
@@ -155,7 +155,7 @@ flowchart TD
     AI_Engine -->|Génération Structurée| Out6[Chiffres & Événements Favoris]
 ```
 
-### 4.1. Structure du Résultat Généré par l'IA
+### 4.1. Structure du Résultat Généré par l'Oracle
 
 Chaque utilisateur reçoit un dossier astrologique et numérologique de très haute facture, découpé comme suit :
 
@@ -176,7 +176,7 @@ Chaque utilisateur reçoit un dossier astrologique et numérologique de très ha
 
 ## 5. Modèle Économique : La Stratégie Freemium & Premium
 
-Moonly fonctionne selon un modèle freemium très soigné. La frustration de l'utilisateur face à un mur de paiement (paywall) doit être évitée grâce à un apport de valeur immédiat et gratuit de très haute qualité.
+Moon Astro fonctionne selon un modèle freemium très soigné. La frustration de l'utilisateur face à un mur de paiement (paywall) doit être évitée grâce à un apport de valeur immédiat et gratuit de très haute qualité.
 
 ```mermaid
 graph TD
@@ -185,7 +185,7 @@ graph TD
     B --> D[Aperçu Énergie du Jour]
     B --> E[Bouton de Révélation Or]
     E -->|Paywall Intuitif| F[Abonnement Premium]
-    F --> G[Analyse Complète de l'IA]
+    F --> G[Analyse Complète de l'Oracle]
     F --> H[Horoscopes Illimités Jour/Semaine/Mois]
     F --> I[Historique & Suivi des Cycles Lunaires]
     F --> J[Guidances Amour, Carrière, Bien-être]
@@ -199,7 +199,7 @@ graph TD
 | **Profil Énergétique Dominant** | Oui (Synthèse basique) | Oui (Analyse approfondie de 3 pages) |
 | **Chemin de Vie & Numérologie** | Version simplifiée (Seulement le chiffre de Chemin de Vie) | Version complète (Chemin de vie détaillé, Expression, Intime, Réalisation, Année Personnelle) |
 | **Triade Astrologique (Soleil/Lune/Asc)** | Oui (Signes uniquement) | Oui (Détail des maisons et aspects) |
-| **Horoscope Quotidien** | Aperçu (50 premiers mots) | Complet & personnalisé par IA chaque matin |
+| **Horoscope Quotidien** | Aperçu (50 premiers mots) | Complet & personnalisé chaque matin |
 | **Horoscope Hebdomadaire & Mensuel** | Non | Oui |
 | **Forces & Blocages** | Floutés par un effet de verre | Entièrement débloqués avec exercices d'auto-coaching |
 | **Chiffre Porte-Bonheur & Mois Favorable** | Oui | Oui |
@@ -217,11 +217,11 @@ graph TD
 
 ## 6. Architecture des Écrans (Dashboard & Navigation)
 
-L'interface de Moonly privilégie le minimalisme pour favoriser l'apaisement. La navigation s'organise autour d'une barre de navigation inférieure (Tab Bar) à 4 onglets, idéale pour le futur portage mobile.
+L'interface de Moon Astro privilégie le minimalisme pour favoriser l'apaisement. La navigation s'organise autour d'une barre de navigation inférieure (Tab Bar) à 4 onglets, idéale pour le futur portage mobile.
 
 ```
 +-------------------------------------------------------------+
-|  [Logo Moonly]                                [Mon Profil]  |
+|  [Logo Moon Astro]                                [Mon Profil]  |
 |                                                             |
 |  "Bonjour Marie, la Lune Gibbeuse Croissante illumine       |
 |   votre ciel aujourd'hui."                                  |
@@ -256,11 +256,11 @@ L'interface de Moonly privilégie le minimalisme pour favoriser l'apaisement. La
 #### 2. Mon Thème (La Carte du Ciel)
 * **Représentation Graphique** : Un dessin épuré et moderne de la carte du ciel de naissance de l'utilisateur (simplifié pour éviter le côté trop technique et illisible des astrologues classiques).
 * **Les Piliers Identitaires** : Analyse détaillée du Signe Solaire (l'égo), du Signe Lunaire (les émotions) et de l'Ascendant (le masque social).
-* **Le Rapport de l'IA** : L'accès direct à l'analyse complète générée suite au quiz (Forces, Blocages, Conseils d'alignement).
+* **Le Rapport de l'Oracle** : L'accès direct à l'analyse complète générée suite au quiz (Forces, Blocages, Conseils d'alignement).
 
 #### 3. Cycles Lunaires & Guidance
 * **Calendrier Lunaire** : Un calendrier minimaliste indiquant les lunaisons futures (Pleine Lune, Nouvelle Lune) et leurs transits dans les différents signes.
-* **Rituel de Lune** : Des conseils d'écriture ou de méditation rédigés par l'IA spécifiquement adaptés à l'impact de la phase lunaire en cours sur le profil de l'utilisateur.
+* **Rituel de Lune** : Des conseils d'écriture ou de méditation rédigés par l'Oracle spécifiquement adaptés à l'impact de la phase lunaire en cours sur le profil de l'utilisateur.
 
 #### 4. Paramètres & Espace Premium
 * **Gestion du Profil** : Modification des heures de naissance, du prénom ou des coordonnées de contact.
@@ -284,7 +284,7 @@ graph LR
         D[Edge Functions / Node.js]
     end
     subgraph External APIs
-        E[OpenAI / Claude API - Horoscope IA]
+        E[OpenAI / Claude API - Horoscope Céleste]
         F[Stripe - Paiements]
         G[Resend - E-mails]
         H[OneSignal - Notifications Push]
@@ -303,7 +303,7 @@ graph LR
 * **Framework Core** : **React (avec Vite)** pour une Single Page Application (SPA) moderne, légère et ultra-rapide. L'utilisation de Vite garantit des builds instantanés et un temps de chargement minimal, offrant une expérience fluide indispensable pour une webapp premium. Ce socle React standard facilite grandement le portage de la logique métier (hooks, state management) vers React Native.
 * **Styling & UI** : **Tailwind CSS** combiné avec des variables CSS natives pour piloter facilement la charte Mystical Premium et un éventuel basculement de mode de couleur.
 * **Base de Données & Authentification** : **Supabase** (PostgreSQL). Offre une gestion native des utilisateurs (Auth), une base de données relationnelle sécurisée pour stocker les profils astrologiques complexes, et des fonctions Edge performantes.
-* **Moteur d'IA** : Intégration de l'API **Claude (Anthropic)** ou **OpenAI (GPT-4o)** via des serveurs sécurisés pour la génération à la demande et le traitement par batch des horoscopes ultra-personnalisés.
+* **Moteur Astrologique** : Intégration de l'API **Claude (Anthropic)** ou **OpenAI (GPT-4o)** via des serveurs sécurisés pour la génération à la demande et le traitement par batch des horoscopes ultra-personnalisés.
 * **Passerelle de Paiement** : **Stripe** pour la gestion sécurisée des abonnements web (avec Stripe Billing et portail client intégré).
 * **Mailing transactionnel** : **Resend** pour sa rapidité et sa délivrabilité exceptionnelle, idéal pour l'envoi des bilans hebdomadaires et des e-mails d'onboarding.
 * **Notifications Push & In-App** : **OneSignal** ou **Firebase Cloud Messaging (FCM)** pour gérer la communication cross-plateforme (Web Push + Futures Apps iOS/Android).
@@ -383,11 +383,11 @@ CREATE TABLE daily_guidances (
 ## 8. Sécurité, RGPD & Confidentialité des Données
 
 > [!WARNING]
-> La collecte de données personnelles intimes comme les ressentis émotionnels, la situation amoureuse ou les doutes professionnels implique une responsabilité éthique et légale maximale. Moonly doit être irréprochable sur la protection des données.
+> La collecte de données personnelles intimes comme les ressentis émotionnels, la situation amoureuse ou les doutes professionnels implique une responsabilité éthique et légale maximale. Moon Astro doit être irréprochable sur la protection des données.
 
 1. **Consentement Éclairé** : À l'étape 6 du quiz (avant la collecte de l'e-mail), l'utilisateur doit explicitement valider une case à cocher d'acceptation de la politique de confidentialité des données sensibles (données de santé mentale/émotionnelle).
-2. **Minimisation des Données** : Les réponses détaillées du quiz (les 50 questions) sont chiffrées en base de données. Elles ne servent qu'à nourrir le prompt de génération de l'IA et ne sont en aucun cas vendues ou partagées avec des tiers.
-3. **Traitement IA Anonymisé** : Lors de l'envoi des données à l'API de traitement d'intelligence artificielle (Claude ou OpenAI), le nom et l'e-mail de l'utilisateur sont entièrement purgés. L'IA ne reçoit que l'âge, les données de naissance et le tableau des réponses anonymes.
+2. **Minimisation des Données** : Les réponses détaillées du quiz (les 50 questions) sont chiffrées en base de données. Elles ne servent qu'à nourrir le prompt de génération de l'Oracle et ne sont en aucun cas vendues ou partagées avec des tiers.
+3. **Traitement Anonymisé** : Lors de l'envoi des données à l'API de traitement d'moteur astrologique (Claude ou OpenAI), le nom et l'e-mail de l'utilisateur sont entièrement purgés. L'Oracle ne reçoit que l'âge, les données de naissance et le tableau des réponses anonymes.
 4. **Droit à l'Oubli Facilité** : Un bouton simple dans les paramètres de l'application permet à l'utilisateur de supprimer définitivement et instantanément l'intégralité de son profil, de ses réponses de quiz et de ses historiques de guidances de la base de données PostgreSQL.
 
 ---
@@ -396,7 +396,7 @@ CREATE TABLE daily_guidances (
 
 ### Phase 1 : Le MVP Web Immersif (Mois 1 - 2)
 * **Objectifs** : Valider l'attraction du produit et optimiser le taux de conversion du tunnel d'onboarding.
-* **Livrables** : Webapp responsive avec le quiz complet de 50 questions, le rendu de l'IA fluide et le paywall d'abonnement Stripe.
+* **Livrables** : Webapp responsive avec le quiz complet de 50 questions, le rendu de l'Oracle fluide et le paywall d'abonnement Stripe.
 * **Stratégie d'acquisition** : Partenariats avec des créateurs de contenu bien-être/ésotérisme sur Instagram et TikTok.
 
 ### Phase 2 : Rétention & Consolidation (Mois 3 - 4)
@@ -411,11 +411,11 @@ CREATE TABLE daily_guidances (
 
 ## 10. Indicateurs de Succès & KPIs Clés
 
-Pour mesurer la performance et la viabilité économique de Moonly, l'équipe produit analysera en permanence les indicateurs suivants sur le tableau de bord PostHog :
+Pour mesurer la performance et la viabilité économique de Moon Astro, l'équipe produit analysera en permanence les indicateurs suivants sur le tableau de bord PostHog :
 
 ```mermaid
 graph TD
-    KPI[KPIs Principaux de Moonly] --> ACQ[Taux de Complétion du Quiz]
+    KPI[KPIs Principaux de Moon Astro] --> ACQ[Taux de Complétion du Quiz]
     KPI --> MON[Taux de Conversion Premium]
     KPI --> RET[Rétention Hebdomadaire W1 / W4]
     KPI --> LTV[Valeur Durée de Vie Client / LTV]

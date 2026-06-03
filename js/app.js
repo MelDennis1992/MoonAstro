@@ -1,7 +1,16 @@
-// Moonly Webapp — SPA Core Controller
+// Moon Astro Webapp — SPA Core Controller
 
 document.addEventListener("DOMContentLoaded", () => {
   
+  // --- SUPABASE INITIALIZATION ---
+  const SUPABASE_URL = "https://oorlsqxfwhozmciktljf.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vcmxzcXhmd2hvem1jaWt0bGpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMjgyMDIsImV4cCI6MjA5NTkwNDIwMn0.LyyeYMpg1WFX6fsx_VY1qdy_qeO29luRlc12ZojAG2s";
+  const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+  
+  if (!supabase) {
+    console.warn("Supabase SDK non détecté. Fonctionnement en mode local dégradé.");
+  }
+
   // --- APPLICATION STATE ---
   let state = {
     isLoggedIn: false,
@@ -10,7 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
     answers: {},
     report: null,
     selectedPlan: "monthly", // Default
-    history: []
+    history: [],
+    isPasswordRecoveryMode: false
   };
 
   // --- HTML ELEMENTS SELECTIONS ---
@@ -22,15 +32,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const toast = document.getElementById("toast");
   const toastMessage = document.getElementById("toast-message");
 
-  // Load from localStorage if exists
+  // Load from localStorage & Sync with Supabase Database
   function loadState() {
-    const saved = localStorage.getItem("moonly_state");
+    // 1. Load local state first
+    const saved = localStorage.getItem("moon_astro_state");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         state = { ...state, ...parsed };
-        
-        // If we have answers, generate report automatically
         if (state.answers && state.answers.birthDate) {
           state.report = generatePersonalizedReport(state.answers);
         }
@@ -38,11 +47,66 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Erreur de chargement du statut local:", e);
       }
     }
+
+    // 2. Fetch and sync from Supabase
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session && session.user) {
+          const user = session.user;
+          state.isLoggedIn = true;
+
+          // Fetch profile data from db
+          supabase.from("astrology_profiles").select("*").eq("id", user.id).maybeSingle().then(({ data, error }) => {
+            if (error) {
+              console.error("Erreur de chargement du profil distant:", error);
+              return;
+            }
+
+            if (data) {
+              // Update state with live DB data
+              state.answers.name = data.firstname || state.answers.name || "";
+              state.answers.birthDate = data.birthdate || state.answers.birthDate || "";
+              state.answers.birthTime = data.birthtime || state.answers.birthTime || "";
+              state.answers.birthPlace = data.birthplace || state.answers.birthPlace || "";
+              state.answers.latitude = typeof data.latitude === "number" ? data.latitude : state.answers.latitude;
+              state.answers.longitude = typeof data.longitude === "number" ? data.longitude : state.answers.longitude;
+              state.answers.email = data.email || user.email;
+              state.isPremium = (data.payment_status === "premium" || data.payment_status === "active");
+              
+              if (state.answers.birthDate) {
+                state.report = generatePersonalizedReport(state.answers);
+              }
+              
+              generateMockHistory();
+              saveState();
+              router(); // Update page views
+            }
+          });
+        }
+      });
+
+      // Handle real-time auth changes
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          state.isLoggedIn = true;
+          saveState();
+          router();
+        } else if (event === "SIGNED_OUT") {
+          state.isLoggedIn = false;
+          state.isPremium = false;
+          state.answers = {};
+          state.report = null;
+          state.history = [];
+          saveState();
+          router();
+        }
+      });
+    }
   }
 
   // Save to localStorage
   function saveState() {
-    localStorage.setItem("moonly_state", JSON.stringify({
+    localStorage.setItem("moon_astro_state", JSON.stringify({
       isLoggedIn: state.isLoggedIn,
       isPremium: state.isPremium,
       answers: state.answers,
@@ -61,12 +125,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- SPA ROUTER ---
   function router() {
-    const hash = window.location.hash || "#landing";
+    let hash = window.location.hash || "#landing";
     
-    // Auth Guard: redirect to landing if attempting premium pages without answers
+    // 1. Handle Supabase Auth redirect hashes (e.g. recovery / access_token)
+    if (hash.includes("access_token=") || hash.includes("type=recovery") || hash.includes("error_description=")) {
+      const isRecovery = hash.includes("type=recovery") || hash.includes("recovery");
+      if (isRecovery) {
+        state.isPasswordRecoveryMode = true;
+        window.location.hash = "#settings";
+      } else {
+        window.location.hash = "#dashboard";
+      }
+      return;
+    }
+
+    // 2. Auth Guard: redirect to landing if attempting premium pages without answers
     const privatePages = ["#dashboard", "#history", "#settings"];
     if (privatePages.includes(hash) && (!state.answers || !state.answers.name)) {
       window.location.hash = "#landing";
+      return;
+    }
+
+    // 3. Redirect logged-in users from landing to dashboard (or settings if recovering)
+    if (hash === "#landing" && state.isLoggedIn && state.answers && state.answers.name) {
+      if (state.isPasswordRecoveryMode) {
+        window.location.hash = "#settings";
+      } else {
+        window.location.hash = "#dashboard";
+      }
       return;
     }
 
@@ -122,6 +208,14 @@ document.addEventListener("DOMContentLoaded", () => {
       populateHistory();
     } else if (hash === "#settings") {
       populateSettings();
+      if (state.isPasswordRecoveryMode) {
+        state.isPasswordRecoveryMode = false;
+        setTimeout(() => {
+          showToast("Session de récupération active. Veuillez définir votre nouveau mot de passe ci-dessous.");
+          const setPasswordInput = document.getElementById("set-password");
+          if (setPasswordInput) setPasswordInput.focus();
+        }, 500);
+      }
     }
 
     // Scroll to top
@@ -215,6 +309,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderQuizStep() {
     const q = QUIZ_QUESTIONS[state.currentQuizStep];
     
+    // Show Next button only for manual input questions (text, date, time), hide it for choices
+    if (quizBtnNext && quizBtnNext.parentElement) {
+      quizBtnNext.parentElement.style.display = q.type === "choice" ? "none" : "block";
+    }
+    
     // Update step text and progress
     const progressPercent = ((state.currentQuizStep + 1) / QUIZ_QUESTIONS.length) * 100;
     quizProgress.style.width = `${progressPercent}%`;
@@ -228,8 +327,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (q.type === "text") {
       html += `
-        <div class="quiz-input-group" style="margin-top: 10px;">
+        <div class="quiz-input-group" style="margin-top: 10px; position: relative;">
           <input type="${q.id === 'email' ? 'email' : 'text'}" id="q-input-${q.id}" class="quiz-input" placeholder="${q.placeholder || ''}" value="${state.answers[q.id] || ''}">
+          ${q.id === "birthPlace" ? `
+            <div id="birthplace-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
+            <div id="birthplace-coordinates" style="margin-top: 10px; font-size: 13px; color: var(--accent-gold-dark); text-align: center; font-weight: 500; display: none;"></div>
+            <div id="birthplace-map" style="height: 160px; margin-top: 15px; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.2); display: none;"></div>
+          ` : ""}
         </div>
       `;
     } else if (q.type === "date") {
@@ -288,10 +392,171 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+
+    // Geocoding & Mapping Autocomplete for Birth Place
+    if (q.id === "birthPlace") {
+      const birthPlaceInput = document.getElementById("q-input-birthPlace");
+      const suggestionsContainer = document.getElementById("birthplace-suggestions");
+      const coordsContainer = document.getElementById("birthplace-coordinates");
+      const mapContainer = document.getElementById("birthplace-map");
+      let map = null;
+      let marker = null;
+
+      const initMap = (lat, lon) => {
+        if (!mapContainer) return;
+        if (coordsContainer) {
+          coordsContainer.style.display = "block";
+          coordsContainer.innerHTML = `📍 Coordonnées exactes : ${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
+        }
+        if (!window.L) return; // Skip map rendering if Leaflet is not loaded yet
+        mapContainer.style.display = "block";
+        try {
+          if (!map) {
+            map = window.L.map('birthplace-map', {
+              center: [lat, lon],
+              zoom: 11,
+              zoomControl: false,
+              attributionControl: false
+            });
+            window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+              maxZoom: 19
+            }).addTo(map);
+            marker = window.L.marker([lat, lon]).addTo(map);
+          } else {
+            map.setView([lat, lon], 11);
+            marker.setLatLng([lat, lon]);
+          }
+          // Invalidate size to prevent Leaflet rendering issues in hidden elements
+          setTimeout(() => map.invalidateSize(), 200);
+        } catch (e) {
+          console.error("Map rendering error:", e);
+        }
+      };
+
+      if (state.answers.latitude && state.answers.longitude) {
+        setTimeout(() => initMap(state.answers.latitude, state.answers.longitude), 100);
+      }
+
+      let debounceTimeout;
+      birthPlaceInput.addEventListener("input", (e) => {
+        const query = e.target.value.trim();
+        clearTimeout(debounceTimeout);
+        if (query.length < 3) {
+          suggestionsContainer.style.display = "none";
+          return;
+        }
+
+        debounceTimeout = setTimeout(() => {
+          searchCitySuggestions(query, (suggestions) => {
+            suggestionsContainer.innerHTML = "";
+            if (suggestions && suggestions.length > 0) {
+              suggestionsContainer.style.display = "block";
+              suggestions.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "autocomplete-suggestion-item";
+                div.textContent = item.display_name;
+                div.addEventListener("click", () => {
+                  birthPlaceInput.value = item.display_name;
+                  state.answers.birthPlace = item.display_name;
+                  state.answers.latitude = item.lat;
+                  state.answers.longitude = item.lon;
+                  saveState();
+                  suggestionsContainer.style.display = "none";
+                  initMap(item.lat, item.lon);
+                });
+                suggestionsContainer.appendChild(div);
+              });
+            } else {
+              suggestionsContainer.style.display = "none";
+            }
+          });
+        }, 400);
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener("click", (evt) => {
+        if (evt.target !== birthPlaceInput && evt.target !== suggestionsContainer) {
+          suggestionsContainer.style.display = "none";
+        }
+      });
+    }
   }
 
-  // --- ACCOUNT CREATION FORM ---
+  // --- ACCOUNT CREATION & LOGIN FORM ---
   const formRegister = document.getElementById("form-register");
+  const toggleAuthMode = document.getElementById("toggle-auth-mode");
+  const registerTitle = document.querySelector(".register-title");
+  const registerSub = document.querySelector(".register-sub");
+  const regConsentInput = document.getElementById("reg-consent");
+  const consentGroup = regConsentInput ? regConsentInput.parentElement : null;
+  const btnRegisterSubmit = document.getElementById("btn-register-submit");
+
+  let authMode = "signup";
+
+  const forgotPasswordLink = document.getElementById("forgot-password-link");
+
+  if (toggleAuthMode) {
+    toggleAuthMode.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (authMode === "signup") {
+        authMode = "signin";
+        if (registerTitle) registerTitle.textContent = "Se connecter";
+        if (registerSub) registerSub.textContent = "Connectez-vous pour retrouver votre thème astral et vos guidances quotidiennes.";
+        if (consentGroup) consentGroup.style.display = "none";
+        if (regConsentInput) regConsentInput.required = false;
+        if (btnRegisterSubmit) btnRegisterSubmit.textContent = "Se connecter & voir mon thème";
+        if (forgotPasswordLink) forgotPasswordLink.style.display = "block";
+        toggleAuthMode.textContent = "Créer un compte (S'inscrire)";
+      } else {
+        authMode = "signup";
+        if (registerTitle) registerTitle.textContent = "Créer votre profil";
+        if (registerSub) registerSub.textContent = "Afin de sauvegarder vos calculs astrologiques et de générer votre premier rapport d'énergie.";
+        if (consentGroup) consentGroup.style.display = "flex";
+        if (regConsentInput) regConsentInput.required = true;
+        if (btnRegisterSubmit) btnRegisterSubmit.textContent = "Calculer mon thème astral";
+        if (forgotPasswordLink) forgotPasswordLink.style.display = "none";
+        toggleAuthMode.textContent = "Se connecter";
+      }
+    });
+  }
+
+  // Mot de passe oublié (Supabase Auth reset)
+  if (forgotPasswordLink) {
+    forgotPasswordLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("reg-email").value.trim();
+      if (!email) {
+        showToast("Veuillez saisir votre adresse email pour réinitialiser votre mot de passe.");
+        return;
+      }
+      
+      if (supabase) {
+        supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '#settings'
+        }).then(({ error }) => {
+          if (error) {
+            showToast(`Erreur: ${error.message}`);
+          } else {
+            showToast("Un e-mail de réinitialisation de mot de passe vous a été envoyé ✦");
+          }
+        });
+      } else {
+        showToast("Simulation : E-mail de réinitialisation envoyé ! (Mode hors-ligne)");
+      }
+    });
+  }
+
+  // Accès direct Espace Client (Landing CTA)
+  const btnClientAccess = document.getElementById("btn-client-access");
+  if (btnClientAccess) {
+    btnClientAccess.addEventListener("click", () => {
+      if (authMode === "signup" && toggleAuthMode) {
+        toggleAuthMode.click();
+      }
+      window.location.hash = "#register";
+    });
+  }
+
   formRegister.addEventListener("submit", (e) => {
     e.preventDefault();
     
@@ -299,20 +564,167 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = document.getElementById("reg-password").value;
     const consent = document.getElementById("reg-consent");
 
-    if (!consent || !consent.checked) {
-      showToast("Veuillez consentir au traitement de vos données pour continuer.");
-      return;
-    }
+    if (authMode === "signup") {
+      if (!consent || !consent.checked) {
+        showToast("Veuillez consentir au traitement de vos données pour continuer.");
+        return;
+      }
 
-    if (email && password) {
-      // Simulate auth success
-      state.isLoggedIn = true;
-      state.answers.email = email;
-      saveState();
+      if (email && password) {
+        const btn = btnRegisterSubmit || formRegister.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `✦ Création du thème...`;
 
-      // Trigger Astrolabe calculations
-      window.location.hash = "#loading-scene";
-      runLoadingSequence();
+        if (supabase) {
+          // 1. S'inscrire sur Supabase Auth
+          supabase.auth.signUp({
+            email: email,
+            password: password
+          }).then(({ data, error }) => {
+            if (error) {
+              showToast(`Erreur d'inscription: ${error.message}`);
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+              return;
+            }
+
+            const user = data.user;
+            if (!user) {
+              showToast("Une erreur de communication est survenue.");
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+              return;
+            }
+
+            state.isLoggedIn = true;
+            state.answers.email = email;
+            saveState();
+
+            // 2. Calculer le profil énergétique astrologique
+            const report = generatePersonalizedReport(state.answers);
+            state.report = report;
+
+            // Déterminer les éléments scores pour la BDD
+            const element = report.zodiac.element;
+            let score_fire = 25, score_earth = 25, score_air = 25, score_water = 25;
+            if (element === "Feu") score_fire = 60;
+            else if (element === "Terre") score_earth = 60;
+            else if (element === "Air") score_air = 60;
+            else if (element === "Eau") score_water = 60;
+
+            // 3. Insérer les coordonnées natales en base de données
+            supabase.from("astrology_profiles").insert({
+              id: user.id,
+              email: email,
+              firstname: state.answers.name || "Ami(e)",
+              birthdate: state.answers.birthDate || null,
+              birthtime: state.answers.birthTime || "",
+              birthplace: state.answers.birthPlace || "",
+              latitude: state.answers.latitude || null,
+              longitude: state.answers.longitude || null,
+              sun_sign: report.zodiac.name,
+              moon_sign: report.moon ? report.moon.name : "",
+              ascendant: report.ascendant,
+              score_fire: score_fire,
+              score_earth: score_earth,
+              score_air: score_air,
+              score_water: score_water,
+              auracolor: report.energyProfile,
+              payment_status: "free",
+              selected_offer: "monthly"
+            }).then(({ error: dbError }) => {
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+
+              if (dbError) {
+                console.error("Erreur de sauvegarde de profil:", dbError);
+                showToast("Profil créé, mais erreur de synchronisation base de données.");
+              }
+
+              // Redirection et chargement visuel
+              window.location.hash = "#loading-scene";
+              runLoadingSequence();
+            });
+          });
+        } else {
+          // Fallback local en l'absence de Supabase SDK
+          state.isLoggedIn = true;
+          state.answers.email = email;
+          saveState();
+          window.location.hash = "#loading-scene";
+          runLoadingSequence();
+        }
+      }
+    } else {
+      // Sign In Flow
+      if (email && password) {
+        const btn = btnRegisterSubmit || formRegister.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `✦ Connexion...`;
+
+        if (supabase) {
+          supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+          }).then(({ data, error }) => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+
+            if (error) {
+              showToast(`Erreur de connexion: ${error.message}`);
+              return;
+            }
+
+            const user = data.user;
+            if (!user) {
+              showToast("Une erreur de communication est survenue.");
+              return;
+            }
+
+            state.isLoggedIn = true;
+            state.answers.email = email;
+            saveState();
+
+            // Fetch profile data from db to update local state
+            supabase.from("astrology_profiles").select("*").eq("id", user.id).maybeSingle().then(({ data: profileData, error: dbError }) => {
+              if (profileData) {
+                state.answers.name = profileData.firstname || state.answers.name || "";
+                state.answers.birthDate = profileData.birthdate || state.answers.birthDate || "";
+                state.answers.birthTime = profileData.birthtime || state.answers.birthTime || "";
+                state.answers.birthPlace = profileData.birthplace || state.answers.birthPlace || "";
+                state.answers.latitude = typeof profileData.latitude === "number" ? profileData.latitude : state.answers.latitude;
+                state.answers.longitude = typeof profileData.longitude === "number" ? profileData.longitude : state.answers.longitude;
+                state.isPremium = (profileData.payment_status === "premium" || profileData.payment_status === "active");
+                
+                if (state.answers.birthDate) {
+                  state.report = generatePersonalizedReport(state.answers);
+                }
+                generateMockHistory();
+                saveState();
+              }
+              window.location.hash = "#dashboard";
+              showToast("Bienvenue sur votre espace Moon Astro ! ✦");
+            });
+          });
+        } else {
+          // Local fallback
+          state.isLoggedIn = true;
+          state.answers.email = email;
+          state.answers.name = state.answers.name || "Ami(e) Stellaire";
+          state.answers.birthDate = state.answers.birthDate || "1992-11-12";
+          state.answers.birthTime = state.answers.birthTime || "12:00";
+          state.answers.birthPlace = state.answers.birthPlace || "Paris, France";
+          state.answers.latitude = state.answers.latitude || 48.8566;
+          state.answers.longitude = state.answers.longitude || 2.3522;
+          state.report = generatePersonalizedReport(state.answers);
+          generateMockHistory();
+          saveState();
+          window.location.hash = "#dashboard";
+          showToast("Bienvenue (Mode local) ! ✦");
+        }
+      }
     }
   });
 
@@ -324,7 +736,7 @@ document.addEventListener("DOMContentLoaded", () => {
     { title: "Connexion céleste...", desc: "Alignement des étoiles à votre date de naissance." },
     { title: "Calcul des éphémérides...", desc: "Détermination exacte de votre signe Solaire et Ascendant." },
     { title: "Analyse émotionnelle...", desc: "Cartographie de vos énergies émotionnelles dominantes." },
-    { title: "Guidance par IA...", desc: "Création de vos conseils personnalisés d'amour et de carrière." },
+    { title: "Guidance de l'Oracle...", desc: "Création de vos conseils personnalisés d'amour et de carrière." },
     { title: "Prêt !", desc: "Harmonisation complète établie." }
   ];
 
@@ -399,6 +811,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const resUsername = document.getElementById("res-username");
   const resProfileName = document.getElementById("res-profile-name");
   const resSun = document.getElementById("res-sun");
+  const resMoon = document.getElementById("res-moon");
   const resAscendant = document.getElementById("res-ascendant");
   const resEnergyDesc = document.getElementById("res-energy-desc");
   const resStrength = document.getElementById("res-strength");
@@ -417,6 +830,9 @@ document.addEventListener("DOMContentLoaded", () => {
     resUsername.textContent = r.name;
     resProfileName.textContent = r.energyProfile;
     resSun.textContent = `${r.zodiac.name} ${r.zodiac.symbol}`;
+    if (resMoon && r.moon) {
+      resMoon.textContent = `${r.moon.name} ${r.moon.symbol}`;
+    }
     resAscendant.textContent = `${r.ascendant} ✦`;
     resEnergyDesc.textContent = r.energyDescription;
     resStrength.textContent = r.mainStrength;
@@ -430,6 +846,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (r.numerologyName) {
       resNumExpression.textContent = r.numerologyName.expressionText;
       resNumIntime.textContent = r.numerologyName.soulUrgeText;
+    }
+
+    // Remplir la gemmologie (Pierre de Chance)
+    if (r.luckyGemstone) {
+      const gemIcon = document.getElementById("res-gem-icon");
+      const gemName = document.getElementById("res-gem-name");
+      const gemDesc = document.getElementById("res-gem-desc");
+      if (gemIcon) gemIcon.textContent = r.luckyGemstone.symbol;
+      if (gemName) gemName.textContent = `${r.luckyGemstone.name} Sacrée`;
+      if (gemDesc) gemDesc.textContent = r.luckyGemstone.desc;
     }
   }
 
@@ -474,7 +900,7 @@ document.addEventListener("DOMContentLoaded", () => {
   btnSubscribe.addEventListener("click", () => {
     // Fill Stripe pricing summary based on active plan selection
     if (state.selectedPlan === "weekly") {
-      stripePlanTitle.textContent = "Abonnement Hebdomadaire Moonly";
+      stripePlanTitle.textContent = "Abonnement Hebdomadaire Moon Astro";
       stripePlanPrice.textContent = "2,99 €";
       btnStripeSubmit.textContent = "S'abonner (2,99 € / semaine)";
     } else if (state.selectedPlan === "monthly") {
@@ -482,7 +908,7 @@ document.addEventListener("DOMContentLoaded", () => {
       stripePlanPrice.textContent = "9,99 €";
       btnStripeSubmit.textContent = "Activer mon essai & payer (9,99 € / mois)";
     } else {
-      stripePlanTitle.textContent = "Abonnement Annuel Moonly";
+      stripePlanTitle.textContent = "Abonnement Annuel Moon Astro";
       stripePlanPrice.textContent = "49,99 €";
       btnStripeSubmit.textContent = "S'abonner annuellement (49,99 € / an)";
     }
@@ -518,7 +944,7 @@ document.addEventListener("DOMContentLoaded", () => {
     e.target.value = e.target.value.replace(/\D/g, "").substring(0, 3);
   });
 
-  // Stripe simulated checkout logic
+  // Stripe simulated and live checkout logic
   formStripe.addEventListener("submit", (e) => {
     e.preventDefault();
     
@@ -527,25 +953,70 @@ document.addEventListener("DOMContentLoaded", () => {
     btnStripeSubmit.style.opacity = 0.8;
     btnStripeSubmit.innerHTML = `<span style="display:inline-block; animation: rotate-cw 1s linear infinite; margin-right: 8px;">✦</span> Traitement sécurisé...`;
     
-    setTimeout(() => {
-      // Payment Successful
-      state.isPremium = true;
-      saveState();
-      
-      // Close Stripe Modal
-      stripeModal.classList.remove("active");
-      
-      // Reset button
-      btnStripeSubmit.disabled = false;
-      btnStripeSubmit.style.opacity = 1;
-      btnStripeSubmit.textContent = "Activer mon essai & payer";
-      
-      // Show success feedback
-      showToast("Abonnement activé ! Bienvenue sur Moonly Premium.");
-      
-      // Redirect to Dashboard
-      window.location.hash = "#dashboard";
-    }, 2200);
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        const user = session?.user;
+        if (!user) {
+          showToast("Vous devez être connecté pour vous abonner.");
+          btnStripeSubmit.disabled = false;
+          btnStripeSubmit.style.opacity = 1;
+          btnStripeSubmit.innerHTML = "Activer mon essai & payer";
+          return;
+        }
+
+        // Call the Supabase Edge Function 'stripe-checkout'
+        const functionUrl = `${SUPABASE_URL}/functions/v1/stripe-checkout`;
+        
+        fetch(functionUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            email: user.email,
+            plan: state.selectedPlan
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.url) {
+            // Redirect user directly to the real Stripe Checkout page
+            window.location.href = data.url;
+          } else {
+            throw new Error(data.error || "Erreur de création de session de paiement");
+          }
+        })
+        .catch(err => {
+          console.warn("Erreur de connexion Stripe Live, activation du mode Démo :", err);
+          
+          // Fallback on error or local testing: simulate payment success in dev
+          setTimeout(() => {
+            state.isPremium = true;
+            saveState();
+            stripeModal.classList.remove("active");
+            btnStripeSubmit.disabled = false;
+            btnStripeSubmit.style.opacity = 1;
+            btnStripeSubmit.textContent = "Activer mon essai & payer";
+            showToast("Mode Démo : Abonnement activé ! Bienvenue sur Moon Astro Premium.");
+            window.location.hash = "#dashboard";
+          }, 2000);
+        });
+      });
+    } else {
+      // Fallback local simulation
+      setTimeout(() => {
+        state.isPremium = true;
+        saveState();
+        stripeModal.classList.remove("active");
+        btnStripeSubmit.disabled = false;
+        btnStripeSubmit.style.opacity = 1;
+        btnStripeSubmit.textContent = "Activer mon essai & payer";
+        showToast("Abonnement activé ! Bienvenue sur Moon Astro Premium (Simulation).");
+        window.location.hash = "#dashboard";
+      }, 2200);
+    }
   });
 
   // Skip paywall (retains free restricted state)
@@ -579,6 +1050,8 @@ document.addEventListener("DOMContentLoaded", () => {
   
   const dashLuckyNumber = document.getElementById("dash-lucky-number");
   const dashLuckyMonth = document.getElementById("dash-lucky-month");
+  const dashSunSign = document.getElementById("dash-sun-sign");
+  const dashMoonSign = document.getElementById("dash-moon-sign");
   const dashAscendant = document.getElementById("dash-ascendant");
   const dashLifepath = document.getElementById("dash-lifepath");
   
@@ -657,6 +1130,8 @@ document.addEventListener("DOMContentLoaded", () => {
       // Lucky details
       dashLuckyNumber.textContent = r.luckyNumber;
       dashLuckyMonth.textContent = r.favorableMonth;
+      if (dashSunSign) dashSunSign.textContent = `${r.zodiac.name} ${r.zodiac.symbol}`;
+      if (dashMoonSign && r.moon) dashMoonSign.textContent = `${r.moon.name} ${r.moon.symbol}`;
       dashAscendant.textContent = `${r.ascendant} ${getZodiacSymbolByName(r.ascendant)}`;
       
       // Weekly and Monthly Forecasts
@@ -694,6 +1169,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       dashLuckyNumber.textContent = "✦";
       dashLuckyMonth.textContent = "✦";
+      if (dashSunSign) dashSunSign.textContent = `${r.zodiac.name}`;
+      if (dashMoonSign && r.moon) dashMoonSign.textContent = `${r.moon.name}`;
       dashAscendant.textContent = `${r.ascendant}`;
 
       // Locked Weekly & Monthly tabs text
@@ -712,6 +1189,29 @@ document.addEventListener("DOMContentLoaded", () => {
       dashWeeklyText.innerHTML = lockedTabHTML;
       dashMonthlyText.innerHTML = lockedTabHTML;
     }
+
+    // Remplir la gemmologie sur le Dashboard
+    if (r.luckyGemstone) {
+      const gemIcon = document.getElementById("dash-gem-icon");
+      const gemName = document.getElementById("dash-gem-name");
+      const gemDesc = document.getElementById("dash-gem-desc");
+      if (gemIcon) gemIcon.textContent = r.luckyGemstone.symbol;
+      if (gemName) gemName.textContent = `${r.luckyGemstone.name} Sacrée`;
+      if (gemDesc) {
+        if (isPrem) {
+          gemDesc.textContent = r.luckyGemstone.desc;
+        } else {
+          gemDesc.innerHTML = `
+            <span style="filter: blur(4px); opacity: 0.35; user-select: none;">
+              Débloquez l'analyse complète de votre pierre céleste et ses vertus d'harmonisation énergétique.
+            </span>
+            <div style="margin-top: 4px; font-size: 11px;">
+              <a href="#paywall" style="color: var(--accent-gold-dark); font-weight: 600; text-decoration: none;">Débloquer ma gemme &rarr;</a>
+            </div>
+          `;
+        }
+      }
+    }
   }
 
   function renderStars(container, count) {
@@ -729,6 +1229,56 @@ document.addEventListener("DOMContentLoaded", () => {
   function getZodiacSymbolByName(name) {
     const found = ZODIAC_SIGNS.find(z => z.name.toLowerCase() === name.toLowerCase());
     return found ? found.symbol : "✦";
+  }
+
+  // Dual geocoding helper (Photon with Nominatim fallback)
+  function searchCitySuggestions(query, callback) {
+    fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=fr`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.features && data.features.length > 0) {
+          const suggestions = data.features.map(feat => {
+            const props = feat.properties;
+            let label = props.name || "";
+            if (props.postcode) label += ` (${props.postcode})`;
+            if (props.state && props.state !== props.name) label += `, ${props.state}`;
+            if (props.country) label += `, ${props.country}`;
+            return {
+              display_name: label,
+              lat: feat.geometry.coordinates[1],
+              lon: feat.geometry.coordinates[0]
+            };
+          });
+          callback(suggestions);
+        } else {
+          queryNominatim(query, callback);
+        }
+      })
+      .catch(err => {
+        console.warn("Photon geocoding failed, trying Nominatim fallback...", err);
+        queryNominatim(query, callback);
+      });
+  }
+
+  function queryNominatim(query, callback) {
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=fr`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          const suggestions = data.map(item => ({
+            display_name: item.display_name,
+            lat: parseFloat(item.lat),
+            lon: parseFloat(item.lon)
+          }));
+          callback(suggestions);
+        } else {
+          callback([]);
+        }
+      })
+      .catch(err => {
+        console.error("Nominatim geocoding failed:", err);
+        callback([]);
+      });
   }
 
   // --- PERSONAL HISTORY PAGE ---
@@ -791,6 +1341,85 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnLogout = document.getElementById("btn-logout");
   const btnResetData = document.getElementById("btn-reset-data");
 
+  let settingsMap = null;
+  let settingsMarker = null;
+
+  function initSettingsMap(lat, lon) {
+    const mapContainer = document.getElementById("settings-birthplace-map");
+    const coordsContainer = document.getElementById("settings-birthplace-coordinates");
+    if (!mapContainer) return;
+    mapContainer.style.display = "block";
+    if (coordsContainer) {
+      coordsContainer.style.display = "block";
+      coordsContainer.innerHTML = `📍 Coordonnées exactes : ${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
+    }
+    try {
+      if (!settingsMap) {
+        settingsMap = window.L.map('settings-birthplace-map', {
+          center: [lat, lon],
+          zoom: 11,
+          zoomControl: false,
+          attributionControl: false
+        });
+        window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19
+        }).addTo(settingsMap);
+        settingsMarker = window.L.marker([lat, lon]).addTo(settingsMap);
+      } else {
+        settingsMap.setView([lat, lon], 11);
+        settingsMarker.setLatLng([lat, lon]);
+      }
+      setTimeout(() => settingsMap.invalidateSize(), 200);
+    } catch (e) {
+      console.error("Settings Map rendering error:", e);
+    }
+  }
+
+  const settingsSuggestions = document.getElementById("settings-birthplace-suggestions");
+  let settingsDebounce;
+  if (setBirthplaceInput) {
+    setBirthplaceInput.addEventListener("input", (e) => {
+      const query = e.target.value.trim();
+      clearTimeout(settingsDebounce);
+      if (query.length < 3) {
+        if (settingsSuggestions) settingsSuggestions.style.display = "none";
+        return;
+      }
+      settingsDebounce = setTimeout(() => {
+        searchCitySuggestions(query, (suggestions) => {
+          if (!settingsSuggestions) return;
+          settingsSuggestions.innerHTML = "";
+          if (suggestions && suggestions.length > 0) {
+            settingsSuggestions.style.display = "block";
+            suggestions.forEach(item => {
+              const div = document.createElement("div");
+              div.className = "autocomplete-suggestion-item";
+              div.textContent = item.display_name;
+              div.addEventListener("click", () => {
+                setBirthplaceInput.value = item.display_name;
+                state.answers.birthPlace = item.display_name;
+                state.answers.latitude = item.lat;
+                state.answers.longitude = item.lon;
+                saveState();
+                settingsSuggestions.style.display = "none";
+                initSettingsMap(item.lat, item.lon);
+              });
+              settingsSuggestions.appendChild(div);
+            });
+          } else {
+            settingsSuggestions.style.display = "none";
+          }
+        });
+      }, 400);
+    });
+  }
+
+  document.addEventListener("click", (evt) => {
+    if (evt.target !== setBirthplaceInput && evt.target !== settingsSuggestions) {
+      if (settingsSuggestions) settingsSuggestions.style.display = "none";
+    }
+  });
+
   function populateSettings() {
     if (!state.answers) return;
     
@@ -799,6 +1428,16 @@ document.addEventListener("DOMContentLoaded", () => {
     setBirthdateInput.value = state.answers.birthDate || "";
     setBirthtimeInput.value = state.answers.birthTime || "";
     setBirthplaceInput.value = state.answers.birthPlace || "";
+
+    // Update settings map coordinates
+    if (state.answers.latitude && state.answers.longitude && window.L) {
+      setTimeout(() => initSettingsMap(state.answers.latitude, state.answers.longitude), 100);
+    } else {
+      const mapContainer = document.getElementById("settings-birthplace-map");
+      const coordsContainer = document.getElementById("settings-birthplace-coordinates");
+      if (mapContainer) mapContainer.style.display = "none";
+      if (coordsContainer) coordsContainer.style.display = "none";
+    }
 
     // Status rendering
     if (state.isPremium) {
@@ -844,36 +1483,153 @@ document.addEventListener("DOMContentLoaded", () => {
     state.answers.birthPlace = setBirthplaceInput.value.trim();
 
     // Recalculate Astro theme!
-    state.report = generatePersonalizedReport(state.answers);
+    const report = generatePersonalizedReport(state.answers);
+    state.report = report;
     saveState();
     
-    showToast("Votre thème astral natal a été recalculé avec succès ✦");
-    router();
+    if (supabase) {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          const element = report.zodiac.element;
+          let score_fire = 25, score_earth = 25, score_air = 25, score_water = 25;
+          if (element === "Feu") score_fire = 60;
+          else if (element === "Terre") score_earth = 60;
+          else if (element === "Air") score_air = 60;
+          else if (element === "Eau") score_water = 60;
+
+          supabase.from("astrology_profiles").update({
+            firstname: state.answers.name,
+            birthdate: state.answers.birthDate,
+            birthtime: state.answers.birthTime,
+            birthplace: state.answers.birthPlace || "",
+            latitude: state.answers.latitude || null,
+            longitude: state.answers.longitude || null,
+            sun_sign: report.zodiac.name,
+            moon_sign: report.moon ? report.moon.name : "",
+            ascendant: report.ascendant,
+            score_fire: score_fire,
+            score_earth: score_earth,
+            score_air: score_air,
+            score_water: score_water,
+            auracolor: report.energyProfile
+          }).eq("id", user.id).then(({ error }) => {
+            if (error) {
+              console.error("Erreur de synchronisation BDD:", error);
+              showToast("Modifié localement, mais erreur de synchronisation en ligne.");
+            } else {
+              showToast("Votre thème astral natal a été mis à jour et synchronisé ✦");
+            }
+            router();
+          });
+        } else {
+          showToast("Votre thème astral natal a été recalculé avec succès ✦");
+          router();
+        }
+      });
+    } else {
+      showToast("Votre thème astral natal a été recalculé avec succès ✦");
+      router();
+    }
   });
+
+  // Update Settings Password Form
+  const formSettingsPassword = document.getElementById("form-settings-password");
+  const btnUpdatePassword = document.getElementById("btn-update-password");
+  if (formSettingsPassword) {
+    formSettingsPassword.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const newPassword = document.getElementById("set-password").value;
+      if (newPassword.length < 6) {
+        showToast("Le mot de passe doit faire au moins 6 caractères.");
+        return;
+      }
+      
+      if (btnUpdatePassword) {
+        btnUpdatePassword.disabled = true;
+        btnUpdatePassword.innerHTML = "✦ Mise à jour...";
+      }
+
+      if (supabase) {
+        supabase.auth.updateUser({ password: newPassword }).then(({ error }) => {
+          if (btnUpdatePassword) {
+            btnUpdatePassword.disabled = false;
+            btnUpdatePassword.innerHTML = "Changer mon mot de passe";
+          }
+          if (error) {
+            showToast(`Erreur: ${error.message}`);
+          } else {
+            showToast("Votre mot de passe a été mis à jour avec succès ✦");
+            document.getElementById("set-password").value = "";
+          }
+        });
+      } else {
+        setTimeout(() => {
+          if (btnUpdatePassword) {
+            btnUpdatePassword.disabled = false;
+            btnUpdatePassword.innerHTML = "Changer mon mot de passe";
+          }
+          showToast("Simulation : Mot de passe mis à jour ! (Mode hors-ligne)");
+          document.getElementById("set-password").value = "";
+        }, 800);
+      }
+    });
+  }
 
   // Logout
   btnLogout.addEventListener("click", () => {
-    state.isLoggedIn = false;
-    saveState();
-    showToast("Déconnexion réussie. À bientôt sous les étoiles.");
-    window.location.hash = "#landing";
+    if (supabase) {
+      supabase.auth.signOut().then(() => {
+        state.isLoggedIn = false;
+        state.isPremium = false;
+        state.answers = {};
+        state.report = null;
+        state.history = [];
+        saveState();
+        showToast("Déconnexion réussie. À bientôt sous les étoiles.");
+        window.location.hash = "#landing";
+      });
+    } else {
+      state.isLoggedIn = false;
+      saveState();
+      showToast("Déconnexion réussie. À bientôt sous les étoiles.");
+      window.location.hash = "#landing";
+    }
   });
 
   // Reset/Delete
   btnResetData.addEventListener("click", () => {
     if (confirm("Voulez-vous vraiment supprimer définitivement votre profil et toutes vos lectures ?")) {
-      localStorage.removeItem("moonly_state");
-      state = {
-        isLoggedIn: false,
-        isPremium: false,
-        currentQuizStep: 0,
-        answers: {},
-        report: null,
-        selectedPlan: "monthly",
-        history: []
+      const performLocalReset = () => {
+        localStorage.removeItem("moon_astro_state");
+        state = {
+          isLoggedIn: false,
+          isPremium: false,
+          currentQuizStep: 0,
+          answers: {},
+          report: null,
+          selectedPlan: "monthly",
+          history: []
+        };
+        showToast("Toutes vos données ont été définitivement effacées.");
+        window.location.hash = "#landing";
       };
-      showToast("Toutes vos données ont été définitivement effacées.");
-      window.location.hash = "#landing";
+
+      if (supabase) {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (user) {
+            supabase.from("astrology_profiles").delete().eq("id", user.id).then(({ error }) => {
+              if (error) console.error("Erreur lors de la suppression de la BDD:", error);
+              supabase.auth.signOut().then(() => {
+                performLocalReset();
+              });
+            });
+          } else {
+            performLocalReset();
+          }
+        });
+      } else {
+        performLocalReset();
+      }
     }
   });
 
