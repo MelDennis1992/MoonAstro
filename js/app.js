@@ -25,6 +25,35 @@ document.addEventListener("DOMContentLoaded", () => {
     lang: "fr",
     midQuizSynthesisConfirmed: false
   };
+
+  // --- STORAGE COMPATIBILITY FOR PRIVATE MODE / INCOGNITO ---
+  const memoryStorage = {};
+  const safeStorage = {
+    getItem(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (e) {
+        console.warn("Storage warning: localStorage is blocked in private/incognito mode.", e);
+        return memoryStorage[key] || null;
+      }
+    },
+    setItem(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        console.warn("Storage warning: localStorage is blocked in private/incognito mode.", e);
+        memoryStorage[key] = String(value);
+      }
+    },
+    removeItem(key) {
+      try {
+        localStorage.removeItem(key);
+      } catch (e) {
+        console.warn("Storage warning: localStorage is blocked in private/incognito mode.", e);
+        delete memoryStorage[key];
+      }
+    }
+  };
  
   // --- HTML ELEMENTS SELECTIONS ---
   const pages = document.querySelectorAll(".page");
@@ -38,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load from localStorage & Sync with Supabase Database
   function loadState() {
     // 1. Load local state first
-    const saved = localStorage.getItem("moon_astro_state");
+    const saved = safeStorage.getItem("moon_astro_state");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -109,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
  
   // Save to localStorage
   function saveState() {
-    localStorage.setItem("moon_astro_state", JSON.stringify({
+    safeStorage.setItem("moon_astro_state", JSON.stringify({
       isLoggedIn: state.isLoggedIn,
       isPremium: state.isPremium,
       answers: state.answers,
@@ -2169,7 +2198,7 @@ document.addEventListener("DOMContentLoaded", () => {
   btnResetData.addEventListener("click", () => {
     if (confirm("Voulez-vous vraiment supprimer définitivement votre profil et toutes vos lectures ?")) {
       const performLocalReset = () => {
-        localStorage.removeItem("moon_astro_state");
+        safeStorage.removeItem("moon_astro_state");
         state = {
           isLoggedIn: false,
           isPremium: false,
@@ -2235,7 +2264,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function translatePage(lang) {
     state.lang = lang;
-    localStorage.setItem("moon_astro_lang", lang);
+    safeStorage.setItem("moon_astro_lang", lang);
     oracleChatInitialized = false; // Reset chat initialization to force translation of welcome message
     
     // Update active class on buttons
