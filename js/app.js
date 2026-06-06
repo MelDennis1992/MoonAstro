@@ -102,6 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
               state.answers.birthPlace = data.birthplace || state.answers.birthPlace || "";
               state.answers.latitude = typeof data.latitude === "number" ? data.latitude : state.answers.latitude;
               state.answers.longitude = typeof data.longitude === "number" ? data.longitude : state.answers.longitude;
+              state.answers.relationship = data.relationship_status || "";
               state.answers.email = data.email || user.email;
               state.isPremium = (data.payment_status === "premium" || data.payment_status === "active");
               
@@ -484,7 +485,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ${q.id === "birthPlace" ? `
             <div id="birthplace-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
             <div id="birthplace-coordinates" style="margin-top: 10px; font-size: 13px; color: var(--accent-gold-dark); text-align: center; font-weight: 500; display: none;"></div>
-            <div id="birthplace-map" style="height: 160px; margin-top: 15px; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.2); display: none;"></div>
+            <div id="birthplace-map" style="height: 280px; margin-top: 15px; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.2); display: none;"></div>
           ` : ""}
         </div>
       `;
@@ -873,6 +874,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 state.answers.birthPlace = profileData.birthplace || state.answers.birthPlace || "";
                 state.answers.latitude = typeof profileData.latitude === "number" ? profileData.latitude : state.answers.latitude;
                 state.answers.longitude = typeof profileData.longitude === "number" ? profileData.longitude : state.answers.longitude;
+                state.answers.relationship = profileData.relationship_status || "";
                 state.isPremium = (profileData.payment_status === "premium" || profileData.payment_status === "active");
                 
                 if (state.answers.birthDate) {
@@ -1937,6 +1939,11 @@ document.addEventListener("DOMContentLoaded", () => {
     setBirthdateInput.value = state.answers.birthDate || "";
     setBirthtimeInput.value = state.answers.birthTime || "";
     setBirthplaceInput.value = state.answers.birthPlace || "";
+
+    const setRelationshipSelect = document.getElementById("set-relationship");
+    if (setRelationshipSelect) {
+      setRelationshipSelect.value = state.answers.relationship || "single";
+    }
  
     // Setup Google Autocomplete in settings if available
     const hasGoogleMapsSettings = window.google && window.google.maps && window.google.maps.places && GOOGLE_API_KEY.startsWith("AIzaSy");
@@ -2045,6 +2052,9 @@ document.addEventListener("DOMContentLoaded", () => {
     state.answers.birthDate = setBirthdateInput.value;
     state.answers.birthTime = setBirthtimeInput.value;
     
+    const setRelationshipSelect = document.getElementById("set-relationship");
+    state.answers.relationship = setRelationshipSelect ? setRelationshipSelect.value : "single";
+    
     const submitBtn = formSettings.querySelector("button[type='submit']");
     if (submitBtn) submitBtn.disabled = true;
 
@@ -2094,6 +2104,7 @@ document.addEventListener("DOMContentLoaded", () => {
             birthplace: state.answers.birthPlace || "",
             latitude: state.answers.latitude || null,
             longitude: state.answers.longitude || null,
+            relationship_status: state.answers.relationship || "",
             sun_sign: report.zodiac.name,
             moon_sign: report.moon ? report.moon.name : "",
             ascendant: report.ascendant,

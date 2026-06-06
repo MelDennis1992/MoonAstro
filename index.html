@@ -645,7 +645,23 @@
               <input type="text" id="set-birthplace" class="quiz-input" required>
               <div id="settings-birthplace-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
               <div id="settings-birthplace-coordinates" style="margin-top: 10px; font-size: 13px; color: var(--accent-gold-dark); text-align: center; font-weight: 500; display: none;"></div>
-              <div id="settings-birthplace-map" style="height: 160px; margin-top: 10px; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.2); display: none;"></div>
+              <div id="settings-birthplace-map" style="height: 280px; margin-top: 10px; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.2); display: none;"></div>
+            </div>
+          </div>
+          <div class="quiz-input-row" style="margin-top: 12px;">
+            <div class="quiz-input-group">
+              <label class="quiz-input-label" data-i18n="settings.label.relationship">Situation amoureuse</label>
+              <select id="set-relationship" class="quiz-input" style="background: var(--bg-card); color: var(--text-color); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 12px; height: 48px; padding: 0 12px;">
+                <option value="single" data-i18n="settings.relationship.single">Célibataire</option>
+                <option value="couple" data-i18n="settings.relationship.couple">En couple</option>
+                <option value="married" data-i18n="settings.relationship.married">Marié(e)</option>
+                <option value="divorced" data-i18n="settings.relationship.divorced">Divorcé(e)</option>
+                <option value="widowed" data-i18n="settings.relationship.widowed">Veuf(ve)</option>
+                <option value="complicated" data-i18n="settings.relationship.complicated">C'est compliqué</option>
+              </select>
+            </div>
+            <div class="quiz-input-group" style="visibility: hidden;">
+              <!-- Empty spacer -->
             </div>
           </div>
           <button type="submit" class="btn btn-secondary" style="padding: 12px; font-size: 14px; border-radius: 12px;" data-i18n="settings.btn.update">Mettre à jour mon thème astral</button>
