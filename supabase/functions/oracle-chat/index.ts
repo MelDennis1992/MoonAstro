@@ -97,7 +97,8 @@ serve(async (req) => {
     - Ascendant : ${asc}
     ${personalization}
 
-    Réponds à sa question en utilisant ces coordonnées natales uniques et alignements pour lui fournir des conseils éclairés, constructifs et spirituels. Reste chaleureux, utilise des formulations poétiques et des métaphores célestes en français. Structure ta réponse avec des paragraphes clairs et utilise le gras pour mettre en valeur les mots importants (ex: **comme ceci**). Reste concis (environ 150-200 mots). Ne mentionne pas de concepts que l'utilisateur n'a pas demandés, mais centre tes conseils sur sa question en tissant son profil de manière naturelle.`;
+    Réponds à sa question en utilisant ces coordonnées natales uniques et alignements pour lui fournir des conseils éclairés, constructifs et spirituels. Reste chaleureux, utilise des formulations poétiques et des métaphores célestes en français. 
+    Fournis une réponse très approfondie, riche en révélations et structurée, d'environ 300 à 450 mots. Divise ton analyse en 3 parties claires avec des titres poétiques (ex: 🌌 Analyse Astrale Céleste, 🔮 Conseils Pratiques Terrestres, 💎 Alignement de l'Âme). Utilise des paragraphes bien espacés et le gras pour mettre en valeur les mots-clés spirituels et astrologiques (ex: **comme ceci**). Ne mentionne pas de concepts que l'utilisateur n'a pas demandés, mais centre tes conseils sur sa question en tissant son profil de manière naturelle.`;
 
     // 6. Execute model query
     let reply = "";
@@ -132,7 +133,7 @@ serve(async (req) => {
           },
           contents: contents,
           generationConfig: {
-            maxOutputTokens: 800,
+            maxOutputTokens: 1200,
             temperature: 0.7
           }
         })

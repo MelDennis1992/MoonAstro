@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AQ.Ab8RN6LiyEoM6Z1ZQ2Z7FCudd6xINJR5hwBT6U6JRLi6Z6mvjg&libraries=places"></script>
 </head>
 <body>
 
@@ -548,10 +549,10 @@
       <div style="height: 20px;"></div>
     </section>
 
-    <!-- 8. PERSONAL HISTORY -->
+    <!-- 8. PERSONAL CHART -->
     <section id="history" class="page">
-      <h2 class="history-title serif-font">Votre Journal Céleste</h2>
-      <p class="hero-sub" style="margin-bottom: 24px; margin-top: -12px;">Retrouvez l'évolution de vos énergies et vos anciennes guidances quotidiennes.</p>
+      <h2 class="history-title serif-font" data-i18n="history.title">Votre Signature Céleste</h2>
+      <p class="hero-sub" style="margin-bottom: 24px; margin-top: -12px;" data-i18n="history.sub">Retrouvez les détails permanents de votre thème astral de naissance.</p>
 
       <div id="history-list" class="history-timeline">
         <!-- Injected dynamic by JS -->
@@ -749,9 +750,9 @@
       </a>
       <a href="#history" class="nav-item" id="nav-item-hist">
         <svg class="nav-item-icon" viewBox="0 0 24 24">
-          <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
         </svg>
-        <span data-i18n="nav.history">Historique</span>
+        <span data-i18n="nav.history">Mon Thème</span>
       </a>
       <a href="#oracle" class="nav-item" id="nav-item-oracle">
         <svg class="nav-item-icon" viewBox="0 0 24 24">

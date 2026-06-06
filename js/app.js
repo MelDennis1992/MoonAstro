@@ -563,8 +563,23 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => initMap(state.answers.latitude, state.answers.longitude), 100);
       }
 
+      // Google Places Autocomplete binding
+      if (window.google && window.google.maps && window.google.maps.places) {
+        setupGoogleAutocomplete(birthPlaceInput, (place) => {
+          birthPlaceInput.value = place.formatted_address || place.name;
+          state.answers.birthPlace = place.formatted_address || place.name;
+          state.answers.latitude = place.geometry.location.lat();
+          state.answers.longitude = place.geometry.location.lng();
+          saveState();
+          initMap(state.answers.latitude, state.answers.longitude);
+        });
+      }
+
       let debounceTimeout;
       birthPlaceInput.addEventListener("input", (e) => {
+        if (window.google && window.google.maps && window.google.maps.places) {
+          return; // Let Google handle it!
+        }
         const query = e.target.value.trim();
         clearTimeout(debounceTimeout);
         if (query.length < 3) {
@@ -1475,56 +1490,146 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- PERSONAL HISTORY PAGE ---
   const historyList = document.getElementById("history-list");
-  
+
   function populateHistory() {
-    if (!state.history || state.history.length === 0) {
+    if (!state.report) {
       historyList.innerHTML = `
-        <div style="text-align: center; padding: 30px; color: var(--text-muted);">
-          ${getTranslation(state.lang, "history.empty")}
+        <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+          <div style="font-size: 48px; margin-bottom: 16px;">✨</div>
+          <p>Complétez le questionnaire pour générer votre thème astral.</p>
         </div>
       `;
       return;
     }
- 
-    let html = "";
-    
-    // Add today as premium lock or text in timeline
-    const zodiac = getZodiacInfo(state.answers.birthDate);
-    const dateLocale = state.lang === "en" ? "en-US" : "fr-FR";
-    const todayName = new Date().toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" });
-    const todayShort = new Date().toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" });
-    
-    const todayLabel = state.lang === "en" ? "Today" : "Aujourd'hui";
-    const activeEnergyLabel = state.lang === "en" ? "✦ Active daily energy" : "✦ Énergie du jour active";
-    const checkGuidanceLabel = state.lang === "en" ? "View my guidance &rarr;" : "Consulter ma guidance &rarr;";
-    const fallbackDesc = state.lang === "en" ? "Check your active guidance dashboard." : "Consultez votre dashboard de guidance active.";
 
-    html += `
-      <div class="history-item">
-        <div class="history-card" style="border-left: 3px solid var(--accent-gold);">
-          <div class="history-date">${todayLabel} — ${todayShort}</div>
-          <strong style="font-size:12px; color: var(--primary-midnight); display:block; margin-bottom:4px;">${activeEnergyLabel}</strong>
-          <p class="history-summary">
-            ${state.report ? state.report.dailyHoroscope.general.substring(0, 100) + "..." : fallbackDesc}
-          </p>
-          <a href="#dashboard" style="display:inline-block; font-size:12px; color: var(--accent-gold-dark); text-decoration:none; margin-top:8px; font-weight:600;">${checkGuidanceLabel}</a>
+    const r = state.report;
+    const sunSymbol = r.zodiac?.symbol || "☀️";
+    const moonSymbol = r.moon?.symbol || "🌙";
+    const ascSymbol = "🌌";
+    
+    const fireVal = state.answers.score_fire || 25;
+    const earthVal = state.answers.score_earth || 25;
+    const airVal = state.answers.score_air || 25;
+    const waterVal = state.answers.score_water || 25;
+
+    let html = `
+      <!-- Trinité Céleste -->
+      <div class="card" style="padding: 20px; border-color: rgba(212, 175, 55, 0.25);">
+        <h3 class="result-section-title" style="color: var(--accent-gold-dark); border-bottom-color: rgba(212, 175, 55, 0.1); font-size: 15px; font-family: var(--font-serif-title);">
+          ✦ Votre Trinité Céleste (Big Three)
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 20px; min-width: 36px; height: 36px; background: rgba(197,160,89,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">${sunSymbol}</div>
+            <div>
+              <strong style="font-size: 13px; color: var(--accent-gold-dark);">Soleil en ${r.zodiac.name}</strong>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">Votre force vitale créative et votre identité profonde.</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 20px; min-width: 36px; height: 36px; background: rgba(197,160,89,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">${moonSymbol}</div>
+            <div>
+              <strong style="font-size: 13px; color: var(--accent-gold-dark);">Lune en ${r.moon ? r.moon.name : "Cancer"}</strong>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">Votre monde intérieur, vos émotions et votre intuition.</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 20px; min-width: 36px; height: 36px; background: rgba(197,160,89,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">${ascSymbol}</div>
+            <div>
+              <strong style="font-size: 13px; color: var(--accent-gold-dark);">Ascendant : ${r.ascendant}</strong>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">La porte de votre âme, l'énergie que vous projetez sur le monde.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chemin de Vie -->
+      <div class="card" style="padding: 20px;">
+        <h3 class="result-section-title" style="font-size: 15px; font-family: var(--font-serif-title);">
+          ✦ Chemin de Vie : Nombre ${r.lifePath || '7'}
+        </h3>
+        <p style="font-size: 13px; line-height: 1.5; margin: 10px 0 0 0; color: var(--text-dark);">
+          Votre chemin de vie révèle votre mission spirituelle d'incarnation. Le nombre <strong>${r.lifePath || '7'}</strong> indique une destinée d'évolution personnelle forte et un besoin inné d'introspection, de sagesse et de connexion spirituelle.
+        </p>
+      </div>
+
+      <!-- Blocage Majeur -->
+      <div class="card" style="padding: 20px; border-color: rgba(186, 85, 74, 0.2);">
+        <h3 class="result-section-title" style="color: #BA554A; border-bottom-color: rgba(186, 85, 74, 0.1); font-size: 15px; font-family: var(--font-serif-title);">
+          ✦ Défi Cosmique (Votre Blocage)
+        </h3>
+        <p style="font-size: 13px; line-height: 1.5; margin: 10px 0 0 0; color: var(--text-dark);">
+          Le blocage énergétique identifié dans votre thème est : <strong style="color: #BA554A;">« ${r.blocker || 'la peur du changement'} »</strong>.
+        </p>
+        <p style="font-size: 12px; line-height: 1.5; margin: 8px 0 0 0; color: var(--text-muted); font-style: italic;">
+          Conseil de l'Oracle : Pour dissoudre ce schéma, pratiquez la pleine conscience et portez votre pierre céleste près de vous pour transmuter ces craintes.
+        </p>
+      </div>
+
+      <!-- Pierre Sacrée -->
+      <div class="card" style="padding: 20px; border-color: rgba(212, 175, 55, 0.25);">
+        <h3 class="result-section-title" style="color: var(--accent-gold-dark); border-bottom-color: rgba(212, 175, 55, 0.1); font-size: 15px; font-family: var(--font-serif-title);">
+          ✦ Votre Pierre de Protection Céleste
+        </h3>
+        <div style="display: flex; align-items: center; gap: 14px; margin-top: 10px;">
+          <div style="font-size: 32px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">${r.luckyGemstone ? r.luckyGemstone.symbol : '💎'}</div>
+          <div>
+            <strong style="font-size: 14px; color: var(--primary-midnight);">${r.luckyGemstone ? r.luckyGemstone.name : 'Améthyste'}</strong>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">${r.luckyGemstone ? r.luckyGemstone.desc : 'Apporte la clarté mentale et protège des énergies négatives.'}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Répartition des Éléments -->
+      <div class="card" style="padding: 20px;">
+        <h3 class="result-section-title" style="font-size: 15px; font-family: var(--font-serif-title);">
+          ✦ Équilibre des 4 Éléments Célestes
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px;">
+          <!-- Fire -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+              <strong>🔥 FEU (Passion & Action)</strong>
+              <span style="font-weight: 600; color: #E2583E;">${fireVal}%</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden;">
+              <div style="width: ${fireVal}%; height: 100%; background: linear-gradient(90deg, #E2583E, #F28C28); border-radius: 3px;"></div>
+            </div>
+          </div>
+          <!-- Earth -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+              <strong>🌱 TERRE (Ancrage & Stabilité)</strong>
+              <span style="font-weight: 600; color: #5A8C43;">${earthVal}%</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden;">
+              <div style="width: ${earthVal}%; height: 100%; background: linear-gradient(90deg, #5A8C43, #8A9A5B); border-radius: 3px;"></div>
+            </div>
+          </div>
+          <!-- Air -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+              <strong>💨 AIR (Intellect & Communication)</strong>
+              <span style="font-weight: 600; color: #4A90E2;">${airVal}%</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden;">
+              <div style="width: ${airVal}%; height: 100%; background: linear-gradient(90deg, #4A90E2, #50E3C2); border-radius: 3px;"></div>
+            </div>
+          </div>
+          <!-- Water -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+              <strong>💧 EAU (Sensibilité & Intuition)</strong>
+              <span style="font-weight: 600; color: #2D587B;">${waterVal}%</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden;">
+              <div style="width: ${waterVal}%; height: 100%; background: linear-gradient(90deg, #2D587B, #417690); border-radius: 3px;"></div>
+            </div>
+          </div>
         </div>
       </div>
     `;
- 
-    // Past items
-    state.history.forEach(item => {
-      html += `
-        <div class="history-item">
-          <div class="history-card">
-            <div class="history-date">${item.date}</div>
-            <strong style="font-size:12px; color: var(--primary-midnight); display:block; margin-bottom:4px;">${item.rating}</strong>
-            <p class="history-summary">${item.text}</p>
-          </div>
-        </div>
-      `;
-    });
- 
+
     historyList.innerHTML = html;
   }
 
@@ -1582,6 +1687,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let settingsDebounce;
   if (setBirthplaceInput) {
     setBirthplaceInput.addEventListener("input", (e) => {
+      if (window.google && window.google.maps && window.google.maps.places) {
+        return; // Let Google handle it!
+      }
       const query = e.target.value.trim();
       clearTimeout(settingsDebounce);
       if (query.length < 3) {
@@ -1631,6 +1739,18 @@ document.addEventListener("DOMContentLoaded", () => {
     setBirthdateInput.value = state.answers.birthDate || "";
     setBirthtimeInput.value = state.answers.birthTime || "";
     setBirthplaceInput.value = state.answers.birthPlace || "";
+ 
+    // Setup Google Autocomplete in settings if available
+    if (window.google && window.google.maps && window.google.maps.places && setBirthplaceInput) {
+      setupGoogleAutocomplete(setBirthplaceInput, (place) => {
+        setBirthplaceInput.value = place.formatted_address || place.name;
+        state.answers.birthPlace = place.formatted_address || place.name;
+        state.answers.latitude = place.geometry.location.lat();
+        state.answers.longitude = place.geometry.location.lng();
+        saveState();
+        initSettingsMap(state.answers.latitude, state.answers.longitude);
+      });
+    }
  
     // Update settings map coordinates
     if (state.answers.latitude && state.answers.longitude && window.L) {
@@ -2322,6 +2442,27 @@ document.addEventListener("DOMContentLoaded", () => {
     return response + followUp;
   }
 
+  function setupGoogleAutocomplete(inputElement, onSelectCallback) {
+    if (!window.google || !window.google.maps || !window.google.maps.places) return;
+    
+    // Prevent default submission when pressing enter key in Google Autocomplete input
+    inputElement.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+      }
+    });
+
+    const autocomplete = new window.google.maps.places.Autocomplete(inputElement, {
+      types: ['(cities)']
+    });
+
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      if (place && place.geometry && place.geometry.location) {
+        onSelectCallback(place);
+      }
+    });
+  }
 
   // --- INITIALIZE APPLICATION STATE ---
   loadState();
