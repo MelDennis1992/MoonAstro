@@ -20,9 +20,11 @@ document.addEventListener("DOMContentLoaded", () => {
     report: null,
     selectedPlan: "monthly", // Default
     history: [],
-    isPasswordRecoveryMode: false
+    isPasswordRecoveryMode: false,
+    lang: "fr",
+    midQuizSynthesisConfirmed: false
   };
-
+ 
   // --- HTML ELEMENTS SELECTIONS ---
   const pages = document.querySelectorAll(".page");
   const navBar = document.getElementById("app-nav-bar");
@@ -31,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Toast
   const toast = document.getElementById("toast");
   const toastMessage = document.getElementById("toast-message");
-
+ 
   // Load from localStorage & Sync with Supabase Database
   function loadState() {
     // 1. Load local state first
@@ -41,27 +43,27 @@ document.addEventListener("DOMContentLoaded", () => {
         const parsed = JSON.parse(saved);
         state = { ...state, ...parsed };
         if (state.answers && state.answers.birthDate) {
-          state.report = generatePersonalizedReport(state.answers);
+          state.report = generatePersonalizedReport(state.answers, state.lang);
         }
       } catch (e) {
         console.error("Erreur de chargement du statut local:", e);
       }
     }
-
+ 
     // 2. Fetch and sync from Supabase
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session && session.user) {
           const user = session.user;
           state.isLoggedIn = true;
-
+ 
           // Fetch profile data from db
           supabase.from("astrology_profiles").select("*").eq("id", user.id).maybeSingle().then(({ data, error }) => {
             if (error) {
               console.error("Erreur de chargement du profil distant:", error);
               return;
             }
-
+ 
             if (data) {
               // Update state with live DB data
               state.answers.name = data.firstname || state.answers.name || "";
@@ -74,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
               state.isPremium = (data.payment_status === "premium" || data.payment_status === "active");
               
               if (state.answers.birthDate) {
-                state.report = generatePersonalizedReport(state.answers);
+                state.report = generatePersonalizedReport(state.answers, state.lang);
               }
               
               generateMockHistory();
@@ -84,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
           });
         }
       });
-
+ 
       // Handle real-time auth changes
       supabase.auth.onAuthStateChange((event, session) => {
         if (event === "SIGNED_IN" && session) {
@@ -103,14 +105,15 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
-
+ 
   // Save to localStorage
   function saveState() {
     localStorage.setItem("moon_astro_state", JSON.stringify({
       isLoggedIn: state.isLoggedIn,
       isPremium: state.isPremium,
       answers: state.answers,
-      history: state.history
+      history: state.history,
+      lang: state.lang
     }));
   }
 
@@ -140,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 2. Auth Guard: redirect to landing if attempting premium pages without answers
-    const privatePages = ["#dashboard", "#history", "#settings"];
+    const privatePages = ["#dashboard", "#history", "#settings", "#oracle"];
     if (privatePages.includes(hash) && (!state.answers || !state.answers.name)) {
       window.location.hash = "#landing";
       return;
@@ -182,6 +185,22 @@ document.addEventListener("DOMContentLoaded", () => {
       navBar.classList.remove("active");
     }
 
+    // Update Header Profile Link & Text
+    const headerProfileLink = document.getElementById("header-profile-link");
+    const headerProfileText = document.getElementById("header-profile-text");
+    if (headerProfileLink && headerProfileText) {
+      const lang = state.lang || "fr";
+      if (state.isLoggedIn) {
+        headerProfileLink.setAttribute("href", "#settings");
+        headerProfileText.textContent = getTranslation(lang, "nav.my_profile") || "Mon Profil";
+        headerProfileText.setAttribute("data-i18n", "nav.my_profile");
+      } else {
+        headerProfileLink.setAttribute("href", "#register");
+        headerProfileText.textContent = getTranslation(lang, "nav.client_space") || "Espace Client";
+        headerProfileText.setAttribute("data-i18n", "nav.client_space");
+      }
+    }
+
     // Update Premium Badge Visibility
     if (state.isPremium) {
       premiumBadgeContainer.style.display = "block";
@@ -193,6 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (hash === "#landing") {
       // Clear quiz step
       state.currentQuizStep = 0;
+      state.midQuizSynthesisConfirmed = false;
     } else if (hash === "#quiz") {
       renderQuizStep();
     } else if (hash === "#register") {
@@ -206,6 +226,8 @@ document.addEventListener("DOMContentLoaded", () => {
       populateDashboard();
     } else if (hash === "#history") {
       populateHistory();
+    } else if (hash === "#oracle") {
+      initOracleChat();
     } else if (hash === "#settings") {
       populateSettings();
       if (state.isPasswordRecoveryMode) {
@@ -261,9 +283,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   quizBtnBack.addEventListener("click", () => {
+    if (state.currentQuizStep === 10 && state.midQuizSynthesisConfirmed) {
+      state.midQuizSynthesisConfirmed = false;
+      renderQuizStep();
+      return;
+    }
     const prevStep = getPrevStepIndex(state.currentQuizStep);
     if (prevStep >= 0) {
       state.currentQuizStep = prevStep;
+      if (state.currentQuizStep < 10) {
+        state.midQuizSynthesisConfirmed = false;
+      }
       renderQuizStep();
     } else {
       window.location.hash = "#landing";
@@ -307,28 +337,120 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderQuizStep() {
+    const lang = state.lang || "fr";
+
+    // Intercept at step index 10 (after 10 questions) to show the mid-quiz celestial trinity synthesis
+    if (state.currentQuizStep === 10 && !state.midQuizSynthesisConfirmed) {
+      if (quizBtnNext && quizBtnNext.parentElement) {
+        quizBtnNext.parentElement.style.display = "none";
+      }
+      
+      const astro = computeAstrology(
+        state.answers.birthDate,
+        state.answers.birthTime,
+        state.answers.latitude,
+        state.answers.longitude,
+        state.answers.birthPlace
+      );
+      
+      const sunSign = lang === "en" ? (astro.sun.name_en || astro.sun.name) : astro.sun.name;
+      const moonSign = lang === "en" ? (astro.moon.name_en || astro.moon.name) : astro.moon.name;
+      const ascSign = lang === "en" ? (astro.ascendant.name_en || astro.ascendant.name) : astro.ascendant.name;
+      
+      const sunSymbol = astro.sun.symbol || "";
+      const moonSymbol = astro.moon.symbol || "";
+      const ascSymbol = astro.ascendant.symbol || "";
+      
+      const title = getTranslation(lang, "quiz.synthesis.title");
+      const sub = getTranslation(lang, "quiz.synthesis.sub");
+      const sunLabel = getTranslation(lang, "quiz.synthesis.sun");
+      const moonLabel = getTranslation(lang, "quiz.synthesis.moon");
+      const ascLabel = getTranslation(lang, "quiz.synthesis.asc");
+      const desc = getTranslation(lang, "quiz.synthesis.desc");
+      const btnText = getTranslation(lang, "quiz.synthesis.btn");
+      
+      let html = `
+        <div class="synthesis-container">
+          <h2 class="synthesis-title serif-font">${title}</h2>
+          <p class="synthesis-subtitle">${sub}</p>
+          
+          <div class="synthesis-grid">
+            <div class="synthesis-card">
+              <div class="synthesis-icon">☉</div>
+              <div>
+                <span class="synthesis-label">${sunLabel}</span>
+                <span class="synthesis-value">${sunSign} ${sunSymbol}</span>
+              </div>
+            </div>
+            
+            <div class="synthesis-card">
+              <div class="synthesis-icon">☽</div>
+              <div>
+                <span class="synthesis-label">${moonLabel}</span>
+                <span class="synthesis-value">${moonSign} ${moonSymbol}</span>
+              </div>
+            </div>
+            
+            <div class="synthesis-card">
+              <div class="synthesis-icon">▲</div>
+              <div>
+                <span class="synthesis-label">${ascLabel}</span>
+                <span class="synthesis-value">${ascSign} ${ascSymbol}</span>
+              </div>
+            </div>
+          </div>
+          
+          <p class="synthesis-desc">${desc}</p>
+          
+          <button id="synthesis-continue-btn" class="btn btn-gold" style="width: auto; padding: 12px 32px; font-weight: 600; border-radius: 14px;">
+            ${btnText}
+          </button>
+        </div>
+      `;
+      
+      quizContent.innerHTML = html;
+      
+      const synthBtn = document.getElementById("synthesis-continue-btn");
+      if (synthBtn) {
+        synthBtn.addEventListener("click", () => {
+          state.midQuizSynthesisConfirmed = true;
+          renderQuizStep();
+        });
+      }
+      
+      quizProgress.style.width = `20%`;
+      quizStepIndicator.textContent = lang === "en" ? "Cosmic Pause" : "Pause Cosmique";
+      return;
+    }
+
     const q = QUIZ_QUESTIONS[state.currentQuizStep];
     
     // Show Next button only for manual input questions (text, date, time), hide it for choices
     if (quizBtnNext && quizBtnNext.parentElement) {
       quizBtnNext.parentElement.style.display = q.type === "choice" ? "none" : "block";
+      quizBtnNext.textContent = getTranslation(lang, "quiz.btn.next") || "Continuer";
     }
     
     // Update step text and progress
     const progressPercent = ((state.currentQuizStep + 1) / QUIZ_QUESTIONS.length) * 100;
     quizProgress.style.width = `${progressPercent}%`;
     quizStepIndicator.textContent = `${state.currentQuizStep + 1} / ${QUIZ_QUESTIONS.length}`;
-
+ 
+    // Get translated category & question
+    const category = lang === "en" ? (q.category_en || q.category) : q.category;
+    const question = lang === "en" ? (q.question_en || q.question) : q.question;
+ 
     // Render question layout
     let html = `
-      <span class="quiz-category">${q.category}</span>
-      <h2 class="quiz-question-title serif-font">${q.question}</h2>
+      <span class="quiz-category">${category}</span>
+      <h2 class="quiz-question-title serif-font">${question}</h2>
     `;
-
+ 
     if (q.type === "text") {
+      const placeholder = lang === "en" ? (q.placeholder_en || q.placeholder || '') : (q.placeholder || '');
       html += `
         <div class="quiz-input-group" style="margin-top: 10px; position: relative;">
-          <input type="${q.id === 'email' ? 'email' : 'text'}" id="q-input-${q.id}" class="quiz-input" placeholder="${q.placeholder || ''}" value="${state.answers[q.id] || ''}">
+          <input type="${q.id === 'email' ? 'email' : 'text'}" id="q-input-${q.id}" class="quiz-input" placeholder="${placeholder}" value="${state.answers[q.id] || ''}">
           ${q.id === "birthPlace" ? `
             <div id="birthplace-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
             <div id="birthplace-coordinates" style="margin-top: 10px; font-size: 13px; color: var(--accent-gold-dark); text-align: center; font-weight: 500; display: none;"></div>
@@ -349,21 +471,23 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
     } else if (q.type === "choice") {
-      html += `<div class="quiz-options" style="margin-top: 10px;">`;
-      q.options.forEach(opt => {
+      const symbols = ["✦", "☽", "★", "✨", "☄", "☉", "🪐", "⚜"];
+      html += `<div class="quiz-options-grid">`;
+      q.options.forEach((opt, idx) => {
         const isSelected = state.answers[q.id] === opt.value ? "selected" : "";
+        const optionText = lang === "en" ? (opt.text_en || opt.text) : opt.text;
+        const symbol = symbols[idx % symbols.length];
+        
         html += `
-          <div class="quiz-option ${isSelected}" data-value="${opt.value}">
-            <div class="quiz-option-bullet">
-              <div class="quiz-option-bullet-inner"></div>
-            </div>
-            <span>${opt.text}</span>
+          <div class="quiz-option quiz-option-card ${isSelected}" data-value="${opt.value}">
+            <div class="quiz-card-decor">${symbol}</div>
+            <div class="quiz-card-text">${optionText}</div>
           </div>
         `;
       });
       html += `</div>`;
     }
-
+ 
     quizContent.innerHTML = html;
 
     // Attach choice listeners
@@ -495,29 +619,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const forgotPasswordLink = document.getElementById("forgot-password-link");
 
-  if (toggleAuthMode) {
-    toggleAuthMode.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (authMode === "signup") {
-        authMode = "signin";
-        if (registerTitle) registerTitle.textContent = "Se connecter";
-        if (registerSub) registerSub.textContent = "Connectez-vous pour retrouver votre thème astral et vos guidances quotidiennes.";
-        if (consentGroup) consentGroup.style.display = "none";
-        if (regConsentInput) regConsentInput.required = false;
-        if (btnRegisterSubmit) btnRegisterSubmit.textContent = "Se connecter & voir mon thème";
-        if (forgotPasswordLink) forgotPasswordLink.style.display = "block";
-        toggleAuthMode.textContent = "Créer un compte (S'inscrire)";
-      } else {
-        authMode = "signup";
-        if (registerTitle) registerTitle.textContent = "Créer votre profil";
-        if (registerSub) registerSub.textContent = "Afin de sauvegarder vos calculs astrologiques et de générer votre premier rapport d'énergie.";
-        if (consentGroup) consentGroup.style.display = "flex";
-        if (regConsentInput) regConsentInput.required = true;
-        if (btnRegisterSubmit) btnRegisterSubmit.textContent = "Calculer mon thème astral";
-        if (forgotPasswordLink) forgotPasswordLink.style.display = "none";
-        toggleAuthMode.textContent = "Se connecter";
-      }
+  // --- SHOW / HIDE PASSWORD TOGGLES ---
+  function setupPasswordToggle(btnId, inputId, eyeOnId, eyeOffId) {
+    const btn    = document.getElementById(btnId);
+    const input  = document.getElementById(inputId);
+    const eyeOn  = document.getElementById(eyeOnId);
+    const eyeOff = document.getElementById(eyeOffId);
+    if (!btn || !input) return;
+    btn.addEventListener("click", () => {
+      const isHidden = input.type === "password";
+      input.type = isHidden ? "text" : "password";
+      if (eyeOn)  eyeOn.style.display  = isHidden ? "none" : "";
+      if (eyeOff) eyeOff.style.display = isHidden ? ""     : "none";
     });
+  }
+  setupPasswordToggle("toggle-reg-password", "reg-password", "eye-icon-reg", "eye-off-icon-reg");
+  setupPasswordToggle("toggle-set-password", "set-password", "eye-icon-set", "eye-off-icon-set");
+
+
+  if (toggleAuthMode) {
+    toggleAuthMode.addEventListener("click", handleAuthToggleClick);
   }
 
   // Mot de passe oublié (Supabase Auth reset)
@@ -526,7 +647,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       const email = document.getElementById("reg-email").value.trim();
       if (!email) {
-        showToast("Veuillez saisir votre adresse email pour réinitialiser votre mot de passe.");
+        showToast(getTranslation(state.lang, "auth.forgot.email_required") || "Veuillez saisir votre adresse email pour réinitialiser votre mot de passe.");
         return;
       }
       
@@ -535,25 +656,33 @@ document.addEventListener("DOMContentLoaded", () => {
           redirectTo: window.location.origin + '#settings'
         }).then(({ error }) => {
           if (error) {
-            showToast(`Erreur: ${error.message}`);
+            const errPrefix = state.lang === "en" ? "Error: " : "Erreur : ";
+            showToast(`${errPrefix}${error.message}`);
           } else {
-            showToast("Un e-mail de réinitialisation de mot de passe vous a été envoyé ✦");
+            showToast(getTranslation(state.lang, "auth.forgot.email_sent") || "Un e-mail de réinitialisation de mot de passe vous a été envoyé ✦");
           }
         });
       } else {
-        showToast("Simulation : E-mail de réinitialisation envoyé ! (Mode hors-ligne)");
+        showToast(getTranslation(state.lang, "auth.forgot.email_sent") || "Simulation : E-mail de réinitialisation envoyé ! (Mode hors-ligne)");
       }
     });
   }
 
-  // Accès direct Espace Client (Landing CTA)
+  // Accès direct Espace Client (Landing CTA & Header User Profile)
   const btnClientAccess = document.getElementById("btn-client-access");
   if (btnClientAccess) {
     btnClientAccess.addEventListener("click", () => {
-      if (authMode === "signup" && toggleAuthMode) {
-        toggleAuthMode.click();
-      }
+      setAuthMode("signin");
       window.location.hash = "#register";
+    });
+  }
+
+  const headerProfileLink = document.getElementById("header-profile-link");
+  if (headerProfileLink) {
+    headerProfileLink.addEventListener("click", (e) => {
+      if (!state.isLoggedIn) {
+        setAuthMode("signin");
+      }
     });
   }
 
@@ -602,7 +731,7 @@ document.addEventListener("DOMContentLoaded", () => {
             saveState();
 
             // 2. Calculer le profil énergétique astrologique
-            const report = generatePersonalizedReport(state.answers);
+            const report = generatePersonalizedReport(state.answers, state.lang);
             state.report = report;
 
             // Déterminer les éléments scores pour la BDD
@@ -699,7 +828,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 state.isPremium = (profileData.payment_status === "premium" || profileData.payment_status === "active");
                 
                 if (state.answers.birthDate) {
-                  state.report = generatePersonalizedReport(state.answers);
+                  state.report = generatePersonalizedReport(state.answers, state.lang);
                 }
                 generateMockHistory();
                 saveState();
@@ -718,7 +847,7 @@ document.addEventListener("DOMContentLoaded", () => {
           state.answers.birthPlace = state.answers.birthPlace || "Paris, France";
           state.answers.latitude = state.answers.latitude || 48.8566;
           state.answers.longitude = state.answers.longitude || 2.3522;
-          state.report = generatePersonalizedReport(state.answers);
+          state.report = generatePersonalizedReport(state.answers, state.lang);
           generateMockHistory();
           saveState();
           window.location.hash = "#dashboard";
@@ -733,15 +862,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadingStatusText = document.getElementById("loading-text");
   
   const loadingSteps = [
-    { title: "Connexion céleste...", desc: "Alignement des étoiles à votre date de naissance." },
-    { title: "Calcul des éphémérides...", desc: "Détermination exacte de votre signe Solaire et Ascendant." },
-    { title: "Analyse émotionnelle...", desc: "Cartographie de vos énergies émotionnelles dominantes." },
-    { title: "Guidance de l'Oracle...", desc: "Création de vos conseils personnalisés d'amour et de carrière." },
-    { title: "Prêt !", desc: "Harmonisation complète établie." }
+    { titleKey: "loading.step0.title", descKey: "loading.step0.desc" },
+    { titleKey: "loading.step1.title", descKey: "loading.step1.desc" },
+    { titleKey: "loading.step2.title", descKey: "loading.step2.desc" },
+    { titleKey: "loading.step3.title", descKey: "loading.step3.desc" },
+    { titleKey: "loading.step4.title", descKey: "loading.step4.desc" }
   ];
 
   function runLoadingSequence() {
     let index = 0;
+    
+    // Set initial text
+    if (loadingStatusTitle && loadingStatusText) {
+      loadingStatusTitle.textContent = getTranslation(state.lang, loadingSteps[0].titleKey);
+      loadingStatusText.textContent = getTranslation(state.lang, loadingSteps[0].descKey);
+    }
     
     // Interval to change titles & text beautifully
     const interval = setInterval(() => {
@@ -751,8 +886,8 @@ document.addEventListener("DOMContentLoaded", () => {
         loadingStatusText.style.opacity = 0;
         
         setTimeout(() => {
-          loadingStatusTitle.textContent = loadingSteps[index].title;
-          loadingStatusText.textContent = loadingSteps[index].desc;
+          loadingStatusTitle.textContent = getTranslation(state.lang, loadingSteps[index].titleKey);
+          loadingStatusText.textContent = getTranslation(state.lang, loadingSteps[index].descKey);
           loadingStatusTitle.style.opacity = 1;
           loadingStatusText.style.opacity = 1;
         }, 300);
@@ -760,7 +895,7 @@ document.addEventListener("DOMContentLoaded", () => {
         clearInterval(interval);
         
         // Generate personalized calculations!
-        state.report = generatePersonalizedReport(state.answers);
+        state.report = generatePersonalizedReport(state.answers, state.lang);
         
         // Generate mock history representing past readings to populate history screen immediately
         generateMockHistory();
@@ -779,27 +914,35 @@ document.addEventListener("DOMContentLoaded", () => {
     const dateToday = new Date();
     
     state.history = [];
+    const dateLocale = state.lang === "en" ? "en-US" : "fr-FR";
+    const rulerName = state.lang === "en" ? (zodiac.ruler_en || zodiac.ruler) : zodiac.ruler;
     
     // 3 past days
     for (let i = 1; i <= 3; i++) {
       const pastDate = new Date(dateToday);
       pastDate.setDate(dateToday.getDate() - i);
       
-      const dayName = pastDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+      const dayName = pastDate.toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" });
       
-      let ratingSymbol = "✦ Harmonieux";
-      let summaryText = `Vos énergies du ${dayName} ont favorisé l'introspection spirituelle. Votre planète régente ${zodiac.ruler} vous a invité(e) à assainir vos priorités professionnelles.`;
+      let ratingSymbol = state.lang === "en" ? "✦ Harmonious" : "✦ Harmonieux";
+      let summaryText = state.lang === "en"
+        ? `Your energies for ${dayName} favored spiritual introspection. Your ruling planet ${rulerName} invited you to clarify your professional priorities.`
+        : `Vos énergies du ${dayName} ont favorisé l'introspection spirituelle. Votre planète régente ${rulerName} vous a invité(e) à assainir vos priorités professionnelles.`;
       
       if (i === 1) {
-        ratingSymbol = "✦ Magnétique";
-        summaryText = `Guidance d'amour : les transits vous invitaient à exprimer sereinement vos sentiments secrets. Une opportunité inattendue s'est matérialisée.`;
+        ratingSymbol = state.lang === "en" ? "✦ Magnetic" : "✦ Magnétique";
+        summaryText = state.lang === "en"
+          ? `Love guidance: the transits invited you to express your secret feelings peacefully. An unexpected opportunity materialized.`
+          : `Guidance d'amour : les transits vous invitaient à exprimer sereinement vos sentiments secrets. Une opportunité inattendue s'est matérialisée.`;
       } else if (i === 2) {
-        ratingSymbol = "✦ Alchimique";
-        summaryText = `Point de vigilance : protégez activement votre bulle énergétique contre la surcharge mentale et les émotions partagées.`;
+        ratingSymbol = state.lang === "en" ? "✦ Alchemical" : "✦ Alchimique";
+        summaryText = state.lang === "en"
+          ? `Warning: actively protect your energetic bubble against mental overload and shared emotions.`
+          : `Point de vigilance : protégez activement votre bulle énergétique contre la surcharge mentale et les émotions partagées.`;
       }
       
       state.history.push({
-        date: pastDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }),
+        date: pastDate.toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" }),
         displayDate: dayName,
         rating: ratingSymbol,
         text: summaryText
@@ -829,15 +972,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const r = state.report;
     resUsername.textContent = r.name;
     resProfileName.textContent = r.energyProfile;
-    resSun.textContent = `${r.zodiac.name} ${r.zodiac.symbol}`;
+    
+    const sunName = state.lang === "en" ? (r.zodiac.name_en || r.zodiac.name) : r.zodiac.name;
+    resSun.textContent = `${sunName} ${r.zodiac.symbol}`;
     if (resMoon && r.moon) {
-      resMoon.textContent = `${r.moon.name} ${r.moon.symbol}`;
+      const moonName = state.lang === "en" ? (r.moon.name_en || r.moon.name) : r.moon.name;
+      resMoon.textContent = `${moonName} ${r.moon.symbol}`;
     }
     resAscendant.textContent = `${r.ascendant} ✦`;
     resEnergyDesc.textContent = r.energyDescription;
     resStrength.textContent = r.mainStrength;
     resBlocker.textContent = r.blocker;
-
+ 
     // Remplir la numérologie
     if (r.lifePath) {
       resLifepathVal.textContent = `${r.lifePath.number} — ${r.lifePath.name}`;
@@ -847,14 +993,16 @@ document.addEventListener("DOMContentLoaded", () => {
       resNumExpression.textContent = r.numerologyName.expressionText;
       resNumIntime.textContent = r.numerologyName.soulUrgeText;
     }
-
+ 
     // Remplir la gemmologie (Pierre de Chance)
     if (r.luckyGemstone) {
       const gemIcon = document.getElementById("res-gem-icon");
       const gemName = document.getElementById("res-gem-name");
       const gemDesc = document.getElementById("res-gem-desc");
       if (gemIcon) gemIcon.textContent = r.luckyGemstone.symbol;
-      if (gemName) gemName.textContent = `${r.luckyGemstone.name} Sacrée`;
+      if (gemName) {
+        gemName.textContent = state.lang === "en" ? r.luckyGemstone.name : `${r.luckyGemstone.name} Sacrée`;
+      }
       if (gemDesc) gemDesc.textContent = r.luckyGemstone.desc;
     }
   }
@@ -878,6 +1026,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const formStripe = document.getElementById("form-stripe");
   const btnStripeSubmit = document.getElementById("btn-stripe-submit");
 
+  function getStripeSubmitBtnText() {
+    const lang = state.lang || "fr";
+    if (state.selectedPlan === "weekly") {
+      return getTranslation(lang, "stripe.btn.weekly") || "S'abonner (2,99 € / semaine)";
+    } else if (state.selectedPlan === "monthly") {
+      return getTranslation(lang, "stripe.btn.monthly") || "Activer mon essai & payer (9,99 € / mois)";
+    } else {
+      return getTranslation(lang, "stripe.btn.yearly") || "S'abonner annuellement (49,99 € / an)";
+    }
+  }
+
+  function updateSubscribeButtonText() {
+    const lang = state.lang || "fr";
+    if (state.selectedPlan === "weekly") {
+      btnSubscribe.textContent = getTranslation(lang, "paywall.btn.weekly") || "Commencer mon abonnement hebdomadaire";
+    } else if (state.selectedPlan === "monthly") {
+      btnSubscribe.textContent = getTranslation(lang, "paywall.btn.monthly") || "Commencer mon essai gratuit";
+    } else {
+      btnSubscribe.textContent = getTranslation(lang, "paywall.btn.yearly") || "S'abonner annuellement (Réduction 60%)";
+    }
+  }
+
   // Selection of Subscription
   subOptions.forEach(opt => {
     opt.addEventListener("click", () => {
@@ -885,32 +1055,26 @@ document.addEventListener("DOMContentLoaded", () => {
       opt.classList.add("active");
       state.selectedPlan = opt.getAttribute("data-plan");
       
-      // Update main subscription CTA label
-      if (state.selectedPlan === "weekly") {
-        btnSubscribe.textContent = "Commencer mon abonnement hebdomadaire";
-      } else if (state.selectedPlan === "monthly") {
-        btnSubscribe.textContent = "Commencer mon essai gratuit";
-      } else {
-        btnSubscribe.textContent = "S'abonner annuellement (Réduction 60%)";
-      }
+      updateSubscribeButtonText();
     });
   });
 
   // Open Checkout Modal
   btnSubscribe.addEventListener("click", () => {
+    const lang = state.lang || "fr";
     // Fill Stripe pricing summary based on active plan selection
     if (state.selectedPlan === "weekly") {
-      stripePlanTitle.textContent = "Abonnement Hebdomadaire Moon Astro";
+      stripePlanTitle.textContent = getTranslation(lang, "stripe.plan.weekly") || "Abonnement Hebdomadaire Moon Astro";
       stripePlanPrice.textContent = "2,99 €";
-      btnStripeSubmit.textContent = "S'abonner (2,99 € / semaine)";
+      btnStripeSubmit.textContent = getTranslation(lang, "stripe.btn.weekly") || "S'abonner (2,99 € / semaine)";
     } else if (state.selectedPlan === "monthly") {
-      stripePlanTitle.textContent = "Abonnement Mensuel (3 jours d'essai)";
+      stripePlanTitle.textContent = getTranslation(lang, "stripe.plan.monthly") || "Abonnement Mensuel (3 jours d'essai)";
       stripePlanPrice.textContent = "9,99 €";
-      btnStripeSubmit.textContent = "Activer mon essai & payer (9,99 € / mois)";
+      btnStripeSubmit.textContent = getTranslation(lang, "stripe.btn.monthly") || "Activer mon essai & payer (9,99 € / mois)";
     } else {
-      stripePlanTitle.textContent = "Abonnement Annuel Moon Astro";
+      stripePlanTitle.textContent = getTranslation(lang, "stripe.plan.yearly") || "Abonnement Annuel Moon Astro";
       stripePlanPrice.textContent = "49,99 €";
-      btnStripeSubmit.textContent = "S'abonner annuellement (49,99 € / an)";
+      btnStripeSubmit.textContent = getTranslation(lang, "stripe.btn.yearly") || "S'abonner annuellement (49,99 € / an)";
     }
 
     stripeModal.classList.add("active");
@@ -951,16 +1115,17 @@ document.addEventListener("DOMContentLoaded", () => {
     // Change button state to elegant loading spinner
     btnStripeSubmit.disabled = true;
     btnStripeSubmit.style.opacity = 0.8;
-    btnStripeSubmit.innerHTML = `<span style="display:inline-block; animation: rotate-cw 1s linear infinite; margin-right: 8px;">✦</span> Traitement sécurisé...`;
+    const processingText = getTranslation(state.lang, "stripe.processing") || "Traitement sécurisé...";
+    btnStripeSubmit.innerHTML = `<span style="display:inline-block; animation: rotate-cw 1s linear infinite; margin-right: 8px;">✦</span> ${processingText}`;
     
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         const user = session?.user;
         if (!user) {
-          showToast("Vous devez être connecté pour vous abonner.");
+          showToast(getTranslation(state.lang, "stripe.error.auth") || "Vous devez être connecté pour vous abonner.");
           btnStripeSubmit.disabled = false;
           btnStripeSubmit.style.opacity = 1;
-          btnStripeSubmit.innerHTML = "Activer mon essai & payer";
+          btnStripeSubmit.textContent = getStripeSubmitBtnText();
           return;
         }
 
@@ -998,8 +1163,8 @@ document.addEventListener("DOMContentLoaded", () => {
             stripeModal.classList.remove("active");
             btnStripeSubmit.disabled = false;
             btnStripeSubmit.style.opacity = 1;
-            btnStripeSubmit.textContent = "Activer mon essai & payer";
-            showToast("Mode Démo : Abonnement activé ! Bienvenue sur Moon Astro Premium.");
+            btnStripeSubmit.textContent = getStripeSubmitBtnText();
+            showToast(getTranslation(state.lang, "stripe.success.demo") || "Mode Démo : Abonnement activé ! Bienvenue sur Moon Astro Premium.");
             window.location.hash = "#dashboard";
           }, 2000);
         });
@@ -1012,8 +1177,8 @@ document.addEventListener("DOMContentLoaded", () => {
         stripeModal.classList.remove("active");
         btnStripeSubmit.disabled = false;
         btnStripeSubmit.style.opacity = 1;
-        btnStripeSubmit.textContent = "Activer mon essai & payer";
-        showToast("Abonnement activé ! Bienvenue sur Moon Astro Premium (Simulation).");
+        btnStripeSubmit.textContent = getStripeSubmitBtnText();
+        showToast(getTranslation(state.lang, "stripe.success.sim") || "Abonnement activé ! Bienvenue sur Moon Astro Premium (Simulation).");
         window.location.hash = "#dashboard";
       }, 2200);
     }
@@ -1077,15 +1242,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!state.report) return;
     const r = state.report;
     const isPrem = state.isPremium;
-
+ 
     // Direct profile properties
     dashUsername.textContent = r.name;
     
     // Set formatted date
     const options = { weekday: "long", day: "numeric", month: "long", year: "numeric" };
-    dashDate.textContent = new Date().toLocaleDateString("fr-FR", options);
+    dashDate.textContent = new Date().toLocaleDateString(state.lang === "en" ? "en-US" : "fr-FR", options);
     
-    dashZodiacName.textContent = r.zodiac.name;
+    const sunName = state.lang === "en" ? (r.zodiac.name_en || r.zodiac.name) : r.zodiac.name;
+    dashZodiacName.textContent = sunName;
     
     // Inject Custom Zodiac Icon SVG
     dashZodiacIcon.outerHTML = `
@@ -1093,7 +1259,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <text x="50%" y="65%" text-anchor="middle" font-size="14" font-family="sans-serif">${r.zodiac.symbol}</text>
       </svg>
     `;
-
+ 
     // Dynamic Circular Energy Gauge Chart
     const score = r.energyScore;
     dashGaugeText.textContent = `${score}%`;
@@ -1102,14 +1268,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // SVG DashOffset animation: length is 251.2
     const offset = 251.2 - (251.2 * score) / 100;
     dashGaugeFill.style.strokeDashoffset = offset;
-
+ 
     // Alimenter le Chemin de Vie
     if (r.lifePath) {
       dashLifepath.textContent = r.lifePath.number;
     } else {
       dashLifepath.textContent = "✦";
     }
-
+ 
     // --- DAILY TEMPLATE INJECTS ---
     dashDailyGeneral.textContent = r.dailyHoroscope.general;
     
@@ -1121,92 +1287,110 @@ document.addEventListener("DOMContentLoaded", () => {
       dashDailyWellbeing.textContent = r.dailyHoroscope.wellbeing;
       dashDailyWarning.textContent = r.dailyHoroscope.warning;
       dashDailyAffirmation.textContent = `"${r.dailyHoroscope.affirmation}"`;
-
+ 
       // Build category rating stars
       renderStars(starsLove, r.dailyHoroscope.loveStars);
       renderStars(starsCareer, r.dailyHoroscope.careerStars);
       renderStars(starsWellbeing, r.dailyHoroscope.wellbeingStars);
-
+ 
       // Lucky details
       dashLuckyNumber.textContent = r.luckyNumber;
       dashLuckyMonth.textContent = r.favorableMonth;
-      if (dashSunSign) dashSunSign.textContent = `${r.zodiac.name} ${r.zodiac.symbol}`;
-      if (dashMoonSign && r.moon) dashMoonSign.textContent = `${r.moon.name} ${r.moon.symbol}`;
+      if (dashSunSign) {
+        const sunName = state.lang === "en" ? (r.zodiac.name_en || r.zodiac.name) : r.zodiac.name;
+        dashSunSign.textContent = `${sunName} ${r.zodiac.symbol}`;
+      }
+      if (dashMoonSign && r.moon) {
+        const moonName = state.lang === "en" ? (r.moon.name_en || r.moon.name) : r.moon.name;
+        dashMoonSign.textContent = `${moonName} ${r.moon.symbol}`;
+      }
       dashAscendant.textContent = `${r.ascendant} ${getZodiacSymbolByName(r.ascendant)}`;
       
       // Weekly and Monthly Forecasts
-      const forecasts = generateForecasts(r);
+      const forecasts = generateForecasts(r, state.lang);
       dashWeeklyText.innerHTML = `<p>${forecasts.weekly}</p>`;
       dashMonthlyText.innerHTML = `<p>${forecasts.monthly}</p>`;
-
+ 
     } else {
       // Free User is limited
-      const lockedHTML = `
+      const getLockedHTML = (textKey) => `
         <span style="filter: blur(4px); opacity: 0.35; user-select: none;">
-          Cette guidance sentimentale requiert un statut premium pour décrypter vos cycles amoureux d'aujourd'hui.
+          ${getTranslation(state.lang, textKey)}
         </span>
         <div style="margin-top: 8px; font-size: 12px;">
-          <a href="#paywall" style="color: var(--accent-gold-dark); font-weight: 600; text-decoration: none;">✦ Débloquer avec Premium &rarr;</a>
+          <a href="#paywall" style="color: var(--accent-gold-dark); font-weight: 600; text-decoration: none;">${getTranslation(state.lang, "dash.locked.btn")}</a>
         </div>
       `;
-      dashDailyLove.innerHTML = lockedHTML;
-      dashDailyCareer.innerHTML = lockedHTML;
-      dashDailyWellbeing.innerHTML = lockedHTML;
+      dashDailyLove.innerHTML = getLockedHTML("dash.locked.love");
+      dashDailyCareer.innerHTML = getLockedHTML("dash.locked.career");
+      dashDailyWellbeing.innerHTML = getLockedHTML("dash.locked.wellbeing");
       
       dashDailyWarning.innerHTML = `
         <span style="filter: blur(4px); opacity: 0.35; user-select: none;">
-          Attention particulière quant à vos astres aujourd'hui...
+          ${getTranslation(state.lang, "dash.locked.warning")}
         </span>
         <div style="margin-top: 4px; font-size: 11px;">
-          <a href="#paywall" style="color: #BA554A; font-weight: 600; text-decoration: none;">Débloquer mon alerte de vigilance &rarr;</a>
+          <a href="#paywall" style="color: #BA554A; font-weight: 600; text-decoration: none;">${getTranslation(state.lang, "dash.locked.warning.btn")}</a>
         </div>
       `;
-      dashDailyAffirmation.textContent = `"Je m'ouvre doucement aux guidances que m'offre le cosmos."`;
+      
+      const defaultAffirmation = state.lang === "en" 
+        ? "I gently open myself to the guidance offered by the cosmos." 
+        : "Je m'ouvre doucement aux guidances que m'offre le cosmos.";
+      dashDailyAffirmation.textContent = `"${getTranslation(state.lang, "dash.locked.affirmation.default") || defaultAffirmation}"`;
       
       renderStars(starsLove, 0);
       renderStars(starsCareer, 0);
       renderStars(starsWellbeing, 0);
-
+ 
       dashLuckyNumber.textContent = "✦";
       dashLuckyMonth.textContent = "✦";
-      if (dashSunSign) dashSunSign.textContent = `${r.zodiac.name}`;
-      if (dashMoonSign && r.moon) dashMoonSign.textContent = `${r.moon.name}`;
+      if (dashSunSign) {
+        const sunName = state.lang === "en" ? (r.zodiac.name_en || r.zodiac.name) : r.zodiac.name;
+        dashSunSign.textContent = sunName;
+      }
+      if (dashMoonSign && r.moon) {
+        const moonName = state.lang === "en" ? (r.moon.name_en || r.moon.name) : r.moon.name;
+        dashMoonSign.textContent = moonName;
+      }
       dashAscendant.textContent = `${r.ascendant}`;
-
+ 
       // Locked Weekly & Monthly tabs text
       const lockedTabHTML = `
         <div style="text-align: center; padding: 20px 0;">
           <svg viewBox="0 0 24 24" style="width: 44px; height: 44px; fill: var(--accent-gold); margin-bottom: 12px;">
             <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
           </svg>
-          <h3 class="serif-font" style="font-size: 18px; margin-bottom: 4px;">Guidance Cosmique Premium</h3>
+          <h3 class="serif-font" style="font-size: 18px; margin-bottom: 4px;">${getTranslation(state.lang, "dash.locked.forecast.title")}</h3>
           <p style="font-size: 13px; color: var(--text-muted); max-width: 80%; margin: 0 auto 16px;">
-            Accédez aux bilans astrologiques de la semaine et aux grandes prévisions mensuelles de votre signe.
+            ${getTranslation(state.lang, "dash.locked.forecast.desc")}
           </p>
-          <a href="#paywall" class="btn btn-gold" style="display:inline-flex; width:auto; padding: 10px 24px; font-size:13px; border-radius:12px;">Débloquer les prévisions</a>
+          <a href="#paywall" class="btn btn-gold" style="display:inline-flex; width:auto; padding: 10px 24px; font-size:13px; border-radius:12px;">${getTranslation(state.lang, "dash.locked.forecast.btn")}</a>
         </div>
       `;
       dashWeeklyText.innerHTML = lockedTabHTML;
       dashMonthlyText.innerHTML = lockedTabHTML;
     }
-
+ 
     // Remplir la gemmologie sur le Dashboard
     if (r.luckyGemstone) {
       const gemIcon = document.getElementById("dash-gem-icon");
       const gemName = document.getElementById("dash-gem-name");
       const gemDesc = document.getElementById("dash-gem-desc");
       if (gemIcon) gemIcon.textContent = r.luckyGemstone.symbol;
-      if (gemName) gemName.textContent = `${r.luckyGemstone.name} Sacrée`;
+      if (gemName) {
+        gemName.textContent = state.lang === "en" ? r.luckyGemstone.name : `${r.luckyGemstone.name} Sacrée`;
+      }
       if (gemDesc) {
         if (isPrem) {
           gemDesc.textContent = r.luckyGemstone.desc;
         } else {
           gemDesc.innerHTML = `
             <span style="filter: blur(4px); opacity: 0.35; user-select: none;">
-              Débloquez l'analyse complète de votre pierre céleste et ses vertus d'harmonisation énergétique.
+              ${getTranslation(state.lang, "dash.locked.gem.desc")}
             </span>
             <div style="margin-top: 4px; font-size: 11px;">
-              <a href="#paywall" style="color: var(--accent-gold-dark); font-weight: 600; text-decoration: none;">Débloquer ma gemme &rarr;</a>
+              <a href="#paywall" style="color: var(--accent-gold-dark); font-weight: 600; text-decoration: none;">${getTranslation(state.lang, "dash.locked.gem.btn")}</a>
             </div>
           `;
         }
@@ -1227,13 +1411,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getZodiacSymbolByName(name) {
-    const found = ZODIAC_SIGNS.find(z => z.name.toLowerCase() === name.toLowerCase());
+    if (!name) return "✦";
+    const found = ZODIAC_SIGNS.find(z => 
+      z.name.toLowerCase() === name.toLowerCase() || 
+      (z.name_en && z.name_en.toLowerCase() === name.toLowerCase())
+    );
     return found ? found.symbol : "✦";
   }
 
   // Dual geocoding helper (Photon with Nominatim fallback)
   function searchCitySuggestions(query, callback) {
-    fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=fr`)
+    const queryLang = state.lang || "fr";
+    fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=${queryLang}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.features && data.features.length > 0) {
@@ -1261,7 +1450,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function queryNominatim(query, callback) {
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=fr`)
+    const queryLang = state.lang || "fr";
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=${queryLang}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
@@ -1288,32 +1478,38 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!state.history || state.history.length === 0) {
       historyList.innerHTML = `
         <div style="text-align: center; padding: 30px; color: var(--text-muted);">
-          Aucun historique d'horoscope disponible. Votre journal se complétera de jour en jour.
+          ${getTranslation(state.lang, "history.empty")}
         </div>
       `;
       return;
     }
-
+ 
     let html = "";
     
     // Add today as premium lock or text in timeline
     const zodiac = getZodiacInfo(state.answers.birthDate);
-    const todayName = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-    const todayShort = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+    const dateLocale = state.lang === "en" ? "en-US" : "fr-FR";
+    const todayName = new Date().toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" });
+    const todayShort = new Date().toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" });
     
+    const todayLabel = state.lang === "en" ? "Today" : "Aujourd'hui";
+    const activeEnergyLabel = state.lang === "en" ? "✦ Active daily energy" : "✦ Énergie du jour active";
+    const checkGuidanceLabel = state.lang === "en" ? "View my guidance &rarr;" : "Consulter ma guidance &rarr;";
+    const fallbackDesc = state.lang === "en" ? "Check your active guidance dashboard." : "Consultez votre dashboard de guidance active.";
+
     html += `
       <div class="history-item">
         <div class="history-card" style="border-left: 3px solid var(--accent-gold);">
-          <div class="history-date">Aujourd'hui — ${todayShort}</div>
-          <strong style="font-size:12px; color: var(--primary-midnight); display:block; margin-bottom:4px;">✦ Énergie du jour active</strong>
+          <div class="history-date">${todayLabel} — ${todayShort}</div>
+          <strong style="font-size:12px; color: var(--primary-midnight); display:block; margin-bottom:4px;">${activeEnergyLabel}</strong>
           <p class="history-summary">
-            ${state.report ? state.report.dailyHoroscope.general.substring(0, 100) + "..." : "Consultez votre dashboard de guidance active."}
+            ${state.report ? state.report.dailyHoroscope.general.substring(0, 100) + "..." : fallbackDesc}
           </p>
-          <a href="#dashboard" style="display:inline-block; font-size:12px; color: var(--accent-gold-dark); text-decoration:none; margin-top:8px; font-weight:600;">Consulter ma guidance &rarr;</a>
+          <a href="#dashboard" style="display:inline-block; font-size:12px; color: var(--accent-gold-dark); text-decoration:none; margin-top:8px; font-weight:600;">${checkGuidanceLabel}</a>
         </div>
       </div>
     `;
-
+ 
     // Past items
     state.history.forEach(item => {
       html += `
@@ -1326,7 +1522,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
     });
-
+ 
     historyList.innerHTML = html;
   }
 
@@ -1428,7 +1624,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setBirthdateInput.value = state.answers.birthDate || "";
     setBirthtimeInput.value = state.answers.birthTime || "";
     setBirthplaceInput.value = state.answers.birthPlace || "";
-
+ 
     // Update settings map coordinates
     if (state.answers.latitude && state.answers.longitude && window.L) {
       setTimeout(() => initSettingsMap(state.answers.latitude, state.answers.longitude), 100);
@@ -1438,33 +1634,36 @@ document.addEventListener("DOMContentLoaded", () => {
       if (mapContainer) mapContainer.style.display = "none";
       if (coordsContainer) coordsContainer.style.display = "none";
     }
-
+ 
     // Status rendering
     if (state.isPremium) {
-      setStatusText.textContent = "Abonnement Premium Actif 👑";
+      setStatusText.textContent = getTranslation(state.lang, "settings.status.premium.full") || "Abonnement Premium Actif 👑";
       setStatusText.style.color = "var(--accent-gold-dark)";
       btnToggleDemoPremium.innerHTML = `
         <button id="demo-premium-trigger" class="btn btn-secondary" style="padding: 10px 14px; font-size: 11px; border-radius: 8px; flex: 1;">
-          Simuler mode Gratuit
+          ${getTranslation(state.lang, "settings.demo.free") || "Simuler mode Gratuit"}
         </button>
       `;
     } else {
-      setStatusText.textContent = "Version Gratuite Limitée ✦";
+      setStatusText.textContent = getTranslation(state.lang, "settings.status.free.full") || "Version Gratuite Limitée ✦";
       setStatusText.style.color = "var(--text-muted)";
       btnToggleDemoPremium.innerHTML = `
         <button id="demo-premium-trigger" class="btn btn-gold" style="padding: 10px 14px; font-size: 11px; border-radius: 8px; flex: 1;">
-          Simuler/Activer Premium
+          ${getTranslation(state.lang, "settings.demo.premium") || "Simuler/Activer Premium"}
         </button>
       `;
     }
-
+ 
     // Attach simulation trigger listener
     const demoTrigger = document.getElementById("demo-premium-trigger");
     if (demoTrigger) {
       demoTrigger.addEventListener("click", () => {
         state.isPremium = !state.isPremium;
         saveState();
-        showToast(state.isPremium ? "Premium activé (Simulation) !" : "Premium désactivé (Simulation) !");
+        const toastMsg = state.isPremium 
+          ? (getTranslation(state.lang, "settings.demo.toast.premium") || "Premium activé (Simulation) !")
+          : (getTranslation(state.lang, "settings.demo.toast.free") || "Premium désactivé (Simulation) !");
+        showToast(toastMsg);
         
         // Refresh routing / state
         populateSettings();
@@ -1483,7 +1682,7 @@ document.addEventListener("DOMContentLoaded", () => {
     state.answers.birthPlace = setBirthplaceInput.value.trim();
 
     // Recalculate Astro theme!
-    const report = generatePersonalizedReport(state.answers);
+    const report = generatePersonalizedReport(state.answers, state.lang);
     state.report = report;
     saveState();
     
@@ -1651,7 +1850,404 @@ document.addEventListener("DOMContentLoaded", () => {
   if (linkTermsLanding) linkTermsLanding.addEventListener("click", () => window.location.hash = "#terms");
   if (linkPrivacyLanding) linkPrivacyLanding.addEventListener("click", () => window.location.hash = "#terms");
 
+  // --- TRANSLATION & I18N ENGINE ---
+  function getTranslation(lang, key) {
+    const dict = window.TRANSLATIONS || (typeof TRANSLATIONS !== "undefined" ? TRANSLATIONS : null);
+    if (dict && dict[lang] && dict[lang][key]) {
+      return dict[lang][key];
+    }
+    // Fallback to fr
+    if (dict && dict["fr"] && dict["fr"][key]) {
+      return dict["fr"][key];
+    }
+    return "";
+  }
+
+  function translatePage(lang) {
+    state.lang = lang;
+    localStorage.setItem("moon_astro_lang", lang);
+    oracleChatInitialized = false; // Reset chat initialization to force translation of welcome message
+    
+    // Update active class on buttons
+    document.querySelectorAll(".lang-switcher .lang-btn").forEach(btn => {
+      if (btn.getAttribute("data-lang") === lang) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    });
+
+    // Translate DOM elements with data-i18n
+    const elements = document.querySelectorAll("[data-i18n]");
+    elements.forEach(el => {
+      const key = el.getAttribute("data-i18n");
+      const translation = getTranslation(lang, key);
+      if (translation) {
+        if (el.tagName === "INPUT" && (el.type === "text" || el.type === "email" || el.type === "password")) {
+          el.placeholder = translation;
+        } else if (el.tagName === "INPUT" && el.type === "submit") {
+          el.value = translation;
+        } else {
+          el.innerHTML = translation;
+        }
+      }
+    });
+
+    // Regenerate report if birthDate exists
+    if (state.answers && state.answers.birthDate) {
+      state.report = generatePersonalizedReport(state.answers, lang);
+      generateMockHistory();
+    }
+
+    // Update authentication toggle text
+    updateAuthToggleUI();
+
+    // Update subscription CTA text for currently selected plan
+    updateSubscribeButtonText();
+
+    // Re-run router to populate updated page contents
+    router();
+  }
+
+  // --- AUTH DYNAMIC TOGGLING WITH I18N ---
+  function setAuthMode(mode) {
+    authMode = mode;
+    if (authMode === "signin") {
+      if (registerTitle) registerTitle.textContent = getTranslation(state.lang, "auth.title.signin");
+      if (registerSub) registerSub.textContent = getTranslation(state.lang, "auth.sub.signin");
+      if (consentGroup) consentGroup.style.display = "none";
+      if (regConsentInput) regConsentInput.required = false;
+      if (btnRegisterSubmit) btnRegisterSubmit.textContent = getTranslation(state.lang, "auth.btn.signin");
+      if (forgotPasswordLink) {
+        forgotPasswordLink.style.display = "block";
+        forgotPasswordLink.textContent = getTranslation(state.lang, "auth.forgot");
+      }
+    } else {
+      if (registerTitle) registerTitle.textContent = getTranslation(state.lang, "auth.title.signup");
+      if (registerSub) registerSub.textContent = getTranslation(state.lang, "auth.sub.signup");
+      if (consentGroup) consentGroup.style.display = "flex";
+      if (regConsentInput) regConsentInput.required = true;
+      if (btnRegisterSubmit) btnRegisterSubmit.textContent = getTranslation(state.lang, "auth.btn.signup");
+      if (forgotPasswordLink) forgotPasswordLink.style.display = "none";
+    }
+    updateAuthToggleUI();
+  }
+
+  function updateAuthToggleUI() {
+    const container = document.getElementById("auth-toggle-container");
+    if (!container) return;
+    if (authMode === "signup") {
+      const text = state.lang === "en" ? "Already have an account? " : "Déjà un compte ? ";
+      const linkText = state.lang === "en" ? "Sign In" : "Se connecter";
+      container.innerHTML = `${text}<a href="#" id="toggle-auth-mode" style="color: var(--accent-gold-dark); font-weight: 600; text-decoration: none;">${linkText}</a>`;
+    } else {
+      const text = state.lang === "en" ? "Don't have an account? " : "Nouveau ici ? ";
+      const linkText = state.lang === "en" ? "Sign Up" : "Créer un compte";
+      container.innerHTML = `${text}<a href="#" id="toggle-auth-mode" style="color: var(--accent-gold-dark); font-weight: 600; text-decoration: none;">${linkText}</a>`;
+    }
+    
+    // Re-attach listener
+    const newToggle = document.getElementById("toggle-auth-mode");
+    if (newToggle) {
+      newToggle.addEventListener("click", handleAuthToggleClick);
+    }
+  }
+
+  function handleAuthToggleClick(e) {
+    if (e) e.preventDefault();
+    setAuthMode(authMode === "signup" ? "signin" : "signup");
+  }
+
+  // --- CELESTIAL ORACLE CHATBOT LOGIC ---
+  let oracleChatInitialized = false;
+  let chatMessagesHistory = [];
+
+  function initOracleChat() {
+    const lang = state.lang || "fr";
+    const container = document.getElementById("oracle-chat-container");
+    const messagesEl = document.getElementById("oracle-chat-messages");
+    const suggestionsEl = document.querySelector(".chat-suggestions-container");
+    const inputForm = document.getElementById("oracle-chat-form");
+    const chatInput = document.getElementById("oracle-chat-input");
+
+    if (!container || !messagesEl) return;
+
+    // 1. Guard check: Premium is required
+    if (!state.isPremium) {
+      // Show locked overlay
+      suggestionsEl.style.display = "none";
+      inputForm.style.display = "none";
+      
+      const lockTitle = getTranslation(lang, "oracle.error.premium");
+      const ctaBtnText = getTranslation(lang, "dash.locked.btn");
+      
+      messagesEl.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; gap: 16px; padding: 20px;">
+          <div style="font-size: 48px; filter: drop-shadow(0 0 10px rgba(197, 160, 89, 0.3));">🔒</div>
+          <h3 class="serif-font" style="color: var(--accent-gold); font-size: 20px; max-width: 400px; margin: 0; line-height: 1.5;">${lockTitle}</h3>
+          <a href="#paywall" class="btn btn-gold" style="width: auto; padding: 12px 32px; font-weight: 600; border-radius: 14px; text-decoration: none;">
+            ✦ ${ctaBtnText}
+          </a>
+        </div>
+      `;
+      oracleChatInitialized = false;
+      return;
+    }
+
+    // Restore controls for premium
+    suggestionsEl.style.display = "block";
+    inputForm.style.display = "flex";
+
+    // 2. Initialize if not already initialized
+    if (!oracleChatInitialized) {
+      messagesEl.innerHTML = "";
+      chatMessagesHistory = [];
+
+      // Add dynamic translated welcome message
+      const userName = state.answers.name || (lang === "en" ? "Cosmic Friend" : "Ami(e) Cosmique");
+      const sunSignName = state.report && state.report.zodiac ? (lang === "en" ? (state.report.zodiac.name_en || state.report.zodiac.name) : state.report.zodiac.name) : (lang === "en" ? "Aries" : "Bélier");
+      const moonSignName = state.report && state.report.moon ? (lang === "en" ? (state.report.moon.name_en || state.report.moon.name) : state.report.moon.name) : (lang === "en" ? "Cancer" : "Cancer");
+      const ascSignName = state.report ? (lang === "en" ? (state.report.ascendant_en || state.report.ascendant) : state.report.ascendant) : (lang === "en" ? "Libra" : "Balance");
+
+      let welcomeText = getTranslation(lang, "oracle.welcome");
+      welcomeText = welcomeText
+        .replace("{name}", userName)
+        .replace("{sun}", `${sunSignName} ${state.report?.zodiac?.symbol || "♈"}`)
+        .replace("{moon}", `${moonSignName} ${state.report?.moon?.symbol || "♋"}`)
+        .replace("{ascendant}", `${ascSignName}`);
+
+      addChatBubble("oracle", welcomeText);
+      oracleChatInitialized = true;
+
+      // Bind suggestions clicks
+      document.querySelectorAll(".chat-suggest-btn").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const suggestKey = btn.getAttribute("data-suggest-key");
+          const suggestText = getTranslation(state.lang, suggestKey);
+          if (suggestText) {
+            handleUserMessageSend(suggestText);
+          }
+        };
+      });
+
+      // Bind send message
+      inputForm.onsubmit = (e) => {
+        e.preventDefault();
+        const text = chatInput.value.trim();
+        if (text) {
+          chatInput.value = "";
+          handleUserMessageSend(text);
+        }
+      };
+    }
+  }
+
+  function addChatBubble(sender, text) {
+    const messagesEl = document.getElementById("oracle-chat-messages");
+    if (!messagesEl) return;
+
+    const bubble = document.createElement("div");
+    bubble.className = `chat-bubble ${sender}`;
+    
+    // Parse formatting like **bold text** to HTML
+    let formattedText = text;
+    formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    formattedText = formattedText.replace(/\n/g, "<br>");
+    
+    bubble.innerHTML = formattedText;
+    messagesEl.appendChild(bubble);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    
+    // Store in history
+    chatMessagesHistory.push({ sender, text });
+  }
+
+  async function handleUserMessageSend(text) {
+    addChatBubble("user", text);
+    
+    const typingIndicator = document.getElementById("oracle-typing-indicator");
+    const messagesEl = document.getElementById("oracle-chat-messages");
+    if (typingIndicator) {
+      typingIndicator.style.display = "flex";
+      messagesEl.appendChild(typingIndicator); // move typing indicator to the bottom
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    try {
+      let reply = "";
+      let session = null;
+      if (supabase) {
+        const { data } = await supabase.auth.getSession();
+        session = data?.session;
+      }
+
+      if (session) {
+        // Real Edge Function request
+        const token = session.access_token;
+        
+        // Prepare astrology data to pass to edge function
+        const astrologyData = {
+          blocker: (state.report && state.report.blocker) ? state.report.blocker : "",
+          gemstone: (state.report && state.report.luckyGemstone) ? state.report.luckyGemstone.name : "",
+          gemstoneDesc: (state.report && state.report.luckyGemstone) ? state.report.luckyGemstone.desc : "",
+          lifePath: (state.report && state.report.lifePath) ? String(state.report.lifePath) : ""
+        };
+
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/oracle-chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            message: text,
+            history: chatMessagesHistory.slice(0, -1), // exclude the one we just added
+            astrologyData: astrologyData
+          })
+        });
+
+        if (response.ok) {
+          const resData = await response.json();
+          reply = resData.reply;
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          console.error("Edge function error:", errData);
+          throw new Error("Function error");
+        }
+      } else {
+        // Fallback Mock Mode (offline simulation)
+        reply = await simulateOracleResponse(text);
+      }
+
+      if (typingIndicator) typingIndicator.style.display = "none";
+      addChatBubble("oracle", reply);
+    } catch (e) {
+      if (typingIndicator) typingIndicator.style.display = "none";
+      const errMsg = state.lang === "en" 
+        ? "The stars are currently clouded. Please try again in a few moments."
+        : "Les cieux sont temporairement voilés. Veuillez réessayer dans quelques instants.";
+      addChatBubble("oracle", errMsg);
+    }
+  }
+
+  // Smart Offline Oracle Response Simulator based on user's chart
+  async function simulateOracleResponse(userMessage) {
+    const lang    = state.lang || "fr";
+    const msgLower = userMessage.toLowerCase();
+
+    const name      = (state.answers && state.answers.name)           ? state.answers.name           : (lang === "fr" ? "Âme Céleste" : "Celestial Soul");
+    const sun       = (state.report  && state.report.zodiac)          ? state.report.zodiac.name      : "Bélier";
+    const moon      = (state.report  && state.report.moon)            ? state.report.moon.name        : "Cancer";
+    const asc       = (state.report  && state.report.ascendant)       ? state.report.ascendant        : "Balance";
+    const blocker   = (state.report  && state.report.blocker)         ? state.report.blocker          : (lang === "fr" ? "la peur du changement" : "fear of change");
+    const gem       = (state.report  && state.report.luckyGemstone)   ? state.report.luckyGemstone.name : "Améthyste";
+    const gemDesc   = (state.report  && state.report.luckyGemstone)   ? state.report.luckyGemstone.desc : (lang === "fr" ? "apporte clarté et protection" : "brings clarity and protection");
+    const lifeNum   = (state.report  && state.report.lifePath)        ? state.report.lifePath         : "7";
+
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+    const followUp = lang === "fr"
+      ? pick([
+          "\n\n*Souhaitez-vous explorer votre **vie amoureuse**, votre **chemin de vie** ou votre **gemme céleste** ?*",
+          "\n\n*N'hésitez pas à m'interroger sur votre **potentiel professionnel** ou vos **blocages énergétiques**.*",
+          "\n\n*Votre thème recèle encore bien des révélations… Quelle facette souhaitez-vous illuminer ?*"
+        ])
+      : pick([
+          "\n\n*Would you like to explore your **love life**, **life path**, or **celestial gemstone**?*",
+          "\n\n*Feel free to ask me about your **career potential** or **energetic blockages**.*",
+          "\n\n*Your chart holds many more revelations… Which aspect shall we illuminate next?*"
+        ]);
+
+    let response = "";
+
+    // AMOUR
+    if (msgLower.includes("amour") || msgLower.includes("love") || msgLower.includes("relation") || msgLower.includes("couple") || msgLower.includes("rencontre")) {
+      response = lang === "fr"
+        ? pick([
+            `**✨ Guidance de l'Oracle — Amour & Connexion**\n\nCher(ère) ${name}, votre Soleil en **${sun}** vous confère une capacité d'aimer profondément, parfois au risque de vous oublier. Votre Lune en **${moon}** teinte vos émotions d'une sensibilité rare.\n\nVénus transit actuellement votre Ascendant **${asc}**, ouvrant une fenêtre d'authenticité émotionnelle. C'est le moment de :\n1. Exprimer ce que vous n'osiez pas dire.\n2. Attirer en étant pleinement vous-même.\n3. Lâcher une attente qui bloque votre cœur.\n\nLe cosmos vous dit : l'amour ne vous cherche pas, il vous *reconnaît*.`,
+            `**🌙 Guidance de l'Oracle — Le Cœur Étoilé**\n\n${name}, votre Soleil **${sun}** / Lune **${moon}** crée une nature ardente et protectrice. Le vrai blocage dans votre ciel : **« ${blocker} »** — cette peur crée un mur autour de votre cœur que votre Ascendant **${asc}** tente pourtant de franchir.\n\nActions immédiates :\n- 🌹 Une conversation honnête avec quelqu'un de cher cette semaine.\n- 💎 Portez votre **${gem}** près du cœur.\n- 🌑 À la Nouvelle Lune : écrivez 3 qualités que vous apportez en amour.`,
+            `**💫 Guidance de l'Oracle — Vibrations Amoureuses**\n\nSous votre Soleil **${sun}**, vous aimez avec intensité mais parfois avec impatience. La Lune en **${moon}** vous demande de *ressentir avant d'agir*. Vénus forme un aspect favorable à votre Ascendant **${asc}** — vos vibrations sont attractives en ce moment.\n\nLa question des astres : *« Cherchez-vous un(e) partenaire ou votre propre complétude ? »*\n\nCette réponse changera tout.`
+          ])
+        : pick([
+            `**✨ Oracle Guidance — Love & Connection**\n\nDear ${name}, Venus is transiting your **${asc}** Ascendant — a rare window of emotional authenticity. Express what you've been afraid to say. The cosmos tells you: love doesn't search for you, it *recognizes* you.`,
+            `**🌙 Oracle Guidance — The Starlit Heart**\n\n${name}, your blockage **"${blocker}"** builds an invisible wall around your heart. Wear your **${gem}** close to your heart and allow yourself one honest conversation this week.`
+          ]);
+    }
+
+    // CARRIÈRE
+    else if (msgLower.includes("travail") || msgLower.includes("carrière") || msgLower.includes("career") || msgLower.includes("professionnel") || msgLower.includes("job") || msgLower.includes("boulot") || msgLower.includes("argent") || msgLower.includes("money")) {
+      response = lang === "fr"
+        ? pick([
+            `**⭐ Guidance de l'Oracle — Carrière & Mission**\n\n${name}, votre Soleil en **${sun}** vous destine à briller dans des rôles où votre individualité est une force. Votre Ascendant **${asc}** détermine *comment* les autres vous perçoivent professionnellement.\n\nJupiter stimule actuellement votre secteur professionnel — mais votre blocage **« ${blocker} »** risque de vous empêcher de saisir cette opportunité.\n\nStratégies cosmiques :\n1. Identifiez une compétence sous-évaluée et mettez-la en avant cette semaine.\n2. Dites *oui* à une opportunité que vous auriez normalement déclinée.\n3. Méditez avec votre **${gem}** avant chaque décision importante.`,
+            `**🔮 Guidance de l'Oracle — L'Abondance Méritée**\n\nVotre chemin de vie **${lifeNum}** révèle une âme faite pour *créer*, pas seulement exécuter. Avec votre Soleil en **${sun}**, votre vraie richesse vient de l'authenticité de votre contribution.\n\nLe paradoxe dans votre ciel : vous avez peur de demander ce que vous méritez. La Lune en **${moon}** crée cette retenue émotionnelle.\n\nDéfi des 7 prochains jours : formulez clairement votre valeur professionnelle à quelqu'un qui peut l'entendre. Saturne récompense le courage, pas la patience passive.`
+          ])
+        : pick([
+            `**⭐ Oracle Guidance — Career & Mission**\n\n${name}, Jupiter is stimulating your career sector. But your blockage **"${blocker}"** may stop you. Identify a skill you undervalue, highlight it this week. Meditate with your **${gem}** before every key decision.`,
+            `**🔮 Oracle Guidance — Earned Abundance**\n\nYour life path **${lifeNum}** reveals a soul made to *create*. Your Moon in **${moon}** creates emotional restraint around asking what you deserve. Articulate your professional value to someone who can hear it. Saturn rewards courage.`
+          ]);
+    }
+
+    // BLOCAGES
+    else if (msgLower.includes("blocage") || msgLower.includes("obstacle") || msgLower.includes("peur") || msgLower.includes("fear") || msgLower.includes("difficile") || msgLower.includes("aide") || msgLower.includes("surmonter")) {
+      response = lang === "fr"
+        ? pick([
+            `**🌑 Guidance de l'Oracle — Transmutation des Ombres**\n\n${name}, votre blocage **« ${blocker} »** n'est pas une faiblesse — c'est le reflet de votre zone de croissance la plus puissante. Votre Ascendant **${asc}** a construit des défenses qui vous ont protégé(e) autrefois, mais qui vous retiennent aujourd'hui.\n\nProtocole de transmutation :\n1. **Nommez-le** : Écrivez-le sur papier à la pleine lune.\n2. **Ancrez-le** : Portez votre **${gem}** (${gemDesc}) quotidiennement.\n3. **Libérez-le** : Chaque matin : *« Je choisis la croissance plutôt que la protection. »*`,
+            `**💎 Guidance de l'Oracle — La Clé Cachée**\n\nLe blocage **« ${blocker} »**, ${name}, est lié à une leçon que Saturne vous enseigne depuis plusieurs années. Votre Soleil en **${sun}** possède la force exacte pour dissoudre ce schéma. Il vous manque simplement la *permission* de vous-même.\n\nTenez votre **${gem}** dans la main gauche et posez-vous : *« Qu'est-ce que je gagnerais si je n'avais plus cette peur ? »*\n\nLa première réponse est votre prochaine direction.`
+          ])
+        : pick([
+            `**🌑 Oracle Guidance — Shadow Transmutation**\n\n${name}, your blockage **"${blocker}"** is your most powerful growth zone in disguise. Protocol: name it, ground it with your **${gem}**, say each morning: *"I choose growth over protection."*`,
+            `**💎 Oracle Guidance — The Hidden Key**\n\nYour Sun in **${sun}** has the exact strength to dissolve **"${blocker}"**. Hold your **${gem}** in your left hand and ask: *"What would I gain without this fear?"* The first answer is your next direction.`
+          ]);
+    }
+
+    // PIERRE / GEMME
+    else if (msgLower.includes("pierre") || msgLower.includes("gem") || msgLower.includes("cristal") || msgLower.includes("crystal") || msgLower.includes("minéral")) {
+      response = lang === "fr"
+        ? pick([
+            `**💠 Guidance de l'Oracle — Sagesse des Gemmes**\n\nVotre pierre céleste, ${name}, est le **${gem}**.\n\n*Vertus* : ${gemDesc}\n\nSpécifiquement choisie pour votre Soleil **${sun}** / Lune **${moon}**, elle amplifie vos énergies lumineuses et filtre vos tensions.\n\nRitual 🌑 : Placez-la sur votre chakra du cœur 11 minutes à la Nouvelle Lune. Chaque matin, tenez-la et répétez : *« Je reçois la lumière de mon âme. »*`,
+            `**🔮 Guidance de l'Oracle — L'Alliance Cristalline**\n\nLe **${gem}** a été tissé dans votre thème pour une raison précise : ${gemDesc}. Votre Ascendant **${asc}** réagit particulièrement bien à son énergie.\n\nPortez-la côté gauche pour attirer ses qualités. Posez-la à droite de votre espace de travail pour projeter sa fréquence. Rechargez-la sous la pleine lune chaque mois.`
+          ])
+        : `**💠 Oracle Guidance — Gemstone Wisdom**\n\nYour celestial stone is **${gem}** — ${gemDesc}. Ritual: hold it on your heart chakra for 11 minutes at the New Moon. Each morning repeat: *"I receive the light of my soul."*`;
+    }
+
+    // SANTÉ / ÉNERGIE
+    else if (msgLower.includes("santé") || msgLower.includes("énergie") || msgLower.includes("fatigue") || msgLower.includes("corps") || msgLower.includes("health") || msgLower.includes("energy")) {
+      response = lang === "fr"
+        ? `**🌿 Guidance de l'Oracle — Vitalité & Harmonie**\n\n${name}, votre corps parle un langage astral. Sous votre Soleil **${sun}**, votre énergie suit des cycles que la société ignore souvent. Votre Lune en **${moon}** régit votre système émotionnel — le conflit intérieur se ressent dans le corps avant d'être compris par l'esprit.\n\nRitual de recharge :\n1. 🌊 Buvez de l'eau avec intention chaque matin.\n2. 🌿 10 minutes dans la nature par jour (pieds nus si possible).\n3. 💎 Portez votre **${gem}** lors de vos moments de récupération.\n\nMessage des astres : *votre fatigue est une invitation à rentrer chez vous intérieurement.*`
+        : `**🌿 Oracle Guidance — Vitality & Harmony**\n\n${name}, your Moon in **${moon}** means inner conflict shows up in the body before the mind understands it. Ground yourself: 10 minutes in nature daily, water with intention, and your **${gem}** during recovery moments.`;
+    }
+
+    // SPIRITUALITÉ / ÂME
+    else if (msgLower.includes("spirit") || msgLower.includes("âme") || msgLower.includes("chemin") || msgLower.includes("destin") || msgLower.includes("soul") || msgLower.includes("mission")) {
+      response = lang === "fr"
+        ? `**🌌 Guidance de l'Oracle — Chemin de l'Âme**\n\n${name}, votre chemin de vie **${lifeNum}** révèle votre mission profonde sur Terre. Ce n'est pas une destination — c'est une orientation permanente.\n\nSoleil **${sun}** : votre boussole consciente. Lune **${moon}** : votre moteur inconscient. Ascendant **${asc}** : le véhicule de cette incarnation.\n\nAlignés, ces trois éléments créent une puissance créatrice rare. Les astres observent que vous n'en utilisez qu'une fraction.\n\nLa question de l'Oracle : *« Qu'est-ce que vous feriez si vous saviez que vous ne pouvez pas échouer ? »*\n\nLa réponse est votre prochain pas cosmique.`
+        : `**🌌 Oracle Guidance — Soul Path**\n\n${name}, your life path **${lifeNum}** is a permanent orientation. Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — aligned, they create rare power. The Oracle asks: *"What would you do if you knew you couldn't fail?"* That answer is your next cosmic step.`;
+    }
+
+    // RÉPONSE GÉNÉRALE
+    else {
+      response = lang === "fr"
+        ? pick([
+            `**🔮 Guidance de l'Oracle**\n\n${name}, les astres reçoivent votre question avec bienveillance. Votre triade — Soleil **${sun}**, Lune **${moon}**, Ascendant **${asc}** — m'indique que vous traversez un cycle d'intégration profonde.\n\nCe que les cieux voient en vous :\n- Une puissance qui attend d'être reconnue.\n- Un schéma **« ${blocker} »** prêt à être transmué.\n- Une intuition qui mérite d'être davantage écoutée.\n\nInterrogez-moi sur votre **vie amoureuse**, votre **potentiel professionnel**, votre **blocage principal** ou votre **pierre céleste**.`,
+            `**✨ L'Oracle vous parle, ${name}**\n\nJe lis dans votre thème une âme en mouvement. Votre Soleil **${sun}** vous pousse vers la lumière ; votre Lune **${moon}** vous rappelle parfois vers vos eaux intérieures. Cette tension est votre plus grande richesse. Votre **${gem}** est votre allié pour naviguer cette dualité avec grâce.\n\nSur quel aspect souhaitez-vous que l'Oracle aille plus loin ?`
+          ])
+        : pick([
+            `**🔮 Oracle Guidance**\n\n${name}, your triad — Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — tells me you're in a deep integration cycle. Ask me about your **love life**, **career potential**, **main blockage**, or **celestial stone**.`,
+            `**✨ The Oracle speaks, ${name}**\n\nSun **${sun}** pushes you toward light; Moon **${moon}** calls you inward. This tension is your greatest richness. Your **${gem}** helps you navigate both worlds.`
+          ]);
+    }
+
+    // Realistic typing delay: 2.5s base + ~4ms per character, capped at 5s
+    const typingDelay = Math.min(2500 + response.length * 4, 5000);
+    await new Promise(resolve => setTimeout(resolve, typingDelay));
+
+    return response + followUp;
+  }
+
+
   // --- INITIALIZE APPLICATION STATE ---
   loadState();
-  router(); // Run routing immediately on load
+  state.lang = "fr";
+  translatePage("fr"); // Run translation and routing immediately on load in French
 });

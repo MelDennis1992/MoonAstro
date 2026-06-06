@@ -24,8 +24,16 @@
         </svg>
         <span class="logo-text logo-font">Moon Astro</span>
       </a>
-      <div id="premium-badge-container" style="display: none;">
-        <span class="premium-badge">Premium</span>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+        <a href="#register" id="header-profile-link" class="header-profile-link" style="display: flex; align-items: center; gap: 6px; text-decoration: none; color: var(--accent-gold-dark); font-size: 12px; font-weight: 600; transition: color 0.3s ease;">
+          <svg class="profile-icon" viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: var(--accent-gold-dark); transition: fill 0.3s ease;">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+          <span id="header-profile-text" data-i18n="nav.client_space">Espace Client</span>
+        </a>
+        <div id="premium-badge-container" style="display: none;">
+          <span class="premium-badge" data-i18n="settings.status.premium">Premium</span>
+        </div>
       </div>
     </header>
 
@@ -37,8 +45,8 @@
           <div class="moon-body"></div>
           <div class="moon-crescent"></div>
         </div>
-        <h1 class="hero-tagline">Découvrez votre guidance céleste personnelle.</h1>
-        <p class="hero-sub">Moon Astro fusionne l'astrologie traditionnelle avec les calculs cosmiques avancés pour vous offrir un compagnon quotidien unique adapté à votre énergie.</p>
+        <h1 class="hero-tagline" data-i18n="landing.title">Révélez Votre Signature Cosmique</h1>
+        <p class="hero-sub" data-i18n="landing.sub">Découvrez votre thème astral calculé avec précision, votre guidance quotidienne personnalisée, et alignez votre énergie sur les rythmes célestes.</p>
       </div>
 
       <div class="pilars">
@@ -49,8 +57,8 @@
             </svg>
           </div>
           <div class="pilar-text">
-            <h3>Compréhension de soi</h3>
-            <p>Un questionnaire holistique pour décrypter vos émotions et vos cycles.</p>
+            <h3 data-i18n="landing.pilar1.title">100% Personnalisé</h3>
+            <p data-i18n="landing.pilar1.desc">Des analyses générées sur-mesure d'après vos coordonnées natales exactes.</p>
           </div>
         </div>
 
@@ -61,8 +69,8 @@
             </svg>
           </div>
           <div class="pilar-text">
-            <h3>Guidance quotidienne sur mesure</h3>
-            <p>Une lecture astrologique et émotionnelle rédigée pour vous chaque matin.</p>
+            <h3 data-i18n="landing.pilar2.title">Astrologie Réelle</h3>
+            <p data-i18n="landing.pilar2.desc">Calcul précis de votre trinité astrale (Soleil, Lune, Ascendant) selon les éphémérides.</p>
           </div>
         </div>
 
@@ -73,20 +81,20 @@
             </svg>
           </div>
           <div class="pilar-text">
-            <h3>Espace sécurisé & intimiste</h3>
-            <p>Vos réponses et vos données restent anonymes et 100% confidentielles.</p>
+            <h3 data-i18n="landing.pilar3.title">Espace sécurisé & intimiste</h3>
+            <p data-i18n="landing.pilar3.desc">Vos réponses et vos données restent anonymes et 100% confidentielles.</p>
           </div>
         </div>
       </div>
 
-      <button id="btn-start-quiz" class="btn btn-primary" style="margin-bottom: 12px;">Découvrir mon énergie</button>
-      <button id="btn-client-access" class="btn btn-secondary" style="margin-bottom: 24px; border: 1px solid rgba(197, 160, 89, 0.3); color: var(--accent-gold-dark);">Espace Client (Se connecter)</button>
+      <button id="btn-start-quiz" class="btn btn-primary" style="margin-bottom: 12px;" data-i18n="landing.btn.start">Découvrir mon énergie</button>
+      <button id="btn-client-access" class="btn btn-secondary" style="margin-bottom: 24px; border: 1px solid rgba(197, 160, 89, 0.3); color: var(--accent-gold-dark);" data-i18n="landing.btn.client">Espace Client (Se connecter)</button>
       
       <div class="page-footer">
-        <div>Propulsé par Moon Astro — Astrologie & Bien-être</div>
+        <div data-i18n="landing.footer">Propulsé par Moon Astro — Astrologie & Bien-être</div>
         <div>
-          <a href="#terms" id="link-terms-landing">Conditions Générales</a> &bull; 
-          <a href="#terms" id="link-privacy-landing">Politique de Confidentialité</a>
+          <a href="#terms" id="link-terms-landing" data-i18n="landing.terms">Conditions Générales</a> &bull; 
+          <a href="#terms" id="link-privacy-landing" data-i18n="landing.privacy">Politique de Confidentialité</a>
         </div>
       </div>
     </section>
@@ -118,34 +126,40 @@
         <svg class="register-logo-icon" viewBox="0 0 24 24">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
         </svg>
-        <h2 class="register-title serif-font">Créer votre profil</h2>
-        <p class="register-sub">Afin de sauvegarder vos calculs astrologiques et de générer votre premier rapport d'énergie.</p>
+        <h2 class="register-title serif-font" data-i18n="auth.title.signup">Créer votre profil</h2>
+        <p class="register-sub" data-i18n="auth.sub.signup">Afin de sauvegarder vos calculs astrologiques et de générer votre premier rapport d'énergie.</p>
       </div>
 
       <form id="form-register" class="register-form" onsubmit="return false;">
         <div class="quiz-input-group">
-          <label class="quiz-input-label">Adresse Email</label>
-          <input type="email" id="reg-email" class="quiz-input" placeholder="exemple@domaine.com" required>
+          <label class="quiz-input-label" data-i18n="auth.label.email">Adresse Email</label>
+          <input type="email" id="reg-email" class="quiz-input" placeholder="exemple@domaine.com" required data-i18n="auth.placeholder.email">
         </div>
         <div class="quiz-input-group" style="position: relative;">
-          <label class="quiz-input-label">Mot de passe</label>
-          <input type="password" id="reg-password" class="quiz-input" placeholder="••••••••" required>
-          <a href="#" id="forgot-password-link" style="font-size: 11px; color: var(--accent-gold-dark); text-align: right; text-decoration: none; display: none; margin-top: 4px; font-weight: 500;">Mot de passe oublié ?</a>
+          <label class="quiz-input-label" data-i18n="auth.label.password">Mot de passe</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="reg-password" class="quiz-input" placeholder="••••••••" required data-i18n="auth.placeholder.password">
+            <button type="button" class="password-eye-btn" id="toggle-reg-password" aria-label="Afficher le mot de passe">
+              <svg id="eye-icon-reg" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="eye-off-icon-reg" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+          <a href="#" id="forgot-password-link" style="font-size: 12px; color: var(--accent-gold-dark); text-align: right; text-decoration: underline; display: none; margin-top: 6px; font-weight: 500; cursor: pointer;" data-i18n="auth.forgot">Mot de passe oublié ?</a>
         </div>
         <div class="quiz-input-group" style="flex-direction: row; align-items: flex-start; gap: 10px; margin-top: 8px;">
           <input type="checkbox" id="reg-consent" style="margin-top: 4px; cursor: pointer; width: auto;" required>
-          <label for="reg-consent" style="font-size: 12px; color: var(--text-muted); cursor: pointer; line-height: 1.4; font-family: var(--font-sans);">
+          <label for="reg-consent" style="font-size: 12px; color: var(--text-muted); cursor: pointer; line-height: 1.4; font-family: var(--font-sans);" data-i18n="auth.label.consent">
             J'accepte explicitement le traitement de mes coordonnées natales (date, heure, lieu) et de mes ressentis psycho-comportementaux pour la génération et la sauvegarde de mon thème astral Moon Astro.
           </label>
         </div>
-        <button type="submit" id="btn-register-submit" class="btn btn-primary" style="margin-top: 10px;">Calculer mon thème astral</button>
-        <p style="text-align: center; margin-top: 15px; font-size: 13px; color: var(--text-muted); font-family: var(--font-sans);">
+        <button type="submit" id="btn-register-submit" class="btn btn-primary" style="margin-top: 10px;" data-i18n="auth.btn.signup">Calculer mon thème astral</button>
+        <p id="auth-toggle-container" style="text-align: center; margin-top: 15px; font-size: 13px; color: var(--text-muted); font-family: var(--font-sans);">
           Déjà un compte ? 
           <a href="#" id="toggle-auth-mode" style="color: var(--accent-gold-dark); font-weight: 600; text-decoration: none;">Se connecter</a>
         </p>
       </form>
       
-      <p class="terms-text">En continuant, vous acceptez nos <a href="#terms">Conditions d'Utilisation</a> et certifiez avoir lu notre <a href="#terms">Charte de Confidentialité</a>.</p>
+      <p class="terms-text" data-i18n="auth.terms">En continuant, vous acceptez nos <a href="#terms">Conditions d'Utilisation</a> et certifiez avoir lu notre <a href="#terms">Charte de Confidentialité</a>.</p>
     </section>
 
     <!-- 4. LOADING TRANSITION -->
@@ -169,31 +183,31 @@
     <!-- 5. PERSONALIZED RESULT (FREE TEASER) -->
     <section id="result" class="page">
       <div class="result-header">
-        <h2 class="serif-font">Votre Ciel Astral est Prêt, <span id="res-username">Ami</span></h2>
-        <p class="hero-sub" style="margin: 0 auto;">Les calculs cosmiques ont synthétisé vos cycles astrologiques.</p>
+        <h2 class="serif-font"><span data-i18n="result.title.ready">Votre Ciel Astral est Prêt</span>, <span id="res-username">Ami</span></h2>
+        <p class="hero-sub" style="margin: 0 auto;" data-i18n="result.sub">Les calculs cosmiques ont synthétisé vos cycles astrologiques.</p>
       </div>
 
       <div class="energy-badge-large">
-        <span class="energy-badge-label">Profil Énergétique Dominant</span>
+        <span class="energy-badge-label" data-i18n="result.card.profile">Profil Énergétique Dominant</span>
         <span id="res-profile-name" class="energy-badge-val">Énergie Lunaire Intuitive</span>
       </div>
 
       <div class="card" style="margin-top: 10px;">
         <h3 class="result-section-title">
           <svg viewBox="0 0 24 24"><path d="M12 2.24L14.47 7.3l5.57.8-4.02 3.93.95 5.56-4.97-2.62-4.97 2.62.95-5.56-4.02-3.93 5.57-.8L12 2.24z"/></svg>
-          Votre Identité Céleste
+          <span data-i18n="result.card.identity">Votre Identité Céleste</span>
         </h3>
         <div class="grid-key-stats" style="grid-template-columns: repeat(3, 1fr);">
           <div class="stat-mini-card">
-            <span class="stat-mini-label">Signe Solaire</span>
+            <span class="stat-mini-label" data-i18n="result.label.sun">Signe Solaire</span>
             <span id="res-sun" class="stat-mini-val">Cancer ♋</span>
           </div>
           <div class="stat-mini-card">
-            <span class="stat-mini-label">Signe Lunaire</span>
+            <span class="stat-mini-label" data-i18n="result.label.moon">Signe Lunaire</span>
             <span id="res-moon" class="stat-mini-val">Taureau ♉</span>
           </div>
           <div class="stat-mini-card">
-            <span class="stat-mini-label">Ascendant</span>
+            <span class="stat-mini-label" data-i18n="result.label.asc">Ascendant</span>
             <span id="res-ascendant" class="stat-mini-val">Scorpion ♏</span>
           </div>
         </div>
@@ -204,11 +218,11 @@
       <div class="card" style="margin-top: 10px; border-color: rgba(212, 175, 55, 0.3);">
         <h3 class="result-section-title" style="color: var(--accent-gold-dark);">
           <svg viewBox="0 0 24 24" style="fill: var(--accent-gold); width:18px; height:18px; margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm0-4h-2v-4h2v4zm0-6h-2V7h2v2z"/></svg>
-          Votre Destinée Numérologique
+          <span data-i18n="result.card.numerology">Votre Destinée Numérologique</span>
         </h3>
         <div class="grid-key-stats" style="grid-template-columns: 1fr;">
           <div class="stat-mini-card" style="text-align: left; padding: 12px; border: 1px solid var(--border-gold); background: #FAF9F5; border-radius: 12px;">
-            <span class="stat-mini-label" style="font-weight:600; color: var(--accent-gold-dark); text-transform: uppercase; font-size:10px; letter-spacing:0.05em;">Vibration de Chemin de Vie</span>
+            <span class="stat-mini-label" style="font-weight:600; color: var(--accent-gold-dark); text-transform: uppercase; font-size:10px; letter-spacing:0.05em;" data-i18n="result.label.lifepath">Vibration de Chemin de Vie</span>
             <span id="res-lifepath-val" class="stat-mini-val" style="font-size: 18px; margin: 4px 0; display:block;">Calcul en cours...</span>
             <p id="res-lifepath-desc" style="font-size: 13px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">Chargement de votre destinée numérique...</p>
           </div>
@@ -216,11 +230,11 @@
         
         <div style="margin-top: 12px; font-size: 13px; line-height: 1.5; border-top: 1px solid rgba(212, 175, 55, 0.1); padding-top: 10px; display: flex; flex-direction: column; gap: 8px;">
           <div>
-            <strong style="color: var(--primary-midnight); font-weight:600;">✦ Nombre d'Expression (Vos talents innés) :</strong>
+            <strong style="color: var(--primary-midnight); font-weight:600;" data-i18n="result.label.expression">✦ Nombre d'Expression (Vos talents innés) :</strong>
             <p id="res-num-expression" style="color: var(--text-muted); margin-top: 2px;">Calcul en cours...</p>
           </div>
           <div>
-            <strong style="color: var(--primary-midnight); font-weight:600;">✦ Nombre Intime (Votre élan d'âme) :</strong>
+            <strong style="color: var(--primary-midnight); font-weight:600;" data-i18n="result.label.soulurge">✦ Nombre Intime (Votre élan d'âme) :</strong>
             <p id="res-num-intime" style="color: var(--text-muted); margin-top: 2px;">Calcul en cours...</p>
           </div>
         </div>
@@ -229,15 +243,15 @@
       <div class="card">
         <h3 class="result-section-title">
           <svg viewBox="0 0 24 24"><path d="M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10zm1-15h-2v6h2V7zm0 8h-2v2h2v-2z"/></svg>
-          Forces & Blocages Majeurs
+          <span data-i18n="result.card.forces">Forces & Blocages Majeurs</span>
         </h3>
         <div style="font-size: 14px; display: flex; flex-direction: column; gap: 10px;">
           <div>
-            <strong style="color: var(--accent-gold-dark);">✦ Votre Force active :</strong>
+            <strong style="color: var(--accent-gold-dark);" data-i18n="result.label.strength">✦ Votre Force active :</strong>
             <p id="res-strength" style="margin-top: 2px; color: var(--text-muted);">Capacité naturelle à ressentir...</p>
           </div>
           <div>
-            <strong style="color: #BA554A;">✦ Votre Blocage principal :</strong>
+            <strong style="color: #BA554A;" data-i18n="result.label.blocker">✦ Votre Blocage principal :</strong>
             <p id="res-blocker" style="margin-top: 2px; color: var(--text-muted);">Tendance à s'épuiser ou à douter...</p>
           </div>
         </div>
@@ -247,7 +261,7 @@
       <div class="card" style="margin-top: 10px; border-color: rgba(212, 175, 55, 0.25); background: radial-gradient(circle at top right, #FFFFFF, #FAF9F5); border-radius: 16px;">
         <h3 class="result-section-title" style="color: var(--accent-gold-dark);">
           <svg viewBox="0 0 24 24" style="fill: var(--accent-gold); width:18px; height:18px; margin-right:6px;"><path d="M12 2L2 22h20L12 2zm0 3.99L19.53 19H4.47L12 5.99z"/></svg>
-          Votre Pierre Céleste & Gemmologie
+          <span data-i18n="result.card.gem">Votre Pierre Céleste & Gemmologie</span>
         </h3>
         <div style="display: flex; gap: 14px; align-items: center; margin-top: 10px;">
           <div id="res-gem-icon" style="font-size: 32px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">💎</div>
@@ -261,16 +275,16 @@
       <!-- Locked Teaser leading to Paywall -->
       <div class="teaser-locked-container">
         <div class="blur-overlay">
-          <h3 class="result-section-title">🔮 Horoscope du Jour Personnel</h3>
-          <p>Le transit de ce jour favorise des échanges très profonds avec vos proches. Cependant, votre sensibilité pourrait vous jouer des tours si vous n'y prenez garde. Veillez également à accorder du temps à vos passions créatives...</p>
+          <h3 class="result-section-title" data-i18n="result.teaser.title">🔮 Horoscope du Jour Personnel</h3>
+          <p data-i18n="result.teaser.desc">Le transit de ce jour favorise des échanges très profonds avec vos proches. Cependant, votre sensibilité pourrait vous jouer des tours si vous n'y prenez garde. Veillez également à accorder du temps à vos passions créatives...</p>
         </div>
         <div class="lock-card">
           <div class="lock-icon-bg">
             <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
           </div>
-          <h3 class="lock-title serif-font">Rapport Complet Verrouillé</h3>
-          <p class="lock-desc">Débloquez votre horoscope quotidien personnalisé, vos conseils amour, carrière et vos cycles de lune.</p>
-          <button id="btn-go-to-paywall" class="btn btn-gold">Accéder à mon Horoscope Complet</button>
+          <h3 class="lock-title serif-font" data-i18n="result.lock.title">Rapport Complet Verrouillé</h3>
+          <p class="lock-desc" data-i18n="result.lock.desc">Débloquez votre horoscope quotidien personnalisé, vos conseils amour, carrière et vos cycles de lune.</p>
+          <button id="btn-go-to-paywall" class="btn btn-gold" data-i18n="result.lock.btn">Accéder à mon Horoscope Complet</button>
         </div>
       </div>
       
@@ -285,30 +299,30 @@
             <path d="M5 16h14v2H5zm14-8l-3.5 3.5L12 5l-3.5 6.5L5 8v6h14z"/>
           </svg>
         </div>
-        <h2 class="paywall-title serif-font">Libérez votre potentiel astral</h2>
-        <p class="paywall-subtitle">Recevez une guidance personnalisée chaque jour et naviguez sereinement à travers les cycles cosmiques.</p>
+        <h2 class="paywall-title serif-font" data-i18n="paywall.title">Libérez votre potentiel astral</h2>
+        <p class="paywall-subtitle" data-i18n="paywall.sub">Recevez une guidance personnalisée chaque jour et naviguez sereinement à travers les cycles cosmiques.</p>
       </div>
 
       <div class="paywall-features card">
         <div class="pw-feature-row">
           <svg class="pw-feature-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-          <span>Horoscope quotidien 100% personnalisé pour vous</span>
+          <span data-i18n="paywall.feature1">Horoscope quotidien 100% personnalisé pour vous</span>
         </div>
         <div class="pw-feature-row">
           <svg class="pw-feature-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-          <span>Analyses ciblées : Amour, Carrière & Bien-être</span>
+          <span data-i18n="paywall.feature2">Analyses ciblées : Amour, Carrière & Bien-être</span>
         </div>
         <div class="pw-feature-row">
           <svg class="pw-feature-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-          <span>Guidance hebdomadaire et prévisions mensuelles</span>
+          <span data-i18n="paywall.feature3">Guidance hebdomadaire et prévisions mensuelles</span>
         </div>
         <div class="pw-feature-row">
           <svg class="pw-feature-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-          <span>Notifications push célestes personnalisées</span>
+          <span data-i18n="paywall.feature4">Notifications push célestes personnalisées</span>
         </div>
         <div class="pw-feature-row">
           <svg class="pw-feature-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-          <span>Historique complet de toutes vos guidances</span>
+          <span data-i18n="paywall.feature5">Historique complet de toutes vos guidances</span>
         </div>
       </div>
 
@@ -317,59 +331,59 @@
           <div class="sub-option-left">
             <div class="sub-option-check"><div class="sub-option-check-inner"></div></div>
             <div>
-              <div class="sub-option-title">Abonnement Hebdomadaire</div>
-              <div class="sub-option-subtitle">Sans engagement, annulable à tout moment</div>
+              <div class="sub-option-title" data-i18n="paywall.weekly.title">Abonnement Hebdomadaire</div>
+              <div class="sub-option-subtitle" data-i18n="paywall.weekly.desc">Sans engagement, annulable à tout moment</div>
             </div>
           </div>
           <div class="sub-option-right">
             <div class="sub-option-price">2,99 €</div>
-            <div class="sub-option-period">/ semaine</div>
+            <div class="sub-option-period" data-i18n="paywall.weekly.period">/ semaine</div>
           </div>
         </div>
 
         <div class="sub-option active" data-plan="monthly">
-          <span class="sub-badge">Populaire — 3 jours d'essai</span>
+          <span class="sub-badge" data-i18n="paywall.monthly.badge">Populaire — 3 jours d'essai</span>
           <div class="sub-option-left">
             <div class="sub-option-check"><div class="sub-option-check-inner"></div></div>
             <div>
-              <div class="sub-option-title">Abonnement Mensuel</div>
-              <div class="sub-option-subtitle">3 jours gratuits, puis facturé mensuellement</div>
+              <div class="sub-option-title" data-i18n="paywall.monthly.title">Abonnement Mensuel</div>
+              <div class="sub-option-subtitle" data-i18n="paywall.monthly.desc">3 jours gratuits, puis facturé mensuellement</div>
             </div>
           </div>
           <div class="sub-option-right">
             <div class="sub-option-price">9,99 €</div>
-            <div class="sub-option-period">/ mois</div>
+            <div class="sub-option-period" data-i18n="paywall.monthly.period">/ mois</div>
           </div>
         </div>
 
         <div class="sub-option" data-plan="yearly">
-          <span class="sub-badge" style="background: var(--grad-gold); color: var(--primary-midnight)">Économisez 60%</span>
+          <span class="sub-badge" style="background: var(--grad-gold); color: var(--primary-midnight)" data-i18n="paywall.yearly.badge">Économisez 60%</span>
           <div class="sub-option-left">
             <div class="sub-option-check"><div class="sub-option-check-inner"></div></div>
             <div>
-              <div class="sub-option-title">Abonnement Annuel</div>
-              <div class="sub-option-subtitle">Facturation annuelle unique</div>
+              <div class="sub-option-title" data-i18n="paywall.yearly.title">Abonnement Annuel</div>
+              <div class="sub-option-subtitle" data-i18n="paywall.yearly.desc">Facturation annuelle unique</div>
             </div>
           </div>
           <div class="sub-option-right">
             <div class="sub-option-price">49,99 €</div>
-            <div class="sub-option-period">/ an</div>
+            <div class="sub-option-period" data-i18n="paywall.yearly.period">/ an</div>
           </div>
         </div>
       </div>
 
-      <button id="btn-subscribe" class="btn btn-gold">Commencer mon essai gratuit</button>
-      <p class="guarantee-text">Paiement 100% sécurisé via Stripe. Aucun prélèvement avant la fin de l'essai.</p>
+      <button id="btn-subscribe" class="btn btn-gold" data-i18n="paywall.btn.subscribe">Commencer mon essai gratuit</button>
+      <p class="guarantee-text" data-i18n="paywall.guarantee">Paiement 100% sécurisé via Stripe. Aucun prélèvement avant la fin de l'essai.</p>
       
       <!-- Skip button for testing or restricted use -->
-      <button id="btn-skip-paywall" class="btn btn-secondary" style="margin-top: 12px; font-size: 13px; padding: 10px;">Conserver la version gratuite limitée</button>
+      <button id="btn-skip-paywall" class="btn btn-secondary" style="margin-top: 12px; font-size: 13px; padding: 10px;" data-i18n="paywall.btn.skip">Conserver la version gratuite limitée</button>
     </section>
 
     <!-- 7. PREMIUM DASHBOARD -->
     <section id="dashboard" class="page">
       <div class="dash-user-bar">
         <div class="dash-user-info">
-          <h2>Bonjour, <span id="dash-username">Ami</span> ✦</h2>
+          <h2><span data-i18n="dash.greeting">Bonjour</span>, <span id="dash-username">Ami</span> ✦</h2>
           <p id="dash-date">Mardi 2 Juin 2026</p>
         </div>
         <div class="dash-zodiac-badge">
@@ -390,20 +404,20 @@
         </div>
         <div class="gauge-info-text">
           <h3 id="dash-energy-profile">Énergie Lunaire Active</h3>
-          <p>Votre magnétisme céleste est excellent. Parfait pour entreprendre ou s'exprimer.</p>
+          <p data-i18n="dash.weather">Votre magnétisme céleste est excellent. Parfait pour entreprendre ou s'exprimer.</p>
         </div>
       </div>
 
       <div class="dash-tabs">
-        <button class="dash-tab active" data-tab="tab-daily">Quotidien</button>
-        <button class="dash-tab" data-tab="tab-weekly">Hebdo</button>
-        <button class="dash-tab" data-tab="tab-monthly">Mensuel</button>
+        <button class="dash-tab active" data-tab="tab-daily" data-i18n="dash.tab.daily">Quotidien</button>
+        <button class="dash-tab" data-tab="tab-weekly" data-i18n="dash.tab.weekly">Hebdo</button>
+        <button class="dash-tab" data-tab="tab-monthly" data-i18n="dash.tab.monthly">Mensuel</button>
       </div>
 
       <!-- Tab content Quotidien -->
       <div id="tab-daily" class="tab-pane active">
         <div class="card" style="padding: 20px;">
-          <h3 class="result-section-title" style="font-family: var(--font-serif-title); font-size: 16px;">
+          <h3 class="result-section-title" style="font-family: var(--font-serif-title); font-size: 16px;" data-i18n="dash.title.climate">
             ✦ Climat Astral Global
           </h3>
           <p id="dash-daily-general" style="font-size: 14px; line-height: 1.5;">Votre horoscope général du jour...</p>
@@ -417,7 +431,7 @@
                 <div class="cat-icon-container">
                   <svg class="cat-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                 </div>
-                <span class="cat-name">Amour & Relations</span>
+                <span class="cat-name" data-i18n="dash.love">Amour & Relations</span>
               </div>
               <div class="cat-rating" id="stars-love">
                 <!-- Stars loaded dynamic -->
@@ -433,7 +447,7 @@
                 <div class="cat-icon-container">
                   <svg class="cat-icon" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
                 </div>
-                <span class="cat-name">Alignement Pro & Carrière</span>
+                <span class="cat-name" data-i18n="dash.career">Alignement Pro & Carrière</span>
               </div>
               <div class="cat-rating" id="stars-career">
                 <!-- Stars loaded dynamic -->
@@ -449,7 +463,7 @@
                 <div class="cat-icon-container">
                   <svg class="cat-icon" viewBox="0 0 24 24"><path d="M12 3c-1.2 0-2.4 1-2.8 2.2-.2.5-.2 1.1 0 1.6C9.6 8 10.8 9 12 9s2.4-1 2.8-2.2c.2-.5.2-1.1 0-1.6C14.4 4 13.2 3 12 3zm0 8c-3.3 0-6 2.7-6 6v3h12v-3c0-3.3-2.7-6-6-6z"/></svg>
                 </div>
-                <span class="cat-name">Corps & Esprit</span>
+                <span class="cat-name" data-i18n="dash.wellbeing">Corps & Esprit</span>
               </div>
               <div class="cat-rating" id="stars-wellbeing">
                 <!-- Stars loaded dynamic -->
@@ -461,13 +475,13 @@
 
         <div class="affirmation-card card" style="margin-top: 16px;">
           <p id="dash-daily-affirmation" class="affirmation-text">"Je fais confiance à l'intelligence de mon corps."</p>
-          <span class="affirmation-sub">Affirmation du Jour</span>
+          <span class="affirmation-sub" data-i18n="dash.label.affirmation">Affirmation du Jour</span>
         </div>
 
         <div class="card" style="margin-top: 16px; border-color: rgba(186, 85, 74, 0.2);">
           <h3 class="result-section-title" style="color: #BA554A; font-size: 14px; border-bottom-color: rgba(186, 85, 74, 0.1);">
             <svg viewBox="0 0 24 24" style="fill: #BA554A;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-            Point de Vigilance
+            <span data-i18n="dash.warning">Point de Vigilance</span>
           </h3>
           <p id="dash-daily-warning" style="font-size: 14px; color: var(--text-dark); line-height: 1.5;">Soyez prudent(e) aujourd'hui quant à...</p>
         </div>
@@ -476,7 +490,7 @@
         <div class="card" style="margin-top: 16px; border-color: rgba(212, 175, 55, 0.25); background: radial-gradient(circle at top right, #FFFFFF, #FAF9F5); border-radius: 16px;">
           <h3 class="result-section-title" style="color: var(--accent-gold-dark);">
             <svg viewBox="0 0 24 24" style="fill: var(--accent-gold); width:18px; height:18px; margin-right:6px;"><path d="M12 2L2 22h20L12 2zm0 3.99L19.53 19H4.47L12 5.99z"/></svg>
-            ✦ Votre Pierre Céleste & Gemmologie
+            <span data-i18n="dash.gem.title">✦ Votre Pierre Céleste & Gemmologie</span>
           </h3>
           <div style="display: flex; gap: 14px; align-items: center; margin-top: 10px;">
             <div id="dash-gem-icon" style="font-size: 32px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">💎</div>
@@ -489,27 +503,27 @@
 
         <div class="lucky-stats-grid">
           <div class="lucky-box" style="border-color: rgba(212, 175, 55, 0.25); background: radial-gradient(circle at top right, #FFFFFF, #FAF7F0);">
-            <span class="lucky-label" style="color: var(--accent-gold-dark); font-weight: 600;">Chemin de Vie</span>
+            <span class="lucky-label" style="color: var(--accent-gold-dark); font-weight: 600;" data-i18n="dash.stat.lifepath">Chemin de Vie</span>
             <span id="dash-lifepath" class="lucky-val" style="color: var(--primary-midnight);">✦</span>
           </div>
           <div class="lucky-box">
-            <span class="lucky-label">Chiffre Clé</span>
+            <span class="lucky-label" data-i18n="dash.stat.number">Chiffre Clé</span>
             <span id="dash-lucky-number" class="lucky-val">✦</span>
           </div>
           <div class="lucky-box">
-            <span class="lucky-label">Mois Favorable</span>
+            <span class="lucky-label" data-i18n="dash.stat.month">Mois Favorable</span>
             <span id="dash-lucky-month" class="lucky-val">✦</span>
           </div>
           <div class="lucky-box">
-            <span class="lucky-label">Signe Solaire</span>
+            <span class="lucky-label" data-i18n="dash.stat.sun">Signe Solaire</span>
             <span id="dash-sun-sign" class="lucky-val">✦</span>
           </div>
           <div class="lucky-box">
-            <span class="lucky-label">Signe Lunaire</span>
+            <span class="lucky-label" data-i18n="dash.stat.moon">Signe Lunaire</span>
             <span id="dash-moon-sign" class="lucky-val">✦</span>
           </div>
           <div class="lucky-box">
-            <span class="lucky-label">Ascendant</span>
+            <span class="lucky-label" data-i18n="dash.stat.asc">Ascendant</span>
             <span id="dash-ascendant" class="lucky-val">✦</span>
           </div>
         </div>
@@ -518,15 +532,15 @@
       <!-- Tab content Hebdo -->
       <div id="tab-weekly" class="tab-pane">
         <div class="card" style="padding: 24px;">
-          <h3 class="result-section-title">🔮 Guidance de la Semaine</h3>
+          <h3 class="result-section-title" data-i18n="dash.weekly.title">🔮 Guidance de la Semaine</h3>
           <p id="dash-weekly-text" style="font-size: 14px; line-height: 1.6; color: var(--text-dark);">Votre guidance hebdomadaire premium complète...</p>
         </div>
       </div>
 
-      <!-- Tab content Mensuel -->
+      <!-- Tab content Tab Mensuel -->
       <div id="tab-monthly" class="tab-pane">
         <div class="card" style="padding: 24px;">
-          <h3 class="result-section-title">🌟 Prévisions du Mois</h3>
+          <h3 class="result-section-title" data-i18n="dash.monthly.title">🌟 Prévisions du Mois</h3>
           <p id="dash-monthly-text" style="font-size: 14px; line-height: 1.6; color: var(--text-dark);">Vos prévisions mensuelles premium complètes...</p>
         </div>
       </div>
@@ -546,49 +560,92 @@
       <div style="height: 20px;"></div>
     </section>
 
+    <!-- 8.5. PERSONAL ORACLE CHATBOT -->
+    <section id="oracle" class="page">
+      <h2 class="serif-font" style="margin-bottom: 6px;" data-i18n="oracle.title">🔮 L'Oracle Céleste</h2>
+      <p class="hero-sub" style="margin-bottom: 24px; margin-top: -4px;" data-i18n="oracle.sub">Posez vos questions à l'Oracle. Il analysera votre thème astral et vos transits en temps réel.</p>
+      
+      <!-- Oracle Chat Container -->
+      <div id="oracle-chat-container" class="chat-wrapper">
+        <div id="oracle-chat-messages" class="chat-messages">
+          <!-- Welcome message dynamically injected -->
+        </div>
+        
+        <div class="chat-typing-indicator" id="oracle-typing-indicator" style="display: none;">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+
+        <!-- Suggestions chips -->
+        <div class="chat-suggestions-container">
+          <span class="chat-suggestions-title" data-i18n="oracle.suggest.title">Suggestions cosmiques :</span>
+          <div class="chat-suggestions-grid">
+            <button class="chat-suggest-btn" data-suggest-key="oracle.suggest.love" data-i18n="oracle.suggest.love">Que dit mon ciel sur ma vie amoureuse ?</button>
+            <button class="chat-suggest-btn" data-suggest-key="oracle.suggest.career" data-i18n="oracle.suggest.career">Quel est mon potentiel professionnel actuel ?</button>
+            <button class="chat-suggest-btn" data-suggest-key="oracle.suggest.blocker" data-i18n="oracle.suggest.blocker">Comment puis-je surmonter mon blocage majeur ?</button>
+            <button class="chat-suggest-btn" data-suggest-key="oracle.suggest.gem" data-i18n="oracle.suggest.gem">Quelles énergies m'apporte ma pierre céleste ?</button>
+          </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form id="oracle-chat-form" class="chat-input-form" onsubmit="return false;">
+          <input type="text" id="oracle-chat-input" class="chat-input" placeholder="Posez votre question cosmique ici..." data-i18n="oracle.placeholder">
+          <button type="submit" id="oracle-chat-send" class="btn btn-gold chat-send-btn">
+            <svg viewBox="0 0 24 24" class="send-icon" style="width:16px; height:16px; fill:currentColor; margin-right:4px;">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+            <span data-i18n="oracle.btn.send">Envoyer</span>
+          </button>
+        </form>
+      </div>
+
+      <div style="height: 20px;"></div>
+    </section>
+
     <!-- 9. USER SETTINGS & PROFILE -->
     <section id="settings" class="page">
-      <h2 class="serif-font" style="margin-bottom: 6px;">Votre Profil Moon Astro</h2>
-      <p class="hero-sub" style="margin-bottom: 24px; margin-top: -4px;">Gérez vos coordonnées natales et configurez vos alertes spirituelles.</p>
-
+      <h2 class="serif-font" style="margin-bottom: 6px;" data-i18n="settings.title">Votre Profil Moon Astro</h2>
+      <p class="hero-sub" style="margin-bottom: 24px; margin-top: -4px;" data-i18n="settings.sub">Gérez vos coordonnées natales et configurez vos alertes spirituelles.</p>
+ 
       <!-- Natal Information Card -->
       <div class="card">
-        <h3 class="settings-section-title">Coordonnées Natales</h3>
+        <h3 class="settings-section-title" data-i18n="settings.section.natal">Coordonnées Natales</h3>
         <form id="form-settings-profile" class="register-form" onsubmit="return false;">
           <div class="quiz-input-row">
             <div class="quiz-input-group">
-              <label class="quiz-input-label">Prénom</label>
+              <label class="quiz-input-label" data-i18n="settings.label.firstname">Prénom</label>
               <input type="text" id="set-username" class="quiz-input" required>
             </div>
             <div class="quiz-input-group">
-              <label class="quiz-input-label">Date de naissance</label>
+              <label class="quiz-input-label" data-i18n="settings.label.birthdate">Date de naissance</label>
               <input type="date" id="set-birthdate" class="quiz-input" required>
             </div>
           </div>
           <div class="quiz-input-row">
             <div class="quiz-input-group">
-              <label class="quiz-input-label">Heure de naissance</label>
+              <label class="quiz-input-label" data-i18n="settings.label.birthtime">Heure de naissance</label>
               <input type="time" id="set-birthtime" class="quiz-input">
             </div>
             <div class="quiz-input-group" style="position: relative;">
-              <label class="quiz-input-label">Lieu de naissance</label>
+              <label class="quiz-input-label" data-i18n="settings.label.birthplace">Lieu de naissance</label>
               <input type="text" id="set-birthplace" class="quiz-input" required>
               <div id="settings-birthplace-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
               <div id="settings-birthplace-coordinates" style="margin-top: 10px; font-size: 13px; color: var(--accent-gold-dark); text-align: center; font-weight: 500; display: none;"></div>
               <div id="settings-birthplace-map" style="height: 160px; margin-top: 10px; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.2); display: none;"></div>
             </div>
           </div>
-          <button type="submit" class="btn btn-secondary" style="padding: 12px; font-size: 14px; border-radius: 12px;">Mettre à jour mon thème astral</button>
+          <button type="submit" class="btn btn-secondary" style="padding: 12px; font-size: 14px; border-radius: 12px;" data-i18n="settings.btn.update">Mettre à jour mon thème astral</button>
         </form>
       </div>
-
+ 
       <!-- Notifications Toggles Card -->
       <div class="card">
-        <h3 class="settings-section-title">Préférences d'Alertes</h3>
+        <h3 class="settings-section-title" data-i18n="settings.section.alerts">Préférences d'Alertes</h3>
         <div class="setting-toggle-row">
           <div class="setting-toggle-label">
-            <h3>Horoscope Quotidien</h3>
-            <p>Recevoir votre météo astrale chaque matin à 7h30.</p>
+            <h3 data-i18n="settings.alert.daily.title">Horoscope Quotidien</h3>
+            <p data-i18n="settings.alert.daily.desc">Recevoir votre météo astrale chaque matin à 7h30.</p>
           </div>
           <label class="switch">
             <input type="checkbox" id="pref-notif-daily" checked>
@@ -597,8 +654,8 @@
         </div>
         <div class="setting-toggle-row">
           <div class="setting-toggle-label">
-            <h3>Cycles Lunaires</h3>
-            <p>Alertes spéciales lors des Pleines et Nouvelles lunes.</p>
+            <h3 data-i18n="settings.alert.lunar.title">Cycles Lunaires</h3>
+            <p data-i18n="settings.alert.lunar.desc">Alertes spéciales lors des Pleines et Nouvelles lunes.</p>
           </div>
           <label class="switch">
             <input type="checkbox" id="pref-notif-lunar" checked>
@@ -607,8 +664,8 @@
         </div>
         <div class="setting-toggle-row">
           <div class="setting-toggle-label">
-            <h3>Guidance de la semaine</h3>
-            <p>Synthèse spirituelle envoyée chaque dimanche soir.</p>
+            <h3 data-i18n="settings.alert.weekly.title">Guidance de la semaine</h3>
+            <p data-i18n="settings.alert.weekly.desc">Synthèse spirituelle envoyée chaque dimanche soir.</p>
           </div>
           <label class="switch">
             <input type="checkbox" id="pref-notif-weekly">
@@ -616,32 +673,38 @@
           </label>
         </div>
       </div>
-
+ 
       <!-- Sécurité & Mot de passe -->
       <div class="card">
-        <h3 class="settings-section-title">Sécurité & Mot de passe</h3>
+        <h3 class="settings-section-title" data-i18n="settings.section.security">Sécurité & Mot de passe</h3>
         <form id="form-settings-password" class="register-form" onsubmit="return false;" style="margin-top: 10px;">
           <div class="quiz-input-group">
-            <label class="quiz-input-label">Nouveau mot de passe</label>
-            <input type="password" id="set-password" class="quiz-input" placeholder="Nouveau mot de passe (min. 6 caractères)" required>
+            <label class="quiz-input-label" data-i18n="settings.label.newpassword">Nouveau mot de passe</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="set-password" class="quiz-input" placeholder="Nouveau mot de passe (min. 6 caractères)" required data-i18n="settings.placeholder.newpassword">
+              <button type="button" class="password-eye-btn" id="toggle-set-password" aria-label="Afficher le mot de passe">
+                <svg id="eye-icon-set" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="eye-off-icon-set" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
           </div>
-          <button type="submit" id="btn-update-password" class="btn btn-secondary" style="padding: 12px; font-size: 14px; border-radius: 12px; margin-top: 12px;">Changer mon mot de passe</button>
+          <button type="submit" id="btn-update-password" class="btn btn-secondary" style="padding: 12px; font-size: 14px; border-radius: 12px; margin-top: 12px;" data-i18n="settings.btn.changepassword">Changer mon mot de passe</button>
         </form>
       </div>
-
+ 
       <!-- Account Settings -->
       <div class="card">
-        <h3 class="settings-section-title">Abonnement & Compte</h3>
+        <h3 class="settings-section-title" data-i18n="settings.section.account">Abonnement & Compte</h3>
         <div style="font-size: 14px; display: flex; flex-direction: column; gap: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>Statut du compte :</span>
-            <strong id="set-status-text" style="color: var(--accent-gold-dark);">Premium Actif</strong>
+            <span data-i18n="settings.label.accountstatus">Statut du compte :</span>
+            <strong id="set-status-text" style="color: var(--accent-gold-dark);" data-i18n="settings.status.premium">Premium Actif</strong>
           </div>
           <div id="btn-toggle-demo-premium" style="display: flex; gap: 8px; margin-top: 6px;">
             <!-- Injected demo trigger -->
           </div>
-          <button id="btn-logout" class="btn btn-secondary" style="padding: 12px; font-size: 14px; border-radius: 12px; border-color: rgba(186, 85, 74, 0.2); color: #BA554A;">Déconnexion</button>
-          <button id="btn-reset-data" class="btn btn-secondary" style="padding: 10px; font-size: 12px; border-radius: 12px; border: none; background: transparent; color: var(--text-muted);">Supprimer mon compte & réinitialiser</button>
+          <button id="btn-logout" class="btn btn-secondary" style="padding: 12px; font-size: 14px; border-radius: 12px; border-color: rgba(186, 85, 74, 0.2); color: #BA554A;" data-i18n="settings.btn.logout">Déconnexion</button>
+          <button id="btn-reset-data" class="btn btn-secondary" style="padding: 10px; font-size: 12px; border-radius: 12px; border: none; background: transparent; color: var(--text-muted);" data-i18n="settings.btn.delete">Supprimer mon compte & réinitialiser</button>
         </div>
       </div>
       
@@ -652,24 +715,24 @@
     <section id="terms" class="page">
       <div style="margin-bottom: 20px;">
         <a href="#landing" id="terms-btn-back" class="btn-back-quiz" style="display: inline-flex; margin-bottom: 12px;">
-          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> <span style="font-size: 14px; margin-left: 8px; font-weight: 600;">Retour</span>
+          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> <span style="font-size: 14px; margin-left: 8px; font-weight: 600;" data-i18n="terms.btn.back">Retour</span>
         </a>
-        <h2 class="serif-font">Mentions Légales & RGPD</h2>
-        <p class="hero-sub" style="margin-top: -6px;">Transparence, Sécurité et Respect de votre vie privée.</p>
+        <h2 class="serif-font" data-i18n="terms.title">Mentions Légales & RGPD</h2>
+        <p class="hero-sub" style="margin-top: -6px;" data-i18n="terms.sub">Transparence, Sécurité et Respect de votre vie privée.</p>
       </div>
 
       <div class="card" style="font-size: 13px; line-height: 1.6; color: var(--text-muted); display: flex; flex-direction: column; gap: 16px;">
         <div>
-          <h3 style="font-size: 15px; color: var(--primary-midnight); margin-bottom: 6px;">1. Protection des Données Personnelles (RGPD)</h3>
-          <p>Moon Astro s'engage à protéger l'ensemble des données personnelles collectées lors de votre onboarding. Vos coordonnées de naissance (date, heure, lieu) et vos états d'esprit émotionnels ne servent qu'à faire tourner nos algorithmes astrologiques locaux de manière anonyme. Aucune revente de données n'est effectuée.</p>
+          <h3 style="font-size: 15px; color: var(--primary-midnight); margin-bottom: 6px;" data-i18n="terms.sec1.title">1. Protection des Données Personnelles (RGPD)</h3>
+          <p data-i18n="terms.sec1.desc">Moon Astro s'engage à protéger l'ensemble des données personnelles collectées lors de votre onboarding. Vos coordonnées de naissance (date, heure, lieu) et vos états d'esprit émotionnels ne servent qu'à faire tourner nos algorithmes astrologiques locaux de manière anonyme. Aucune revente de données n'est effectuée.</p>
         </div>
         <div>
-          <h3 style="font-size: 15px; color: var(--primary-midnight); margin-bottom: 6px;">2. Clause de Non-Responsabilité Médicale ou Professionnelle</h3>
-          <p>Les lectures astrales, horoscopes, conseils spirituels et analyses personnalisées générées par Moon Astro sont proposés uniquement à titre de divertissement, d'introspection et de bien-être personnel. Ils ne sauraient en aucun cas remplacer un avis ou un diagnostic médical, psychologique, juridique, financier ou professionnel.</p>
+          <h3 style="font-size: 15px; color: var(--primary-midnight); margin-bottom: 6px;" data-i18n="terms.sec2.title">2. Clause de Non-Responsabilité Médicale ou Professionnelle</h3>
+          <p data-i18n="terms.sec2.desc">Les lectures astrales, horoscopes, conseils spirituels et analyses personnalisées générées par Moon Astro sont proposés uniquement à titre de divertissement, d'introspection et de bien-être personnel. Ils ne sauraient en aucun cas remplacer un avis ou un diagnostic médical, psychologique, juridique, financier ou professionnel.</p>
         </div>
         <div>
-          <h3 style="font-size: 15px; color: var(--primary-midnight); margin-bottom: 6px;">3. Conditions d'Abonnement et Remboursements</h3>
-          <p>L'abonnement premium débloque un accès complet et immédiat à l'horoscope quotidien ainsi qu'aux analyses hebdomadaires et mensuelles. L'essai gratuit de 3 jours peut être interrompu à tout moment sans frais via votre profil. Les abonnements payants sont gérés de manière sécurisée par Stripe.</p>
+          <h3 style="font-size: 15px; color: var(--primary-midnight); margin-bottom: 6px;" data-i18n="terms.sec3.title">3. Conditions d'Abonnement et Remboursements</h3>
+          <p data-i18n="terms.sec3.desc">L'abonnement premium débloque un accès complet et immédiat à l'horoscope quotidien ainsi qu'aux analyses hebdomadaires et mensuelles. L'essai gratuit de 3 jours peut être interrompu à tout moment sans frais via votre profil. Les abonnements payants sont gérés de manière sécurisée par Stripe.</p>
         </div>
       </div>
       
@@ -682,19 +745,25 @@
         <svg class="nav-item-icon" viewBox="0 0 24 24">
           <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm1 11h-2v-2h2v2zm0-4h-2V8h2v2z"/>
         </svg>
-        <span>Guidance</span>
+        <span data-i18n="nav.dashboard">Guidance</span>
       </a>
       <a href="#history" class="nav-item" id="nav-item-hist">
         <svg class="nav-item-icon" viewBox="0 0 24 24">
           <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
         </svg>
-        <span>Historique</span>
+        <span data-i18n="nav.history">Historique</span>
+      </a>
+      <a href="#oracle" class="nav-item" id="nav-item-oracle">
+        <svg class="nav-item-icon" viewBox="0 0 24 24">
+          <path d="M12 2L9 9 2 12l7 3 3 7 3-7 7-3-7-3-3-7z"/>
+        </svg>
+        <span data-i18n="nav.oracle">L'Oracle</span>
       </a>
       <a href="#settings" class="nav-item" id="nav-item-sett">
         <svg class="nav-item-icon" viewBox="0 0 24 24">
           <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
         </svg>
-        <span>Profil</span>
+        <span data-i18n="nav.settings">Profil</span>
       </a>
     </nav>
 
@@ -719,13 +788,13 @@
 
       <form id="form-stripe" class="stripe-form" onsubmit="return false;">
         <div class="quiz-input-group">
-          <label class="quiz-input-label">Titulaire de la carte</label>
-          <input type="text" id="stripe-card-name" class="quiz-input" placeholder="Prénom Nom" required>
+          <label class="quiz-input-label" data-i18n="stripe.label.name">Titulaire de la carte</label>
+          <input type="text" id="stripe-card-name" class="quiz-input" placeholder="Prénom Nom" data-i18n="stripe.placeholder.name" required>
         </div>
         
         <div class="quiz-input-group stripe-input-card">
-          <label class="quiz-input-label">Numéro de carte</label>
-          <input type="text" id="stripe-card-number" class="quiz-input" placeholder="4242 4242 4242 4242" maxlength="19" required>
+          <label class="quiz-input-label" data-i18n="stripe.label.number">Numéro de carte</label>
+          <input type="text" id="stripe-card-number" class="quiz-input" placeholder="4242 4242 4242 4242" data-i18n="stripe.placeholder.number" maxlength="19" required>
           <svg class="stripe-card-icon" viewBox="0 0 24 24">
             <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
           </svg>
@@ -733,12 +802,12 @@
 
         <div class="quiz-input-row">
           <div class="quiz-input-group">
-            <label class="quiz-input-label">Expiration</label>
-            <input type="text" id="stripe-card-expiry" class="quiz-input" placeholder="MM/AA" maxlength="5" required>
+            <label class="quiz-input-label" data-i18n="stripe.label.expiry">Expiration</label>
+            <input type="text" id="stripe-card-expiry" class="quiz-input" placeholder="MM/AA" data-i18n="stripe.placeholder.expiry" maxlength="5" required>
           </div>
           <div class="quiz-input-group">
-            <label class="quiz-input-label">CVC</label>
-            <input type="text" id="stripe-card-cvc" class="quiz-input" placeholder="123" maxlength="3" required>
+            <label class="quiz-input-label" data-i18n="stripe.label.cvc">CVC</label>
+            <input type="text" id="stripe-card-cvc" class="quiz-input" placeholder="123" data-i18n="stripe.placeholder.cvc" maxlength="3" required>
           </div>
         </div>
 
@@ -746,7 +815,7 @@
           Activer mon essai & payer
         </button>
 
-        <div class="stripe-secure-text">
+        <div class="stripe-secure-text" data-i18n="stripe.secure">
           <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
           Connexion Stripe cryptée SSL — Annulable en 1 clic
         </div>
@@ -763,6 +832,7 @@
   </div>
 
   <!-- INJECT SCRIPTS -->
+  <script src="js/translations.js"></script>
   <script src="js/quiz-data.js"></script>
   <script src="js/ai-generator.js"></script>
   <script src="js/app.js"></script>
