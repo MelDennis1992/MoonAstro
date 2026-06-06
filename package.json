@@ -1,0 +1,12 @@
+{
+  "name": "moonastro",
+  "version": "1.0.0",
+  "description": "Moon Astro — Application astrologique web statique",
+  "scripts": {
+    "build": "echo 'Site statique — aucune compilation requise'"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "private": true
+}
