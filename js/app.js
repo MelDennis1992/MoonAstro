@@ -2783,9 +2783,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Check if already drawn today
-    let alreadyDrawn = false;
-    try { alreadyDrawn = !!localStorage.getItem(todayKey); } catch(e) {}
+    // Check if already drawn today (uses safeStorage for private/incognito compatibility)
+    const alreadyDrawn = !!safeStorage.getItem(todayKey);
 
     if (alreadyDrawn) {
       // Show card flipped, hide button, show already drawn notice and reflection
@@ -2794,7 +2793,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (alreadyEl) alreadyEl.style.display = "block";
       if (reflectionEl) {
         reflectionEl.style.display = "block";
-        const savedJournal = localStorage.getItem(journalKey) || "";
+        const savedJournal = safeStorage.getItem(journalKey) || "";
         const textarea = document.getElementById("carte-journal-entry");
         if (textarea && savedJournal) textarea.value = savedJournal;
       }
@@ -2816,8 +2815,8 @@ document.addEventListener("DOMContentLoaded", () => {
       newBtn.addEventListener("click", () => {
         // Flip animation
         if (cardEl) cardEl.classList.add("flipped");
-        // Store drawn today
-        try { localStorage.setItem(todayKey, "1"); } catch(e) {}
+        // Store drawn today (safeStorage works in private/incognito mode)
+        safeStorage.setItem(todayKey, "1");
         // Hide button
         if (actionsEl) actionsEl.style.display = "none";
         // Show popup after flip animation completes, then show reflection
@@ -2839,7 +2838,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const c = document.getElementById("carte-card");
         if (!c || c.classList.contains("flipped")) return;
         c.classList.add("flipped");
-        try { localStorage.setItem(todayKey, "1"); } catch(e) {}
+        safeStorage.setItem(todayKey, "1");
         if (actionsEl) actionsEl.style.display = "none";
         // Show popup after flip animation completes
         setTimeout(() => {
@@ -2860,7 +2859,7 @@ document.addEventListener("DOMContentLoaded", () => {
       newSaveBtn.addEventListener("click", () => {
         const textarea = document.getElementById("carte-journal-entry");
         if (!textarea) return;
-        try { localStorage.setItem(journalKey, textarea.value); } catch(e) {}
+        safeStorage.setItem(journalKey, textarea.value);
         showToast(getTranslation(lang, "carte.saved"));
       });
     }
@@ -2952,8 +2951,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const navDot = document.getElementById("nav-carte-dot");
     if (!navDot) return;
     const todayKey = getTodayKey();
-    let drawn = false;
-    try { drawn = !!localStorage.getItem(todayKey); } catch(e) {}
+    const drawn = !!safeStorage.getItem(todayKey);
     if (!drawn && state.isLoggedIn && state.answers && state.answers.name) {
       navDot.classList.add("visible");
     } else {
