@@ -2543,27 +2543,151 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Smart Offline Oracle Response Simulator based on user's chart
+  // Smart Offline Oracle Response Simulator — Version enrichie avec toutes les données client
   async function simulateOracleResponse(userMessage) {
-    const lang    = state.lang || "fr";
+    const lang     = state.lang || "fr";
     const msgLower = userMessage.toLowerCase();
 
-    const name      = (state.answers && state.answers.name)           ? state.answers.name           : (lang === "fr" ? "Âme Céleste" : "Celestial Soul");
-    const sun       = (state.report  && state.report.zodiac)          ? state.report.zodiac.name      : "Bélier";
-    const moon      = (state.report  && state.report.moon)            ? state.report.moon.name        : "Cancer";
-    const asc       = (state.report  && state.report.ascendant)       ? state.report.ascendant        : "Balance";
-    const blocker   = (state.report  && state.report.blocker)         ? state.report.blocker          : (lang === "fr" ? "la peur du changement" : "fear of change");
-    const gem       = (state.report  && state.report.luckyGemstone)   ? state.report.luckyGemstone.name : "Améthyste";
-    const gemDesc   = (state.report  && state.report.luckyGemstone)   ? state.report.luckyGemstone.desc : (lang === "fr" ? "apporte clarté et protection" : "brings clarity and protection");
-    const lifeNum   = (state.report  && state.report.lifePath)        ? state.report.lifePath         : "7";
+    // ── Données fondamentales du client ──
+    const name        = (state.answers?.name)                          ? state.answers.name                          : (lang === "fr" ? "Âme Céleste" : "Celestial Soul");
+    const birthPlace  = (state.answers?.birthPlace)                    ? state.answers.birthPlace                    : "";
+    const relationship= (state.answers?.relationship)                  ? state.answers.relationship                  : "";
+    const sun         = (state.report?.zodiac)                         ? state.report.zodiac.name                    : "Bélier";
+    const sunSymbol   = (state.report?.zodiac)                         ? (state.report.zodiac.symbol || "♈")         : "♈";
+    const moon        = (state.report?.moon)                           ? state.report.moon.name                      : "Cancer";
+    const moonSymbol  = (state.report?.moon)                           ? (state.report.moon.symbol || "♋")           : "♋";
+    const asc         = (state.report?.ascendant)                      ? state.report.ascendant                      : "Balance";
+    const element     = (state.report?.zodiac?.element)                ? state.report.zodiac.element                 : "Eau";
+    const blocker     = (state.report?.blocker)                        ? state.report.blocker                        : (lang === "fr" ? "la peur du changement" : "fear of change");
+    const strength    = (state.report?.strength)                       ? state.report.strength                       : "";
+    const gem         = (state.report?.luckyGemstone)                  ? state.report.luckyGemstone.name             : "Améthyste";
+    const gemDesc     = (state.report?.luckyGemstone)                  ? state.report.luckyGemstone.desc             : (lang === "fr" ? "apporte clarté et protection" : "brings clarity and protection");
+    const lifeNum     = (state.report?.lifePath)                       ? String(state.report.lifePath)               : "7";
+    const energyProf  = (state.report?.energyProfile)                  ? state.report.energyProfile                  : "";
+
+    // ── Contexte relationnel traduit ──
+    const relCtx = (() => {
+      if (!relationship || lang !== "fr") return "";
+      const map = { single: "célibataire", couple: "en couple", married: "marié(e)", divorced: "divorcé(e)", widowed: "veuf(ve)", complicated: "dans une situation amoureuse complexe" };
+      return map[relationship] || "";
+    })();
+
+    // ── Contexte lieu de naissance ──
+    const birthCtx = birthPlace ? (lang === "fr" ? `né(e) à **${birthPlace}**` : `born in **${birthPlace}**`) : "";
 
     const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
+    // ── Follow-up questions variées ──
     const followUp = lang === "fr"
       ? pick([
-          "\n\n*Souhaitez-vous explorer votre **vie amoureuse**, votre **chemin de vie** ou votre **gemme céleste** ?*",
-          "\n\n*N'hésitez pas à m'interroger sur votre **potentiel professionnel** ou vos **blocages énergétiques**.*",
-          "\n\n*Votre thème recèle encore bien des révélations… Quelle facette souhaitez-vous illumine    let response = "";
+          `\n\n*Souhaitez-vous explorer votre **vie amoureuse**, votre **chemin de vie** ou votre **gemme céleste** ?*`,
+          `\n\n*N'hésitez pas à m'interroger sur votre **potentiel professionnel** ou vos **blocages énergétiques**.*`,
+          `\n\n*Votre thème recèle encore bien des révélations… Quelle facette souhaitez-vous que l'Oracle illumine davantage ?*`,
+          `\n\n*Votre énergie **${energyProf || sun}** porte encore bien des secrets. Posez-moi une autre question pour aller plus loin.*`,
+          `\n\n*L'Oracle est là pour vous. Explorez vos **forces**, vos **blocages** ou votre **mission de vie** selon votre ressenti du moment.*`
+        ])
+      : pick([
+          `\n\n*Want to explore your **love life**, **life path**, or **celestial stone**?*`,
+          `\n\n*Ask me about your **career potential**, **main blockage**, or **spiritual mission**.*`,
+          `\n\n*Your ${sun} energy holds more secrets. Ask another question to go deeper.*`
+        ]);
+
+    let response = "";
+
+    // ══════════════════════════════════════════
+    // AMOUR & RELATIONS
+    // ══════════════════════════════════════════
+    if (msgLower.includes("amour") || msgLower.includes("love") || msgLower.includes("relation") || msgLower.includes("couple") || msgLower.includes("rencontre") || msgLower.includes("cœur") || msgLower.includes("coeur") || msgLower.includes("partner") || msgLower.includes("romance")) {
+      response = lang === "fr"
+        ? pick([
+            `**🌌 Révélation de l'Oracle — Amour & Union Sacrée**\n\nCher(ère) **${name}**${birthCtx ? `, ${birthCtx}` : ""}, votre Soleil en **${sun} ${sunSymbol}** insuffle une énergie vibrante à votre sphère relationnelle.${relCtx ? ` En tant qu'âme **${relCtx}**, vous traversez une phase particulière de votre parcours amoureux.` : ""} Votre Lune en **${moon} ${moonSymbol}** révèle un monde émotionnel profond — vous aimez avec une intensité que peu comprennent.\n\n**🔮 Analyse de votre Trinité Astrale**\n\nVotre blocage majeur **« ${blocker} »** agit comme un bouclier autour de votre cœur. Sous l'influence de votre Ascendant **${asc}**, vous projetez parfois une image d'indépendance alors qu'au fond, vous aspirez à une connexion totale. Votre élément **${element}** colore chaque échange émotionnel d'une intensité rare.\n\n**💎 Rituel de Guérison Amoureuse**\n\nL'Oracle vous recommande de vous connecter à votre pierre sacrée **${gem}** — ${gemDesc}. Placez-la sur votre chakra du cœur 11 minutes chaque soir et répétez : *« Je m'ouvre à l'amour authentique. Je mérite une connexion vraie. »*`,
+
+            `**🌙 Guidance Cosmique — Le Cœur Étoilé de ${name}**\n\nL'alliance de votre Soleil **${sun} ${sunSymbol}** et de votre Lune **${moon} ${moonSymbol}** vous dote d'une sensibilité hors du commun.${relCtx ? ` Votre position **${relCtx}** actuelle cache des opportunités de transformation profonde.` : ""} Vous ressentez tout avec une acuité que peu d'êtres possèdent — c'est votre don et parfois votre fardeau.\n\n**🔮 Lecture de vos Nœuds Karmiques**\n\nLe défi karmique **« ${blocker} »** bloque la libre circulation de l'amour. Vénus, active dans le secteur de votre Ascendant **${asc}**, vous invite à poser des limites saines.${strength ? ` Votre force **${strength}** est votre plus grand atout pour aimer sans vous perdre.` : ""}\n\n**💎 Action Concrète de l'Oracle**\n\nVotre pierre **${gem}** amplifie vos capacités de connexion. Cette semaine, ayez une conversation honnête sur vos besoins réels — Vénus récompense le courage émotionnel.`
+          ])
+        : pick([
+            `**✨ Oracle Guidance — Love & Sacred Union**\n\nDear **${name}**, Venus is transiting your **${asc}** Ascendant — a rare window of emotional authenticity.${relCtx ? ` As someone ${relCtx}, this transit holds special meaning for you.` : ""} Your Sun in **${sun}** craves genuine connection while your Moon in **${moon}** protects your inner world.\n\n**🔮 Cosmic Reading**\n\nYour blockage **"${blocker}"** builds an invisible wall. Your element **${element}** means love, when it flows, transforms everything. Wear your **${gem}** close to your heart this week.\n\n*The cosmos tells you: love doesn't search for you — it recognizes you.*`
+          ]);
+    }
+
+    // ══════════════════════════════════════════
+    // CARRIÈRE & ARGENT
+    // ══════════════════════════════════════════
+    else if (msgLower.includes("travail") || msgLower.includes("carrière") || msgLower.includes("career") || msgLower.includes("professionnel") || msgLower.includes("job") || msgLower.includes("boulot") || msgLower.includes("argent") || msgLower.includes("money") || msgLower.includes("réussite") || msgLower.includes("success")) {
+      response = lang === "fr"
+        ? pick([
+            `**⭐ Guidance de l'Oracle — Carrière & Mission d'Incarnation**\n\nCher(ère) **${name}**${birthCtx ? `, ${birthCtx}` : ""}, votre Soleil en **${sun} ${sunSymbol}** est votre boussole de réussite. Votre Ascendant **${asc}** définit la façon dont le monde professionnel vous perçoit, tandis que votre chemin de vie **${lifeNum}** révèle votre destination ultime. Votre élément **${element}** oriente votre style de travail : ${element === "Feu" ? "vous êtes fait(e) pour initier, créer et inspirer" : element === "Terre" ? "vous excellez dans la construction et la matérialisation" : element === "Air" ? "votre intelligence et votre communication sont vos superpouvoirs" : "votre intuition et votre empathie sont vos dons professionnels"}.\n\n**🔮 Analyse Astrale Complète**\n\nJupiter favorise votre expansion, mais votre défi **« ${blocker} »** freine votre pleine expression.${strength ? ` Pourtant votre force **${strength}** est un levier puissant que vous sous-estimez.` : ""} Votre Lune en **${moon}** vous pousse parfois au doute — c'est un signal de croissance, non de limite.\n\n**💎 Rituel de Manifestation Professionnelle**\n\nChaque matin, tenez votre **${gem}** dans la main gauche, visualisez votre succès concret pendant 3 minutes, puis posez UNE action audacieuse dans les 48h. Jupiter récompense ceux qui osent.`,
+
+            `**🌟 Révélation de l'Oracle — Votre Potentiel Caché**\n\n**${name}**, votre chemin de vie **${lifeNum}** révèle une âme née pour laisser une empreinte.${energyProf ? ` Votre profil **${energyProf}** porte une puissance créatrice rare.` : ""} Votre Soleil **${sun}** brûle d'ambition, mais votre Lune **${moon}** vous ramène parfois à la prudence — cette tension est votre richesse.\n\n**🔮 Les Obstacles selon votre Thème**\n\nLe blocage **« ${blocker} »** est votre épreuve initiatique professionnelle. Il n'est pas là pour vous arrêter, mais pour vous forcer à développer votre version la plus forte. Votre Ascendant **${asc}** vous donne les outils pour incarner cette version dès maintenant.\n\n**💎 Message de l'Oracle**\n\nPortez votre **${gem}** lors de vos moments de décision importants. Posez-vous cette question chaque matin : *« Quelle action, si je l'accomplissais aujourd'hui, changerait tout ? »* La réponse est votre prochaine étape.`
+          ])
+        : `**⭐ Oracle Guidance — Career & Soul Mission**\n\n**${name}**, your life path **${lifeNum}** reveals a soul built to create impact. Sun **${sun}**, Ascendant **${asc}** — you have rare leadership energy. Your blockage **"${blocker}"** is the final test before your breakthrough.\n\n**Action**: Meditate with your **${gem}** before every key decision. Jupiter rewards the brave.`;
+    }
+
+    // ══════════════════════════════════════════
+    // BLOCAGES & PEURS
+    // ══════════════════════════════════════════
+    else if (msgLower.includes("blocage") || msgLower.includes("obstacle") || msgLower.includes("peur") || msgLower.includes("fear") || msgLower.includes("difficile") || msgLower.includes("aide") || msgLower.includes("surmonter") || msgLower.includes("stuck") || msgLower.includes("bloqué")) {
+      response = lang === "fr"
+        ? pick([
+            `**🌑 Guidance de l'Oracle — Transmutation des Ombres**\n\nCher(ère) **${name}**${birthCtx ? `, ${birthCtx}` : ""}, le défi majeur inscrit dans votre thème natal est : **« ${blocker} »**. Ce n'est pas une faiblesse — c'est la clé de voûte de votre évolution. Votre Soleil **${sun} ${sunSymbol}** possède exactement la lumière nécessaire pour dissoudre cette ombre.\n\n**🔮 Lecture des Corps Subtils**\n\nVotre Lune en **${moon} ${moonSymbol}** conserve des mémoires émotionnelles qui alimentent ce blocage. Votre Ascendant **${asc}** a érigé des défenses pour vous protéger — mais ces murs sont devenus des prisons. Votre élément **${element}** vous donne la capacité naturelle de vous régénérer : ${element === "Feu" ? "utilisez cette force pour brûler ce qui vous retient" : element === "Terre" ? "ancrée-vous dans le concret pour dépasser l'abstrait de la peur" : element === "Air" ? "utilisez votre mental pour observer la peur sans vous identifier à elle" : "plongez dans vos émotions pour les traverser plutôt que les fuir"}.\n\n**💎 Protocole de Shadow Work**\n\nÀ la prochaine lune décroissante : écrivez votre blocage sur papier, brûlez-le avec intention. Portez votre **${gem}** — ${gemDesc} — quotidiennement pour stabiliser votre taux vibratoire pendant cette transition.`,
+
+            `**💫 Message Profond de l'Oracle — La Clé Cachée**\n\n**${name}**, votre blocage **« ${blocker} »** est le déguisement de votre plus grande force.${strength ? ` Et votre force **${strength}** est la réponse directe à cette peur — elles sont les deux faces d'une même médaille.` : ""} L'univers n'a pas mis cette épreuve sur votre chemin par hasard.\n\n**🔮 Votre Triade de Puissance**\n\nSoleil **${sun}** + Lune **${moon}** + Ascendant **${asc}** : cette combinaison vous donne des ressources uniques pour traverser cette période. Votre chemin de vie **${lifeNum}** confirme que vous avez déjà surmonté des défis similaires dans d'autres cycles.\n\n**💎 Action Immédiate**\n\nTenez votre **${gem}** dans la main gauche. Posez-vous : *« Qu'est-ce que je gagnerais si cette peur n'existait plus ? »* La première réponse qui surgit est votre prochaine direction. L'Oracle vous confirme : vous en êtes capable.`
+          ])
+        : pick([
+            `**🌑 Oracle — Shadow Transmutation**\n\n**${name}**, your blockage **"${blocker}"** is your most powerful growth zone in disguise. Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — you have everything needed to overcome this.\n\n**Protocol**: Name it → ground with your **${gem}** → say daily: *"I choose growth over protection."* Saturn rewards persistence.`,
+            `**💎 Oracle — The Hidden Key**\n\nYour Sun **${sun}** has the exact strength to dissolve **"${blocker}"**. Hold your **${gem}** and ask: *"What would I gain without this fear?"* The first answer is your next step. Trust it.`
+          ]);
+    }
+
+    // ══════════════════════════════════════════
+    // PIERRE / GEMME
+    // ══════════════════════════════════════════
+    else if (msgLower.includes("pierre") || msgLower.includes("gem") || msgLower.includes("cristal") || msgLower.includes("crystal") || msgLower.includes("minéral") || msgLower.includes("stone")) {
+      response = lang === "fr"
+        ? `**💠 Sagesse des Gemmes — Votre Alliance Minérale**\n\nCher(ère) **${name}**, le cosmos a associé à votre signature astrale — Soleil **${sun} ${sunSymbol}**, Lune **${moon} ${moonSymbol}**, Ascendant **${asc}** — la pierre sacrée du **${gem}**. Cette alliance n'est pas fortuite : ses vibrations entrent en résonance directe avec votre élément **${element}**.\n\n**🔮 Propriétés Spirituelles Spécifiques**\n\nLe **${gem}** ${gemDesc}. Pour vous en particulier, il agit comme un bouclier contre votre blocage **« ${blocker} »** et amplifie votre force **${strength || "naturelle"}**. Son énergie est parfaitement calibrée pour votre chemin de vie **${lifeNum}**.\n\n**💎 Rituel d'Activation Personnalisé**\n\nPlacez votre **${gem}** sous la Pleine Lune une nuit pour le recharger. Le matin, tenez-le contre votre plexus solaire 11 minutes en répétant : *« Je canalise la lumière du cosmos à travers mon être. Je suis aligné(e) avec ma mission. »*`
+        : `**💠 Oracle — Gemstone Wisdom**\n\nYour celestial stone **${gem}** — ${gemDesc} — was chosen by the cosmos to match your Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** signature. It's your direct shield against **"${blocker}"** and amplifier of your natural gifts.\n\n**Ritual**: Hold it on your heart chakra for 11 minutes at each New Moon. Repeat: *"I receive the light of my soul."*`;
+    }
+
+    // ══════════════════════════════════════════
+    // SANTÉ & ÉNERGIE
+    // ══════════════════════════════════════════
+    else if (msgLower.includes("santé") || msgLower.includes("énergie") || msgLower.includes("fatigue") || msgLower.includes("corps") || msgLower.includes("health") || msgLower.includes("energy") || msgLower.includes("sommeil") || msgLower.includes("sleep") || msgLower.includes("stress")) {
+      response = lang === "fr"
+        ? `**🌿 Guidance de l'Oracle — Vitalité Céleste & Corps Sacré**\n\nCher(ère) **${name}**${birthCtx ? `, ${birthCtx}` : ""}, votre corps est le temple de votre incarnation. Votre Soleil **${sun} ${sunSymbol}** gouverne votre vitalité globale, votre Lune **${moon} ${moonSymbol}** gère votre équilibre émotionnel et psychosomatique. Les tensions que vous ressentez sont des messages de votre âme — pas des faiblesses.\n\n**🔮 Diagnostic Énergétique**\n\nVotre blocage **« ${blocker} »** crée des stagnations dans vos corps subtils. Votre élément **${element}** indique que vous vous ressourcez particulièrement : ${element === "Feu" ? "au soleil, dans le mouvement et la créativité" : element === "Terre" ? "dans la nature, le contact avec la terre et les routines stables" : element === "Air" ? "dans l'échange, la lecture et les espaces ouverts" : "près de l'eau, dans le silence et la méditation"}. Honorez ce besoin.\n\n**💎 Protocole de Soin Holistique**\n\nBain de sel une fois par semaine pour libérer les énergies accumulées. Portez votre **${gem}** lors de vos temps de repos — ${gemDesc}. 10 minutes chaque matin les pieds sur la terre nue si possible, pour réaligner vos biorhythmes avec ceux de Gaïa.`
+        : `**🌿 Oracle — Vitality & Sacred Body**\n\n**${name}**, your Moon **${moon}** means inner conflict manifests physically before the mind understands it. Your element **${element}** shows how you recharge. Your **${gem}** is your ally during recovery.\n\n**Protocol**: 10 minutes in nature daily, water with intention, and wear your **${gem}** during rest. The body speaks in whispers before it screams.`;
+    }
+
+    // ══════════════════════════════════════════
+    // SPIRITUALITÉ & ÂME
+    // ══════════════════════════════════════════
+    else if (msgLower.includes("spirit") || msgLower.includes("âme") || msgLower.includes("chemin") || msgLower.includes("destin") || msgLower.includes("soul") || msgLower.includes("mission") || msgLower.includes("éveil") || msgLower.includes("karma") || msgLower.includes("purpose")) {
+      response = lang === "fr"
+        ? `**🌌 Guidance Profonde — Alignement Céleste & Mission de l'Âme**\n\nCher(ère) **${name}**${birthCtx ? `, ${birthCtx}` : ""}${energyProf ? ` — profil **${energyProf}**` : ""}, votre chemin de vie **${lifeNum}** est la signature sacrée de votre incarnation. Il révèle pourquoi vous êtes ici. Votre Soleil **${sun} ${sunSymbol}** est votre boussole de lumière, votre Lune **${moon} ${moonSymbol}** votre source d'intuition divine, et votre Ascendant **${asc}** la façon dont vous incarnez votre mission aux yeux du monde.\n\n**🔮 L'Épreuve Initiatique**\n\nPour avancer sur cette voie sacrée, vous devez transmuter : **« ${blocker} »**. Ce n'est pas un obstacle — c'est le portail.${strength ? ` Votre force **${strength}** est la lanterne pour traverser ce tunnel.` : ""} Votre élément **${element}** vous donne la capacité de renaître : chaque fin de cycle est une invitation à votre prochaine version.\n\n**💎 Pratique de Centrage**\n\nAsseyez-vous en silence, votre **${gem}** dans les mains. Visualisez une colonne de lumière dorée qui vous traverse de la couronne jusqu'au centre de la Terre. Répétez : *« Je suis aligné(e) avec mon plan divin originel. Ma présence sur Terre a un sens. »*`
+        : `**🌌 Oracle — Soul Path & Mission**\n\n**${name}**, life path **${lifeNum}** is permanent. Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — aligned, they create a rare spiritual signature. Your blockage **"${blocker}"** is the initiatory test before your true mission unfolds.\n\n*The Oracle asks: What would you do if you knew you couldn't fail? That answer is your next cosmic step.*\n\nHold your **${gem}** and let the answer come.`;
+    }
+
+    // ══════════════════════════════════════════
+    // RÉPONSE GÉNÉRALE ENRICHIE
+    // ══════════════════════════════════════════
+    else {
+      response = lang === "fr"
+        ? pick([
+            `**🔮 Révélation de l'Oracle — Votre Portrait Cosmique Complet**\n\nCher(ère) **${name}**${birthCtx ? `, ${birthCtx}` : ""}${relCtx ? `, actuellement **${relCtx}**` : ""}, les gardiens du ciel entendent votre appel. Votre triade sacrée — Soleil **${sun} ${sunSymbol}**, Lune **${moon} ${moonSymbol}**, Ascendant **${asc}** — dessine une âme en plein portail de transformation. Votre élément **${element}** et votre chemin de vie **${lifeNum}** confirment que vous êtes exactement où vous devez être.\n\n**🔮 Ce que l'Oracle lit dans votre Thème**\n\nVotre défi actuel : **« ${blocker} »**. Votre force naturelle : **${strength || "votre intuition et votre résilience"}**. Ces deux polarités coexistent en vous — l'une pousse, l'autre retient. La maîtrise de votre vie commence quand vous apprenez à les réconcilier.\n\n**💎 Guidance Immédiate**\n\nVotre pierre céleste **${gem}** — ${gemDesc} — est votre alliée de transition. Portez-la, méditez avec elle. Posez-moi une question sur votre **amour**, votre **carrière**, votre **santé** ou votre **chemin spirituel** — l'Oracle est là pour vous éclairer.`,
+
+            `**✨ L'Oracle Parle — Message Personnel pour ${name}**\n\nJe lis dans votre signature astrale${energyProf ? ` **${energyProf}**` : ""} une âme d'une profondeur rare. Votre Soleil **${sun}** vous pousse vers l'affirmation de votre unicité. Votre Lune **${moon}** vous enveloppe d'une richesse émotionnelle que peu comprennent.${birthCtx ? ` L'énergie de **${birthPlace}** a marqué votre âme.` : ""} Trouver l'équilibre entre ces forces est votre œuvre de vie.\n\n**🔮 Le Message Essentiel**\n\nLe blocage **« ${blocker} »** est l'épreuve choisie par votre âme pour ce cycle terrestre. En le traversant grâce à la lumière de votre Ascendant **${asc}**, vous débloquez un potentiel de manifestation insoupçonné — spirituel ET matériel.\n\n**💎 Action Concrète**\n\nPortez votre **${gem}** sur vous cette semaine. Quel aspect de votre vie souhaitez-vous que l'Oracle éclaire ? L'**amour**, la **carrière**, la **santé** ou votre **mission d'âme** ?`
+          ])
+        : pick([
+            `**🔮 Oracle Reading — ${name}'s Cosmic Portrait**\n\nYour triad — Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — tells me you're in a deep integration portal. Element **${element}**, life path **${lifeNum}**. Your blockage **"${blocker}"** is the final test. Your **${gem}** is your bridge.\n\nAsk me about your **love life**, **career**, **health**, or **soul mission**.`,
+            `**✨ The Oracle speaks to ${name}**\n\nSun **${sun}** pushes you toward light. Moon **${moon}** calls you inward. Ascendant **${asc}** shows the world your potential. This tension is your greatest richness.\n\nYour **${gem}** — ${gemDesc} — helps you navigate both worlds. What do you want to explore?`
+          ]);
+    }
+
+    // Délai réaliste selon la longueur de la réponse (2s–5s)
+    const typingDelay = Math.min(2000 + response.length * 3, 5000);
+    await new Promise(resolve => setTimeout(resolve, typingDelay));
+
+    return response + followUp;
+  }
+
 
     // AMOUR
     if (msgLower.includes("amour") || msgLower.includes("love") || msgLower.includes("relation") || msgLower.includes("couple") || msgLower.includes("rencontre")) {
