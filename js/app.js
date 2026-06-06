@@ -535,22 +535,24 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!window.L) return; // Skip map rendering if Leaflet is not loaded yet
         mapContainer.style.display = "block";
         try {
-          if (!map) {
-            map = window.L.map('birthplace-map', {
-              center: [lat, lon],
-              zoom: 11,
-              zoomControl: false,
-              attributionControl: false
-            });
-            window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-              maxZoom: 19
-            }).addTo(map);
-            marker = window.L.marker([lat, lon]).addTo(map);
-          } else {
-            map.setView([lat, lon], 11);
-            marker.setLatLng([lat, lon]);
+          if (map) {
+            try {
+              map.remove();
+            } catch (err) {
+              console.warn("Error removing old onboarding map:", err);
+            }
+            map = null;
           }
-          // Invalidate size to prevent Leaflet rendering issues in hidden elements
+          map = window.L.map('birthplace-map', {
+            center: [lat, lon],
+            zoom: 11,
+            zoomControl: false,
+            attributionControl: false
+          });
+          window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+          }).addTo(map);
+          marker = window.L.marker([lat, lon]).addTo(map);
           setTimeout(() => map.invalidateSize(), 200);
         } catch (e) {
           console.error("Map rendering error:", e);
@@ -1550,7 +1552,15 @@ document.addEventListener("DOMContentLoaded", () => {
       coordsContainer.innerHTML = `📍 Coordonnées exactes : ${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
     }
     try {
-      if (!settingsMap) {
+      if (settingsMap) {
+        try {
+          settingsMap.remove();
+        } catch (err) {
+          console.warn("Error removing old settings map:", err);
+        }
+        settingsMap = null;
+      }
+      if (window.L) {
         settingsMap = window.L.map('settings-birthplace-map', {
           center: [lat, lon],
           zoom: 11,
@@ -1561,11 +1571,8 @@ document.addEventListener("DOMContentLoaded", () => {
           maxZoom: 19
         }).addTo(settingsMap);
         settingsMarker = window.L.marker([lat, lon]).addTo(settingsMap);
-      } else {
-        settingsMap.setView([lat, lon], 11);
-        settingsMarker.setLatLng([lat, lon]);
+        setTimeout(() => settingsMap.invalidateSize(), 200);
       }
-      setTimeout(() => settingsMap.invalidateSize(), 200);
     } catch (e) {
       console.error("Settings Map rendering error:", e);
     }
@@ -1672,22 +1679,84 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Geocoding helper on submit
+  async function geocodeCityName(query) {
+    const queryLang = state.lang || "fr";
+    try {
+      const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1&lang=${queryLang}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.features && data.features.length > 0) {
+          const feat = data.features[0];
+          return {
+            lat: feat.geometry.coordinates[1],
+            lon: feat.geometry.coordinates[0]
+          };
+        }
+      }
+    } catch (e) {
+      console.warn("Komoot Photon geocoding on submit failed, trying Nominatim fallback...", e);
+    }
+    
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&accept-language=${queryLang}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          return {
+            lat: parseFloat(data[0].lat),
+            lon: parseFloat(data[0].lon)
+          };
+        }
+      }
+    } catch (e) {
+      console.error("Nominatim fallback geocoding on submit failed:", e);
+    }
+    return null;
+  }
+
   // Update Settings Profile Form
-  formSettings.addEventListener("submit", (e) => {
+  formSettings.addEventListener("submit", async (e) => {
     e.preventDefault();
+    
+    const newPlace = setBirthplaceInput.value.trim();
+    const oldPlace = state.answers.birthPlace || "";
     
     state.answers.name = setUsernameInput.value.trim();
     state.answers.birthDate = setBirthdateInput.value;
     state.answers.birthTime = setBirthtimeInput.value;
-    state.answers.birthPlace = setBirthplaceInput.value.trim();
-
-    // Recalculate Astro theme!
-    const report = generatePersonalizedReport(state.answers, state.lang);
-    state.report = report;
-    saveState();
     
-    if (supabase) {
-      supabase.auth.getUser().then(({ data: { user } }) => {
+    const submitBtn = formSettings.querySelector("button[type='submit']");
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+      // If the birthplace text was changed, geocode it on the fly to get coordinates
+      if (newPlace !== oldPlace) {
+        state.answers.birthPlace = newPlace;
+        const coords = await geocodeCityName(newPlace);
+        if (coords) {
+          state.answers.latitude = coords.lat;
+          state.answers.longitude = coords.lon;
+          console.log("Geocoded on submit:", coords);
+        } else {
+          console.warn("Geocoding failed for:", newPlace);
+        }
+      } else {
+        state.answers.birthPlace = newPlace;
+      }
+
+      // Recalculate Astro theme!
+      const report = generatePersonalizedReport(state.answers, state.lang);
+      state.report = report;
+      saveState();
+      
+      // Update settings coordinates map rendering
+      if (state.answers.latitude && state.answers.longitude && window.L) {
+        setTimeout(() => initSettingsMap(state.answers.latitude, state.answers.longitude), 100);
+      }
+      
+      if (supabase) {
+        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const element = report.zodiac.element;
           let score_fire = 25, score_earth = 25, score_air = 25, score_water = 25;
@@ -1696,7 +1765,7 @@ document.addEventListener("DOMContentLoaded", () => {
           else if (element === "Air") score_air = 60;
           else if (element === "Eau") score_water = 60;
 
-          supabase.from("astrology_profiles").update({
+          const { error } = await supabase.from("astrology_profiles").update({
             firstname: state.answers.name,
             birthdate: state.answers.birthDate,
             birthtime: state.answers.birthTime,
@@ -1711,23 +1780,31 @@ document.addEventListener("DOMContentLoaded", () => {
             score_air: score_air,
             score_water: score_water,
             auracolor: report.energyProfile
-          }).eq("id", user.id).then(({ error }) => {
-            if (error) {
-              console.error("Erreur de synchronisation BDD:", error);
-              showToast("Modifié localement, mais erreur de synchronisation en ligne.");
-            } else {
-              showToast("Votre thème astral natal a été mis à jour et synchronisé ✦");
-            }
-            router();
-          });
+          }).eq("id", user.id);
+
+          if (error) {
+            console.error("Erreur de synchronisation BDD:", error);
+            showToast("Modifié localement, mais erreur de synchronisation en ligne.");
+          } else {
+            showToast("Votre thème astral natal a été mis à jour et synchronisé ✦");
+          }
+          populateSettings();
+          router();
         } else {
           showToast("Votre thème astral natal a été recalculé avec succès ✦");
+          populateSettings();
           router();
         }
-      });
-    } else {
-      showToast("Votre thème astral natal a été recalculé avec succès ✦");
-      router();
+      } else {
+        showToast("Votre thème astral natal a été recalculé avec succès ✦");
+        populateSettings();
+        router();
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Une erreur est survenue lors de l'enregistrement.");
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
 
