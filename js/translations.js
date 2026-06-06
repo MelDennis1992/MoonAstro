@@ -246,7 +246,19 @@ const TRANSLATIONS = {
     "stripe.processing": "Traitement sécurisé...",
     "stripe.error.auth": "Vous devez être connecté pour vous abonner.",
     "stripe.success.demo": "Mode Démo : Abonnement activé ! Bienvenue sur Moon Astro Premium.",
-    "stripe.success.sim": "Abonnement activé ! Bienvenue sur Moon Astro Premium (Simulation)."
+    "stripe.success.sim": "Abonnement activé ! Bienvenue sur Moon Astro Premium (Simulation).",
+
+    // Carte du Jour
+    "nav.carte": "Carte du Jour",
+    "carte.title": "✨ Carte du Jour",
+    "carte.sub": "Chaque jour, l'univers vous offre un message unique. Retournez votre carte pour le révéler.",
+    "carte.hint": "Touchez pour révéler",
+    "carte.btn.draw": "Piocher ma carte du jour",
+    "carte.reflect.title": "Votre intention du jour",
+    "carte.reflect.placeholder": "Notez ce que cette carte vous inspire...",
+    "carte.reflect.save": "Sauvegarder",
+    "carte.already": "Vous avez déjà pioché votre carte aujourd'hui. Revenez demain pour un nouveau message cosmique.",
+    "carte.saved": "Votre intention du jour a été sauvegardée ✨"
   },
   en: {
     // Nav Bar
@@ -495,7 +507,19 @@ const TRANSLATIONS = {
     "stripe.processing": "Processing securely...",
     "stripe.error.auth": "You must be logged in to subscribe.",
     "stripe.success.demo": "Demo Mode: Subscription activated! Welcome to Moon Astro Premium.",
-    "stripe.success.sim": "Subscription activated! Welcome to Moon Astro Premium (Simulation)."
+    "stripe.success.sim": "Subscription activated! Welcome to Moon Astro Premium (Simulation).",
+
+    // Daily Card
+    "nav.carte": "Daily Card",
+    "carte.title": "✨ Card of the Day",
+    "carte.sub": "Every day, the universe offers you a unique message. Flip your card to reveal it.",
+    "carte.hint": "Tap to reveal",
+    "carte.btn.draw": "Draw my card of the day",
+    "carte.reflect.title": "Your intention for today",
+    "carte.reflect.placeholder": "Write down what this card inspires in you...",
+    "carte.reflect.save": "Save",
+    "carte.already": "You have already drawn your card today. Come back tomorrow for a new cosmic message.",
+    "carte.saved": "Your daily intention has been saved ✨"
   }
 };
 

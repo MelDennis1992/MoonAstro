@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 2. Auth Guard: redirect to landing if attempting premium pages without answers
-    const privatePages = ["#dashboard", "#history", "#settings", "#oracle"];
+    const privatePages = ["#dashboard", "#history", "#settings", "#oracle", "#carte"];
     if (privatePages.includes(hash) && (!state.answers || !state.answers.name)) {
       window.location.hash = "#landing";
       return;
@@ -259,6 +259,8 @@ document.addEventListener("DOMContentLoaded", () => {
       populateHistory();
     } else if (hash === "#oracle") {
       initOracleChat();
+    } else if (hash === "#carte") {
+      initCarteDuJour();
     } else if (hash === "#settings") {
       populateSettings();
       if (state.isPasswordRecoveryMode) {
@@ -2671,8 +2673,209 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- CARTE DU JOUR ---
+  // 36 oracle cards with French + English affirmations, symbol, name, keywords
+  const ORACLE_CARDS = [
+    { symbol: "🌕", name_fr: "La Pleine Lune", name_en: "The Full Moon", affirmation_fr: "Je libère ce qui ne me sert plus. Ma lumière intérieure brille sans retenue.", affirmation_en: "I release what no longer serves me. My inner light shines without restraint.", keywords_fr: ["Libération", "Lumière", "Plénitude"], keywords_en: ["Release", "Light", "Fullness"] },
+    { symbol: "🌑", name_fr: "La Nouvelle Lune", name_en: "The New Moon", affirmation_fr: "Je plante les graines de mes désirs. Un nouveau cycle commence.", affirmation_en: "I plant the seeds of my desires. A new cycle begins.", keywords_fr: ["Nouveau départ", "Intention", "Création"], keywords_en: ["New start", "Intention", "Creation"] },
+    { symbol: "⭐", name_fr: "L'Étoile Guide", name_en: "The Guiding Star", affirmation_fr: "Je suis guidé(e) par la lumière de mon âme. Mon chemin s'illumine devant moi.", affirmation_en: "I am guided by the light of my soul. My path illuminates before me.", keywords_fr: ["Guidance", "Espoir", "Direction"], keywords_en: ["Guidance", "Hope", "Direction"] },
+    { symbol: "☀️", name_fr: "Le Soleil Radieux", name_en: "The Radiant Sun", affirmation_fr: "Je rayonne d'énergie positive. Ma joie est contagieuse et transformatrice.", affirmation_en: "I radiate positive energy. My joy is contagious and transformative.", keywords_fr: ["Joie", "Énergie", "Vitalité"], keywords_en: ["Joy", "Energy", "Vitality"] },
+    { symbol: "🌊", name_fr: "Les Eaux Sacrées", name_en: "The Sacred Waters", affirmation_fr: "Je flue avec la vie. Mes émotions sont ma force et mon intelligence.", affirmation_en: "I flow with life. My emotions are my strength and my intelligence.", keywords_fr: ["Fluidité", "Émotion", "Intuition"], keywords_en: ["Flow", "Emotion", "Intuition"] },
+    { symbol: "🔥", name_fr: "La Flamme Sacrée", name_en: "The Sacred Flame", affirmation_fr: "Je brûle d'une passion qui me propulse vers mon but. Mon feu intérieur est inextinguible.", affirmation_en: "I burn with a passion that propels me toward my purpose. My inner fire is inextinguishable.", keywords_fr: ["Passion", "Courage", "Transformation"], keywords_en: ["Passion", "Courage", "Transformation"] },
+    { symbol: "🌿", name_fr: "La Nature Vivante", name_en: "Living Nature", affirmation_fr: "Je m'ancre dans le présent. Je grandis naturellement vers la lumière.", affirmation_en: "I am rooted in the present. I grow naturally toward the light.", keywords_fr: ["Ancrage", "Croissance", "Patience"], keywords_en: ["Grounding", "Growth", "Patience"] },
+    { symbol: "🦋", name_fr: "La Métamorphose", name_en: "The Metamorphosis", affirmation_fr: "Je suis en pleine transformation. Ce changement me révèle ma vraie beauté.", affirmation_en: "I am in full transformation. This change reveals my true beauty.", keywords_fr: ["Changement", "Beauté", "Renouveau"], keywords_en: ["Change", "Beauty", "Renewal"] },
+    { symbol: "💎", name_fr: "Le Cristal de Clarté", name_en: "The Crystal of Clarity", affirmation_fr: "Ma vision est claire. Je prends mes décisions avec sagesse et discernement.", affirmation_en: "My vision is clear. I make my decisions with wisdom and discernment.", keywords_fr: ["Clarté", "Sagesse", "Décision"], keywords_en: ["Clarity", "Wisdom", "Decision"] },
+    { symbol: "🌈", name_fr: "L'Arc-en-Ciel de l'Espoir", name_en: "The Rainbow of Hope", affirmation_fr: "Après chaque tempête, la lumière revient. Mon avenir est radieux.", affirmation_en: "After every storm, the light returns. My future is radiant.", keywords_fr: ["Espoir", "Promesse", "Joie"], keywords_en: ["Hope", "Promise", "Joy"] },
+    { symbol: "🕊️", name_fr: "La Paix Intérieure", name_en: "Inner Peace", affirmation_fr: "Je choisis la paix. Mon calme intérieur est ma force la plus puissante.", affirmation_en: "I choose peace. My inner calm is my most powerful strength.", keywords_fr: ["Paix", "Sérénité", "Harmonie"], keywords_en: ["Peace", "Serenity", "Harmony"] },
+    { symbol: "🦅", name_fr: "L'Aigle Royal", name_en: "The Royal Eagle", affirmation_fr: "Je prends de la hauteur. Je vois les choses dans leur totalité avec lucidité.", affirmation_en: "I rise above. I see things in their entirety with clarity.", keywords_fr: ["Perspective", "Liberté", "Vision"], keywords_en: ["Perspective", "Freedom", "Vision"] },
+    { symbol: "🌸", name_fr: "La Fleur de l'Éveil", name_en: "The Awakening Flower", affirmation_fr: "Je m'ouvre doucement à ce que la vie m'offre. Je mérite la douceur.", affirmation_en: "I gently open to what life offers me. I deserve gentleness.", keywords_fr: ["Ouverture", "Douceur", "Grâce"], keywords_en: ["Openness", "Gentleness", "Grace"] },
+    { symbol: "⚡", name_fr: "L'Éclair de l'Intuition", name_en: "The Lightning of Intuition", affirmation_fr: "Mon intuition est un GPS cosmique. Je fais confiance à mes premières impressions.", affirmation_en: "My intuition is a cosmic GPS. I trust my first impressions.", keywords_fr: ["Intuition", "Rapidité", "Révélation"], keywords_en: ["Intuition", "Speed", "Revelation"] },
+    { symbol: "🌺", name_fr: "L'Amour en Bloom", name_en: "Love in Bloom", affirmation_fr: "Je suis un être d'amour. Je donne et je reçois l'amour librement.", affirmation_en: "I am a being of love. I give and receive love freely.", keywords_fr: ["Amour", "Ouverture", "Réciprocité"], keywords_en: ["Love", "Openness", "Reciprocity"] },
+    { symbol: "🔮", name_fr: "La Boule de Cristal", name_en: "The Crystal Ball", affirmation_fr: "Je vois au-delà des apparences. Le mystère de demain m'inspire, pas m'effraie.", affirmation_en: "I see beyond appearances. The mystery of tomorrow inspires me, not frightens me.", keywords_fr: ["Mystère", "Prescience", "Confiance"], keywords_en: ["Mystery", "Foresight", "Trust"] },
+    { symbol: "🌙", name_fr: "Le Croissant Magique", name_en: "The Magic Crescent", affirmation_fr: "Je cultive ma magie intérieure. La nuit est mon espace de sagesse et de rêve.", affirmation_en: "I cultivate my inner magic. The night is my space of wisdom and dreams.", keywords_fr: ["Magie", "Rêve", "Féminité"], keywords_en: ["Magic", "Dream", "Femininity"] },
+    { symbol: "🏔️", name_fr: "La Montagne Sacrée", name_en: "The Sacred Mountain", affirmation_fr: "Je suis solide comme la montagne. Ma détermination surmonte tous les obstacles.", affirmation_en: "I am solid as the mountain. My determination overcomes all obstacles.", keywords_fr: ["Force", "Stabilité", "Persévérance"], keywords_en: ["Strength", "Stability", "Perseverance"] },
+    { symbol: "🐺", name_fr: "Le Loup de Minuit", name_en: "The Midnight Wolf", affirmation_fr: "J'honore mon instinct. Ma nature sauvage est ma vérité la plus profonde.", affirmation_en: "I honor my instinct. My wild nature is my deepest truth.", keywords_fr: ["Instinct", "Loyauté", "Authenticité"], keywords_en: ["Instinct", "Loyalty", "Authenticity"] },
+    { symbol: "🌟", name_fr: "L'Étoile Filante", name_en: "The Shooting Star", affirmation_fr: "Mon désir le plus profond est en route de se réaliser. Je reste ouvert(e) aux miracles.", affirmation_en: "My deepest desire is on its way to materializing. I remain open to miracles.", keywords_fr: ["Vœu", "Manifestation", "Miracle"], keywords_en: ["Wish", "Manifestation", "Miracle"] },
+    { symbol: "🧿", name_fr: "L'Œil de Protection", name_en: "The Eye of Protection", affirmation_fr: "Je suis protégé(e) par l'univers. Je libère mes peurs et avance confiant(e).", affirmation_en: "I am protected by the universe. I release my fears and move forward confident.", keywords_fr: ["Protection", "Confiance", "Libération"], keywords_en: ["Protection", "Confidence", "Release"] },
+    { symbol: "🌀", name_fr: "La Spirale de l'Évolution", name_en: "The Spiral of Evolution", affirmation_fr: "Chaque expérience me fait grandir. Je tourne en spirale vers ma meilleure version.", affirmation_en: "Every experience makes me grow. I spiral toward my best version.", keywords_fr: ["Évolution", "Croissance", "Sagesse"], keywords_en: ["Evolution", "Growth", "Wisdom"] },
+    { symbol: "🦁", name_fr: "Le Lion du Courage", name_en: "The Lion of Courage", affirmation_fr: "Je porte en moi une force extraordinaire. J'agis avec courage et bienveillance.", affirmation_en: "I carry extraordinary strength within me. I act with courage and kindness.", keywords_fr: ["Courage", "Leadership", "Noblesse"], keywords_en: ["Courage", "Leadership", "Nobility"] },
+    { symbol: "🌊", name_fr: "Le Flux de l'Abondance", name_en: "The Flow of Abundance", affirmation_fr: "L'abondance coule naturellement dans ma vie. Je reçois avec gratitude.", affirmation_en: "Abundance flows naturally into my life. I receive with gratitude.", keywords_fr: ["Abondance", "Gratitude", "Prospérité"], keywords_en: ["Abundance", "Gratitude", "Prosperity"] },
+    { symbol: "🦉", name_fr: "La Sagesse du Hibou", name_en: "The Owl's Wisdom", affirmation_fr: "Je possède la sagesse pour naviguer dans l'obscurité. Je vois la vérité clairement.", affirmation_en: "I possess the wisdom to navigate darkness. I see truth clearly.", keywords_fr: ["Sagesse", "Perspicacité", "Vérité"], keywords_en: ["Wisdom", "Insight", "Truth"] },
+    { symbol: "🌱", name_fr: "La Graine de Potentiel", name_en: "The Seed of Potential", affirmation_fr: "En moi sommeille un potentiel immense. Ce moment est parfait pour commencer.", affirmation_en: "Immense potential sleeps within me. This moment is perfect to begin.", keywords_fr: ["Potentiel", "Commencement", "Possibilité"], keywords_en: ["Potential", "Beginning", "Possibility"] },
+    { symbol: "🕯️", name_fr: "La Flamme de l'Espoir", name_en: "The Flame of Hope", affirmation_fr: "Même dans l'obscurité, je garde ma flamme allumée. Mon espoir est indéfectible.", affirmation_en: "Even in darkness, I keep my flame lit. My hope is unwavering.", keywords_fr: ["Espoir", "Résilience", "Lumière"], keywords_en: ["Hope", "Resilience", "Light"] },
+    { symbol: "🐬", name_fr: "La Joie du Dauphin", name_en: "The Dolphin's Joy", affirmation_fr: "Je me permets de jouer et de rire. La légèreté est une forme de sagesse.", affirmation_en: "I allow myself to play and laugh. Lightness is a form of wisdom.", keywords_fr: ["Joie", "Légèreté", "Playfulness"], keywords_en: ["Joy", "Lightness", "Playfulness"] },
+    { symbol: "🏺", name_fr: "Le Vase de l'Âme", name_en: "The Vessel of the Soul", affirmation_fr: "Je prends soin de mon intérieur. Je remplis mon vase de ce qui me nourrit vraiment.", affirmation_en: "I take care of my inner self. I fill my vessel with what truly nourishes me.", keywords_fr: ["Soin de soi", "Nourriture", "Intériorité"], keywords_en: ["Self-care", "Nourishment", "Interiority"] },
+    { symbol: "🌤️", name_fr: "L'Après-Tempête", name_en: "After the Storm", affirmation_fr: "Le ciel s'éclaircit après chaque épreuve. La clarté arrive à qui sait attendre.", affirmation_en: "The sky clears after every trial. Clarity comes to those who know how to wait.", keywords_fr: ["Patience", "Clarté", "Renouveau"], keywords_en: ["Patience", "Clarity", "Renewal"] },
+    { symbol: "🎴", name_fr: "La Carte du Destin", name_en: "The Card of Destiny", affirmation_fr: "Mon destin se construit à chaque choix. Aujourd'hui, je choisis consciemment.", affirmation_en: "My destiny is built with every choice. Today, I choose consciously.", keywords_fr: ["Destin", "Choix", "Conscience"], keywords_en: ["Destiny", "Choice", "Consciousness"] },
+    { symbol: "✨", name_fr: "La Pluie d'Étoiles", name_en: "The Stardust Rain", affirmation_fr: "Je suis fait(e) de poussière d'étoiles. Ma nature cosmique me connecte à l'infini.", affirmation_en: "I am made of stardust. My cosmic nature connects me to infinity.", keywords_fr: ["Cosmique", "Connexion", "Infini"], keywords_en: ["Cosmic", "Connection", "Infinity"] },
+    { symbol: "🌺", name_fr: "Le Lotus de la Renaissance", name_en: "The Lotus of Rebirth", affirmation_fr: "Je renais de mes propres cendres, plus fort(e) et plus sage. Chaque fin est un nouveau départ.", affirmation_en: "I rise from my own ashes, stronger and wiser. Every ending is a new beginning.", keywords_fr: ["Renaissance", "Résilience", "Force"], keywords_en: ["Rebirth", "Resilience", "Strength"] },
+    { symbol: "🌙", name_fr: "Le Voile du Mystère", name_en: "The Veil of Mystery", affirmation_fr: "Ce que je ne comprends pas encore me sera révélé au bon moment. Je fais confiance au timing divin.", affirmation_en: "What I do not yet understand will be revealed at the right moment. I trust divine timing.", keywords_fr: ["Mystère", "Confiance", "Timing"], keywords_en: ["Mystery", "Trust", "Timing"] },
+    { symbol: "💫", name_fr: "Le Tourbillon Cosmique", name_en: "The Cosmic Whirl", affirmation_fr: "Je suis au centre de ma propre galaxie. Tout gravite autour de mon énergie.", affirmation_en: "I am at the center of my own galaxy. Everything revolves around my energy.", keywords_fr: ["Énergie", "Centre", "Magnétisme"], keywords_en: ["Energy", "Center", "Magnetism"] },
+    { symbol: "🌴", name_fr: "La Palme de la Victoire", name_en: "The Palm of Victory", affirmation_fr: "J'ai tout ce qu'il me faut pour réussir. Ma persévérance porte ses fruits aujourd'hui.", affirmation_en: "I have everything I need to succeed. My perseverance bears fruit today.", keywords_fr: ["Victoire", "Réussite", "Persévérance"], keywords_en: ["Victory", "Success", "Perseverance"] }
+  ];
+
+  function getTodayKey() {
+    const d = new Date();
+    return `carte_du_jour_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+  }
+
+  function getTodayCardIndex() {
+    // Deterministic daily card: derive from date + user name for personalisation
+    const d = new Date();
+    const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    const name = (state.answers && state.answers.name) ? state.answers.name : "moon";
+    let nameVal = 0;
+    for (let i = 0; i < name.length; i++) nameVal += name.charCodeAt(i);
+    return (seed + nameVal) % ORACLE_CARDS.length;
+  }
+
+  function formatDateFr(d) {
+    const days = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+    const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+    return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  }
+
+  function formatDateEn(d) {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
+
+  function initCarteDuJour() {
+    const lang = state.lang || "fr";
+    const today = new Date();
+    const dateEl = document.getElementById("carte-date-display");
+    const cardEl = document.getElementById("carte-card");
+    const sceneEl = document.getElementById("carte-scene");
+    const btnDraw = document.getElementById("btn-draw-carte");
+    const actionsEl = document.getElementById("carte-actions");
+    const reflectionEl = document.getElementById("carte-reflection-panel");
+    const alreadyEl = document.getElementById("carte-already-drawn");
+    const navDot = document.getElementById("nav-carte-dot");
+    const todayKey = getTodayKey();
+    const journalKey = `${todayKey}_journal`;
+
+    // Fill date
+    if (dateEl) {
+      dateEl.textContent = lang === "en" ? formatDateEn(today) : formatDateFr(today);
+    }
+
+    const cardIndex = getTodayCardIndex();
+    const card = ORACLE_CARDS[cardIndex];
+
+    // Fill card face content
+    const symbolEl = document.getElementById("carte-symbol");
+    const nameEl = document.getElementById("carte-name");
+    const affirmEl = document.getElementById("carte-affirmation");
+    const keywordRow = document.getElementById("carte-keyword-row");
+
+    if (symbolEl) symbolEl.textContent = card.symbol;
+    if (nameEl) nameEl.textContent = lang === "en" ? card.name_en : card.name_fr;
+    if (affirmEl) affirmEl.textContent = lang === "en" ? card.affirmation_en : card.affirmation_fr;
+    if (keywordRow) {
+      keywordRow.innerHTML = "";
+      const keywords = lang === "en" ? card.keywords_en : card.keywords_fr;
+      keywords.forEach(kw => {
+        const pill = document.createElement("span");
+        pill.className = "carte-keyword-pill";
+        pill.textContent = kw;
+        keywordRow.appendChild(pill);
+      });
+    }
+
+    // Check if already drawn today
+    let alreadyDrawn = false;
+    try { alreadyDrawn = !!localStorage.getItem(todayKey); } catch(e) {}
+
+    if (alreadyDrawn) {
+      // Show card flipped, hide button, show already drawn notice and reflection
+      if (cardEl) cardEl.classList.add("flipped");
+      if (actionsEl) actionsEl.style.display = "none";
+      if (alreadyEl) alreadyEl.style.display = "block";
+      if (reflectionEl) {
+        reflectionEl.style.display = "block";
+        const savedJournal = localStorage.getItem(journalKey) || "";
+        const textarea = document.getElementById("carte-journal-entry");
+        if (textarea && savedJournal) textarea.value = savedJournal;
+      }
+      if (navDot) navDot.classList.remove("visible");
+    } else {
+      // Show draw button, hide already drawn notice
+      if (cardEl) cardEl.classList.remove("flipped");
+      if (actionsEl) actionsEl.style.display = "flex";
+      if (alreadyEl) alreadyEl.style.display = "none";
+      if (reflectionEl) reflectionEl.style.display = "none";
+      if (navDot) navDot.classList.add("visible");
+    }
+
+    // Draw button handler
+    if (btnDraw) {
+      // Remove old listeners by cloning
+      const newBtn = btnDraw.cloneNode(true);
+      btnDraw.parentNode.replaceChild(newBtn, btnDraw);
+      newBtn.addEventListener("click", () => {
+        // Flip animation
+        if (cardEl) cardEl.classList.add("flipped");
+        // Store drawn today
+        try { localStorage.setItem(todayKey, "1"); } catch(e) {}
+        // Hide button
+        if (actionsEl) actionsEl.style.display = "none";
+        // Show reflection after delay
+        setTimeout(() => {
+          if (reflectionEl) reflectionEl.style.display = "block";
+          if (navDot) navDot.classList.remove("visible");
+        }, 900);
+      });
+    }
+
+    // Card click to flip (if not drawn yet)
+    if (sceneEl) {
+      const newScene = sceneEl.cloneNode(true);
+      sceneEl.parentNode.replaceChild(newScene, sceneEl);
+      newScene.addEventListener("click", () => {
+        const c = document.getElementById("carte-card");
+        if (!c || c.classList.contains("flipped")) return;
+        c.classList.add("flipped");
+        try { localStorage.setItem(todayKey, "1"); } catch(e) {}
+        if (actionsEl) actionsEl.style.display = "none";
+        setTimeout(() => {
+          if (reflectionEl) reflectionEl.style.display = "block";
+          if (navDot) navDot.classList.remove("visible");
+        }, 900);
+      });
+    }
+
+    // Save journal entry
+    const btnSave = document.getElementById("btn-save-carte-journal");
+    if (btnSave) {
+      const newSaveBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newSaveBtn, btnSave);
+      newSaveBtn.addEventListener("click", () => {
+        const textarea = document.getElementById("carte-journal-entry");
+        if (!textarea) return;
+        try { localStorage.setItem(journalKey, textarea.value); } catch(e) {}
+        showToast(getTranslation(lang, "carte.saved"));
+      });
+    }
+  }
+
+  // Check nav dot on init
+  function updateCarteDot() {
+    const navDot = document.getElementById("nav-carte-dot");
+    if (!navDot) return;
+    const todayKey = getTodayKey();
+    let drawn = false;
+    try { drawn = !!localStorage.getItem(todayKey); } catch(e) {}
+    if (!drawn && state.isLoggedIn && state.answers && state.answers.name) {
+      navDot.classList.add("visible");
+    } else {
+      navDot.classList.remove("visible");
+    }
+  }
+
   // --- INITIALIZE APPLICATION STATE ---
   loadState();
   state.lang = "fr";
+  updateCarteDot();
   translatePage("fr"); // Run translation and routing immediately on load in French
 });
