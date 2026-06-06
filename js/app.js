@@ -2820,7 +2820,10 @@ document.addEventListener("DOMContentLoaded", () => {
         try { localStorage.setItem(todayKey, "1"); } catch(e) {}
         // Hide button
         if (actionsEl) actionsEl.style.display = "none";
-        // Show reflection after delay
+        // Show popup after flip animation completes, then show reflection
+        setTimeout(() => {
+          showCartePopup(card, lang);
+        }, 850);
         setTimeout(() => {
           if (reflectionEl) reflectionEl.style.display = "block";
           if (navDot) navDot.classList.remove("visible");
@@ -2838,6 +2841,10 @@ document.addEventListener("DOMContentLoaded", () => {
         c.classList.add("flipped");
         try { localStorage.setItem(todayKey, "1"); } catch(e) {}
         if (actionsEl) actionsEl.style.display = "none";
+        // Show popup after flip animation completes
+        setTimeout(() => {
+          showCartePopup(card, lang);
+        }, 850);
         setTimeout(() => {
           if (reflectionEl) reflectionEl.style.display = "block";
           if (navDot) navDot.classList.remove("visible");
@@ -2858,6 +2865,87 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
+
+  // --- POPUP CARTE DU JOUR ---
+  function showCartePopup(card, lang) {
+    const overlay   = document.getElementById("carte-popup-overlay");
+    const symbolEl  = document.getElementById("carte-popup-symbol");
+    const nameEl    = document.getElementById("carte-popup-card-name");
+    const affirmEl  = document.getElementById("carte-popup-affirmation");
+    const keywordsEl= document.getElementById("carte-popup-keywords");
+    const closeBtn  = document.getElementById("carte-popup-close");
+    const ctaBtn    = document.getElementById("carte-popup-btn");
+    const labelEl   = overlay ? overlay.querySelector(".carte-popup-label") : null;
+
+    if (!overlay || !card) return;
+
+    // Populate content
+    if (symbolEl)  symbolEl.textContent  = card.symbol;
+    if (nameEl)    nameEl.textContent    = lang === "en" ? card.name_en    : card.name_fr;
+    if (affirmEl)  affirmEl.textContent  = lang === "en" ? card.affirmation_en : card.affirmation_fr;
+    if (labelEl)   labelEl.textContent   = lang === "en" ? "✦ Your Message of the Day ✦" : "✦ Votre Message du Jour ✦";
+    if (ctaBtn)    ctaBtn.textContent    = lang === "en" ? "Receive this message" : "Recevoir ce message";
+
+    if (keywordsEl) {
+      keywordsEl.innerHTML = "";
+      const kws = lang === "en" ? card.keywords_en : card.keywords_fr;
+      kws.forEach(kw => {
+        const pill = document.createElement("span");
+        pill.className = "carte-keyword-pill";
+        pill.textContent = kw;
+        keywordsEl.appendChild(pill);
+      });
+    }
+
+    // Show overlay
+    overlay.style.display = "flex";
+    // Prevent body scroll
+    document.body.style.overflow = "hidden";
+
+    // Close handlers
+    const closePopup = () => {
+      overlay.style.opacity = "0";
+      overlay.style.transition = "opacity 0.25s ease";
+      setTimeout(() => {
+        overlay.style.display  = "none";
+        overlay.style.opacity  = "";
+        overlay.style.transition = "";
+        document.body.style.overflow = "";
+      }, 250);
+    };
+
+    if (closeBtn) {
+      const newClose = closeBtn.cloneNode(true);
+      closeBtn.parentNode.replaceChild(newClose, closeBtn);
+      newClose.addEventListener("click", closePopup);
+    }
+
+    if (ctaBtn) {
+      const newCta = ctaBtn.cloneNode(true);
+      ctaBtn.parentNode.replaceChild(newCta, ctaBtn);
+      newCta.addEventListener("click", closePopup);
+    }
+
+    // Close on overlay click (outside modal)
+    const newOverlay = overlay.cloneNode(false);
+    // Instead of replacing the overlay, just add a one-time click handler
+    overlay.addEventListener("click", function handleOverlayClick(e) {
+      if (e.target === overlay) {
+        closePopup();
+        overlay.removeEventListener("click", handleOverlayClick);
+      }
+    });
+
+    // Close on Escape key
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        closePopup();
+        document.removeEventListener("keydown", handleEsc);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+  }
+
 
   // Check nav dot on init
   function updateCarteDot() {
