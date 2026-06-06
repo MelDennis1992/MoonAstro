@@ -9,7 +9,19 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AQ.Ab8RN6LiyEoM6Z1ZQ2Z7FCudd6xINJR5hwBT6U6JRLi6Z6mvjg&libraries=places"></script>
+  <script>
+    // Dynamically load Google Maps script only if the key is a valid Google Maps key (starts with AIzaSy)
+    const GOOGLE_API_KEY = "AQ.Ab8RN6LiyEoM6Z1ZQ2Z7FCudd6xINJR5hwBT6U6JRLi6Z6mvjg";
+    if (GOOGLE_API_KEY && GOOGLE_API_KEY.startsWith("AIzaSy")) {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    } else {
+      console.warn("Clé Google Maps non conforme (clé Gemini détectée). Secours OpenStreetMap activé.");
+    }
+  </script>
 </head>
 <body>
 

@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- SUPABASE INITIALIZATION ---
   const SUPABASE_URL = "https://oorlsqxfwhozmciktljf.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vcmxzcXhmd2hvem1jaWt0bGpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMjgyMDIsImV4cCI6MjA5NTkwNDIwMn0.LyyeYMpg1WFX6fsx_VY1qdy_qeO29luRlc12ZojAG2s";
+  const GOOGLE_API_KEY = "AQ.Ab8RN6LiyEoM6Z1ZQ2Z7FCudd6xINJR5hwBT6U6JRLi6Z6mvjg";
   const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
   
   if (!supabase) {
@@ -564,7 +565,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Google Places Autocomplete binding
-      if (window.google && window.google.maps && window.google.maps.places) {
+      const hasGoogleMaps = window.google && window.google.maps && window.google.maps.places && GOOGLE_API_KEY.startsWith("AIzaSy");
+      if (hasGoogleMaps) {
         setupGoogleAutocomplete(birthPlaceInput, (place) => {
           birthPlaceInput.value = place.formatted_address || place.name;
           state.answers.birthPlace = place.formatted_address || place.name;
@@ -577,7 +579,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let debounceTimeout;
       birthPlaceInput.addEventListener("input", (e) => {
-        if (window.google && window.google.maps && window.google.maps.places) {
+        if (hasGoogleMaps) {
           return; // Let Google handle it!
         }
         const query = e.target.value.trim();
@@ -1436,26 +1438,68 @@ document.addEventListener("DOMContentLoaded", () => {
     return found ? found.symbol : "✦";
   }
 
+  function getFlagEmoji(countryCode) {
+    if (!countryCode) return "";
+    const codePoints = countryCode
+      .toUpperCase()
+      .split("")
+      .map(char => 127397 + char.charCodeAt(0));
+    try {
+      return String.fromCodePoint(...codePoints);
+    } catch (e) {
+      return "";
+    }
+  }
+
   // Dual geocoding helper (Photon with Nominatim fallback)
   function searchCitySuggestions(query, callback) {
     const queryLang = state.lang || "fr";
-    fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=${queryLang}`)
+    // Fetch up to 15 candidates to ensure we have enough results after filtering
+    fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=15&lang=${queryLang}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.features && data.features.length > 0) {
-          const suggestions = data.features.map(feat => {
+          const validTypes = new Set(['city', 'town', 'village', 'municipality', 'locality', 'district', 'state', 'country', 'administrative', 'region']);
+          const validKeys = new Set(['place', 'boundary']);
+
+          const filtered = data.features.filter(feat => {
+            const props = feat.properties || {};
+            const osmKey = props.osm_key;
+            const osmValue = props.osm_value;
+            const type = props.type;
+            return validKeys.has(osmKey) || validTypes.has(osmValue) || validTypes.has(type);
+          });
+
+          const seen = new Set();
+          const suggestions = [];
+
+          for (const feat of filtered) {
             const props = feat.properties;
             let label = props.name || "";
             if (props.postcode) label += ` (${props.postcode})`;
             if (props.state && props.state !== props.name) label += `, ${props.state}`;
-            if (props.country) label += `, ${props.country}`;
-            return {
-              display_name: label,
-              lat: feat.geometry.coordinates[1],
-              lon: feat.geometry.coordinates[0]
-            };
-          });
-          callback(suggestions);
+            if (props.country) {
+              const flag = getFlagEmoji(props.countrycode);
+              label += `, ${props.country}${flag ? ' ' + flag : ''}`;
+            }
+
+            if (!seen.has(label)) {
+              seen.add(label);
+              suggestions.push({
+                display_name: label,
+                lat: feat.geometry.coordinates[1],
+                lon: feat.geometry.coordinates[0]
+              });
+            }
+
+            if (suggestions.length >= 5) break; // limit to top 5 unique suggestions
+          }
+
+          if (suggestions.length > 0) {
+            callback(suggestions);
+          } else {
+            queryNominatim(query, callback);
+          }
         } else {
           queryNominatim(query, callback);
         }
@@ -1468,15 +1512,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function queryNominatim(query, callback) {
     const queryLang = state.lang || "fr";
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=${queryLang}`)
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10&accept-language=${queryLang}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
-          const suggestions = data.map(item => ({
-            display_name: item.display_name,
-            lat: parseFloat(item.lat),
-            lon: parseFloat(item.lon)
-          }));
+          const seen = new Set();
+          const suggestions = [];
+          
+          for (const item of data) {
+            if (!seen.has(item.display_name)) {
+              seen.add(item.display_name);
+              suggestions.push({
+                display_name: item.display_name,
+                lat: parseFloat(item.lat),
+                lon: parseFloat(item.lon)
+              });
+            }
+            if (suggestions.length >= 5) break;
+          }
           callback(suggestions);
         } else {
           callback([]);
@@ -1496,7 +1549,7 @@ document.addEventListener("DOMContentLoaded", () => {
       historyList.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
           <div style="font-size: 48px; margin-bottom: 16px;">✨</div>
-          <p>Complétez le questionnaire pour générer votre thème astral.</p>
+          <p data-i18n="history.empty">Complétez le questionnaire pour générer votre thème astral.</p>
         </div>
       `;
       return;
@@ -1507,12 +1560,124 @@ document.addEventListener("DOMContentLoaded", () => {
     const moonSymbol = r.moon?.symbol || "🌙";
     const ascSymbol = "🌌";
     
-    const fireVal = state.answers.score_fire || 25;
-    const earthVal = state.answers.score_earth || 25;
-    const airVal = state.answers.score_air || 25;
-    const waterVal = state.answers.score_water || 25;
+    // Calculate elements dynamically based on Sun sign
+    const sunElement = r.zodiac?.element || "Feu";
+    let fireVal = 25, earthVal = 25, airVal = 25, waterVal = 25;
+    if (sunElement === "Feu") fireVal = 60;
+    else if (sunElement === "Terre") earthVal = 60;
+    else if (sunElement === "Air") airVal = 60;
+    else if (sunElement === "Eau") waterVal = 60;
+
+    // Draw astrological wheel
+    const ascLong = (r.astro && typeof r.astro.ascLong === 'number') ? r.astro.ascLong : 270;
+    const sunLong = (r.astro && typeof r.astro.sunLong === 'number') ? r.astro.sunLong : 0;
+    const moonLong = (r.astro && typeof r.astro.moonLong === 'number') ? r.astro.moonLong : 90;
+
+    // We rotate the wheel so the Ascendant is always at 180° (horizontal left)
+    const rotationAngle = 180 - ascLong;
+
+    const getXY = (angle, radius) => {
+      const rad = (angle * Math.PI) / 180;
+      return {
+        x: 150 + radius * Math.cos(rad),
+        y: 150 + radius * Math.sin(rad)
+      };
+    };
+
+    let segmentsHtml = "";
+    for (let i = 0; i < 12; i++) {
+      const startLong = ((i - 3) * 30 + 360) % 360;
+      const startAngle = (startLong + rotationAngle) % 360;
+      const endAngle = (startLong + 30 + rotationAngle) % 360;
+      const midAngle = (startLong + 15 + rotationAngle) % 360;
+
+      // Draw sign division lines
+      const pInner = getXY(startAngle, 95);
+      const pOuter = getXY(startAngle, 125);
+      segmentsHtml += `<line x1="${pInner.x}" y1="${pInner.y}" x2="${pOuter.x}" y2="${pOuter.y}" stroke="rgba(197, 160, 89, 0.2)" stroke-width="1" />`;
+
+      // Draw sign symbols
+      const pText = getXY(midAngle, 110);
+      const signElement = ZODIAC_SIGNS[i].element;
+      let elColor = "var(--accent-gold)";
+      if (signElement === "Feu") elColor = "#E2583E";
+      else if (signElement === "Terre") elColor = "#5A8C43";
+      else if (signElement === "Air") elColor = "#4A90E2";
+      else if (signElement === "Eau") elColor = "#9b59b6";
+
+      segmentsHtml += `<text x="${pText.x}" y="${pText.y + 4}" text-anchor="middle" font-size="11" fill="${elColor}" font-family="Cinzel, serif">${ZODIAC_SIGNS[i].symbol}</text>`;
+    }
+
+    const sunAngle = (sunLong + rotationAngle) % 360;
+    const pSun = getXY(sunAngle, 90);
+    const pSunSym = getXY(sunAngle, 72);
+
+    const moonAngle = (moonLong + rotationAngle) % 360;
+    const pMoon = getXY(moonAngle, 90);
+    const pMoonSym = getXY(moonAngle, 72);
+
+    const ascAngle = 180; // Always 180 (left) in rotated chart
+    const pAscSym = getXY(ascAngle, 72);
 
     let html = `
+      <!-- Dynamic SVG Astrological Wheel -->
+      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 24px;">
+        <svg width="260" height="260" viewBox="0 0 300 300" style="background: transparent;">
+          <defs>
+            <radialGradient id="space-gradient" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#14192d" />
+              <stop offset="75%" stop-color="#0e1224" />
+              <stop offset="100%" stop-color="#070913" />
+            </radialGradient>
+            <radialGradient id="gold-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(197, 160, 89, 0.15)" />
+              <stop offset="100%" stop-color="rgba(197, 160, 89, 0)" />
+            </radialGradient>
+          </defs>
+
+          <!-- Glow -->
+          <circle cx="150" cy="150" r="140" fill="url(#gold-glow)" />
+
+          <!-- Outer border -->
+          <circle cx="150" cy="150" r="125" fill="none" stroke="var(--accent-gold)" stroke-width="1.5" />
+          
+          <!-- Inner circle background -->
+          <circle cx="150" cy="150" r="95" fill="url(#space-gradient)" stroke="var(--accent-gold)" stroke-width="1" />
+          
+          <!-- Divisions -->
+          ${segmentsHtml}
+
+          <!-- Axis lines -->
+          <line x1="55" y1="150" x2="245" y2="150" stroke="rgba(197, 160, 89, 0.15)" stroke-width="1" />
+          <line x1="150" y1="55" x2="150" y2="245" stroke="rgba(197, 160, 89, 0.15)" stroke-width="1" />
+
+          <!-- ASC Arrow and Label -->
+          <line x1="150" y1="150" x2="55" y2="150" stroke="#4A90E2" stroke-width="2.5" />
+          <polygon points="55,150 62,146 62,154" fill="#4A90E2" />
+          <text x="45" y="153" fill="#4A90E2" font-size="9" font-weight="bold" text-anchor="end">ASC</text>
+
+          <!-- Sun Line & Node -->
+          <line x1="150" y1="150" x2="${pSun.x}" y2="${pSun.y}" stroke="var(--accent-gold)" stroke-width="1.5" />
+          <circle cx="${pSunSym.x}" cy="${pSunSym.y}" r="11" fill="#070913" stroke="var(--accent-gold)" stroke-width="1.5" />
+          <text x="${pSunSym.x}" y="${pSunSym.y + 3.5}" text-anchor="middle" font-size="9">☀️</text>
+
+          <!-- Moon Line & Node -->
+          <line x1="150" y1="150" x2="${pMoon.x}" y2="${pMoon.y}" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" />
+          <circle cx="${pMoonSym.x}" cy="${pMoonSym.y}" r="11" fill="#070913" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" />
+          <text x="${pMoonSym.x}" y="${pMoonSym.y + 3.5}" text-anchor="middle" font-size="9">🌙</text>
+
+          <!-- ASC Node -->
+          <circle cx="${pAscSym.x}" cy="${pAscSym.y}" r="11" fill="#070913" stroke="#4A90E2" stroke-width="1.5" />
+          <text x="${pAscSym.x}" y="${pAscSym.y + 3.5}" text-anchor="middle" font-size="9">🌌</text>
+
+          <!-- Center gold dot -->
+          <circle cx="150" cy="150" r="4" fill="var(--accent-gold)" />
+        </svg>
+        <span style="font-size: 11px; color: var(--text-muted); margin-top: 6px; font-style: italic;">
+          Position de votre Trinité Céleste (Soleil, Lune, Ascendant)
+        </span>
+      </div>
+
       <!-- Trinité Céleste -->
       <div class="card" style="padding: 20px; border-color: rgba(212, 175, 55, 0.25);">
         <h3 class="result-section-title" style="color: var(--accent-gold-dark); border-bottom-color: rgba(212, 175, 55, 0.1); font-size: 15px; font-family: var(--font-serif-title);">
@@ -1523,21 +1688,21 @@ document.addEventListener("DOMContentLoaded", () => {
             <div style="font-size: 20px; min-width: 36px; height: 36px; background: rgba(197,160,89,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">${sunSymbol}</div>
             <div>
               <strong style="font-size: 13px; color: var(--accent-gold-dark);">Soleil en ${r.zodiac.name}</strong>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">Votre force vitale créative et votre identité profonde.</p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">Votre force vitale créative, votre égo conscient et votre identité profonde.</p>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
             <div style="font-size: 20px; min-width: 36px; height: 36px; background: rgba(197,160,89,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">${moonSymbol}</div>
             <div>
               <strong style="font-size: 13px; color: var(--accent-gold-dark);">Lune en ${r.moon ? r.moon.name : "Cancer"}</strong>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">Votre monde intérieur, vos émotions et votre intuition.</p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">Votre monde intérieur, vos réactions inconscientes et vos besoins affectifs.</p>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
             <div style="font-size: 20px; min-width: 36px; height: 36px; background: rgba(197,160,89,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">${ascSymbol}</div>
             <div>
               <strong style="font-size: 13px; color: var(--accent-gold-dark);">Ascendant : ${r.ascendant}</strong>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">La porte de votre âme, l'énergie que vous projetez sur le monde.</p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">Votre apparence extérieure, votre masque social et votre véhicule d'incarnation.</p>
             </div>
           </div>
         </div>
@@ -1546,10 +1711,13 @@ document.addEventListener("DOMContentLoaded", () => {
       <!-- Chemin de Vie -->
       <div class="card" style="padding: 20px;">
         <h3 class="result-section-title" style="font-size: 15px; font-family: var(--font-serif-title);">
-          ✦ Chemin de Vie : Nombre ${r.lifePath || '7'}
+          ✦ Chemin de Vie : Nombre ${r.lifePath?.number || '7'}
         </h3>
         <p style="font-size: 13px; line-height: 1.5; margin: 10px 0 0 0; color: var(--text-dark);">
-          Votre chemin de vie révèle votre mission spirituelle d'incarnation. Le nombre <strong>${r.lifePath || '7'}</strong> indique une destinée d'évolution personnelle forte et un besoin inné d'introspection, de sagesse et de connexion spirituelle.
+          Votre chemin de vie révèle votre mission spirituelle d'incarnation. Le nombre <strong>${r.lifePath?.number || '7'} - ${r.lifePath?.name || 'Le Sage'}</strong> indique une destinée d'évolution personnelle forte et un besoin inné d'introspection, de sagesse et de connexion spirituelle.
+        </p>
+        <p style="font-size: 12px; line-height: 1.5; margin: 6px 0 0 0; color: var(--text-muted);">
+          ${r.lifePath?.desc || ''}
         </p>
       </div>
 
@@ -1687,7 +1855,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let settingsDebounce;
   if (setBirthplaceInput) {
     setBirthplaceInput.addEventListener("input", (e) => {
-      if (window.google && window.google.maps && window.google.maps.places) {
+      const hasGoogleMaps = window.google && window.google.maps && window.google.maps.places && GOOGLE_API_KEY.startsWith("AIzaSy");
+      if (hasGoogleMaps) {
         return; // Let Google handle it!
       }
       const query = e.target.value.trim();
@@ -1741,7 +1910,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setBirthplaceInput.value = state.answers.birthPlace || "";
  
     // Setup Google Autocomplete in settings if available
-    if (window.google && window.google.maps && window.google.maps.places && setBirthplaceInput) {
+    const hasGoogleMapsSettings = window.google && window.google.maps && window.google.maps.places && GOOGLE_API_KEY.startsWith("AIzaSy");
+    if (hasGoogleMapsSettings && setBirthplaceInput) {
       setupGoogleAutocomplete(setBirthplaceInput, (place) => {
         setBirthplaceInput.value = place.formatted_address || place.name;
         state.answers.birthPlace = place.formatted_address || place.name;
@@ -1860,6 +2030,9 @@ document.addEventListener("DOMContentLoaded", () => {
           console.log("Geocoded on submit:", coords);
         } else {
           console.warn("Geocoding failed for:", newPlace);
+          showToast(state.lang === "en" ? "Could not verify birth coordinates. Please check spelling." : "Coordonnées de naissance introuvables. Veuillez vérifier l'orthographe.");
+          if (submitBtn) submitBtn.disabled = false;
+          return;
         }
       } else {
         state.answers.birthPlace = newPlace;
@@ -2348,23 +2521,14 @@ document.addEventListener("DOMContentLoaded", () => {
       ? pick([
           "\n\n*Souhaitez-vous explorer votre **vie amoureuse**, votre **chemin de vie** ou votre **gemme céleste** ?*",
           "\n\n*N'hésitez pas à m'interroger sur votre **potentiel professionnel** ou vos **blocages énergétiques**.*",
-          "\n\n*Votre thème recèle encore bien des révélations… Quelle facette souhaitez-vous illuminer ?*"
-        ])
-      : pick([
-          "\n\n*Would you like to explore your **love life**, **life path**, or **celestial gemstone**?*",
-          "\n\n*Feel free to ask me about your **career potential** or **energetic blockages**.*",
-          "\n\n*Your chart holds many more revelations… Which aspect shall we illuminate next?*"
-        ]);
-
-    let response = "";
+          "\n\n*Votre thème recèle encore bien des révélations… Quelle facette souhaitez-vous illumine    let response = "";
 
     // AMOUR
     if (msgLower.includes("amour") || msgLower.includes("love") || msgLower.includes("relation") || msgLower.includes("couple") || msgLower.includes("rencontre")) {
       response = lang === "fr"
         ? pick([
-            `**✨ Guidance de l'Oracle — Amour & Connexion**\n\nCher(ère) ${name}, votre Soleil en **${sun}** vous confère une capacité d'aimer profondément, parfois au risque de vous oublier. Votre Lune en **${moon}** teinte vos émotions d'une sensibilité rare.\n\nVénus transit actuellement votre Ascendant **${asc}**, ouvrant une fenêtre d'authenticité émotionnelle. C'est le moment de :\n1. Exprimer ce que vous n'osiez pas dire.\n2. Attirer en étant pleinement vous-même.\n3. Lâcher une attente qui bloque votre cœur.\n\nLe cosmos vous dit : l'amour ne vous cherche pas, il vous *reconnaît*.`,
-            `**🌙 Guidance de l'Oracle — Le Cœur Étoilé**\n\n${name}, votre Soleil **${sun}** / Lune **${moon}** crée une nature ardente et protectrice. Le vrai blocage dans votre ciel : **« ${blocker} »** — cette peur crée un mur autour de votre cœur que votre Ascendant **${asc}** tente pourtant de franchir.\n\nActions immédiates :\n- 🌹 Une conversation honnête avec quelqu'un de cher cette semaine.\n- 💎 Portez votre **${gem}** près du cœur.\n- 🌑 À la Nouvelle Lune : écrivez 3 qualités que vous apportez en amour.`,
-            `**💫 Guidance de l'Oracle — Vibrations Amoureuses**\n\nSous votre Soleil **${sun}**, vous aimez avec intensité mais parfois avec impatience. La Lune en **${moon}** vous demande de *ressentir avant d'agir*. Vénus forme un aspect favorable à votre Ascendant **${asc}** — vos vibrations sont attractives en ce moment.\n\nLa question des astres : *« Cherchez-vous un(e) partenaire ou votre propre complétude ? »*\n\nCette réponse changera tout.`
+            `**🌌 Révélation de l'Oracle — Amour & Union Sacrée**\n\nCher(ère) **${name}**, votre Soleil en **${sun}** insuffle une énergie vibrante à votre sphère relationnelle. Cependant, votre Lune en **${moon}** indique un monde émotionnel secret et profond. Cette dualité crée parfois un tiraillement entre votre désir conscient de liberté et votre besoin inconscient de fusion et de sécurité émotionnelle.\n\n**🔮 Analyse Astrale & Blocages**\n\nLes astres révèlent que votre blocage majeur **« ${blocker} »** agit comme un bouclier autour de votre cœur. Sous l'influence de votre Ascendant **${asc}**, vous pouvez projeter une image d'indépendance farouche alors qu'au fond, vous aspirez à une intimité totale. Vénus active en ce moment ce secteur natal pour transmuter ce schéma obsolète.\n\n**💎 Alignement Vibratoire & Rituel**\n\nPour harmoniser votre trinité astrale, l'Oracle vous recommande de vous connecter à votre pierre sacrée, le **${gem}** (${gemDesc}). Ritualisez cette démarche en la plaçant sur votre chakra du cœur pendant 11 minutes lors de la prochaine Nouvelle Lune, tout en répétant l'affirmation : *« Je m'ouvre à l'amour véritable en toute sécurité. »*`,
+            `**🌙 Guidance de l'Oracle — Le Cœur Étoilé**\n\nCher(ère) **${name}**, l'alliance de votre Soleil en **${sun}** et de votre Lune en **${moon}** colore votre destinée d'une sensibilité hors du commun. Vous ressentez tout avec une acuité accrue, ce qui fait de vous un(e) partenaire dévoué(e) mais parfois sujet(te) à l'absorption des tensions de votre entourage.\n\n**🔮 Analyse Astrale & Blocages**\n\nLe grand défi karmique qui vous retient est : **« ${blocker} »**. Ce schéma crée une peur inconsciente de la vulnérabilité, bloquant la libre circulation de l'amour dans vos relations. Vénus, conjointe à votre Ascendant **${asc}**, vous invite cette semaine à poser des limites plus saines pour protéger votre énergie.\n\n**💎 Alignement Vibratoire & Rituel**\n\nVotre pierre céleste, le **${gem}**, est votre meilleure alliée pour transmuter cette peur. Portez-la en bijou près du chakra du cœur pour libérer votre parole et affirmer vos besoins émotionnels réels sans crainte du rejet.`
           ])
         : pick([
             `**✨ Oracle Guidance — Love & Connection**\n\nDear ${name}, Venus is transiting your **${asc}** Ascendant — a rare window of emotional authenticity. Express what you've been afraid to say. The cosmos tells you: love doesn't search for you, it *recognizes* you.`,
@@ -2376,8 +2540,7 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (msgLower.includes("travail") || msgLower.includes("carrière") || msgLower.includes("career") || msgLower.includes("professionnel") || msgLower.includes("job") || msgLower.includes("boulot") || msgLower.includes("argent") || msgLower.includes("money")) {
       response = lang === "fr"
         ? pick([
-            `**⭐ Guidance de l'Oracle — Carrière & Mission**\n\n${name}, votre Soleil en **${sun}** vous destine à briller dans des rôles où votre individualité est une force. Votre Ascendant **${asc}** détermine *comment* les autres vous perçoivent professionnellement.\n\nJupiter stimule actuellement votre secteur professionnel — mais votre blocage **« ${blocker} »** risque de vous empêcher de saisir cette opportunité.\n\nStratégies cosmiques :\n1. Identifiez une compétence sous-évaluée et mettez-la en avant cette semaine.\n2. Dites *oui* à une opportunité que vous auriez normalement déclinée.\n3. Méditez avec votre **${gem}** avant chaque décision importante.`,
-            `**🔮 Guidance de l'Oracle — L'Abondance Méritée**\n\nVotre chemin de vie **${lifeNum}** révèle une âme faite pour *créer*, pas seulement exécuter. Avec votre Soleil en **${sun}**, votre vraie richesse vient de l'authenticité de votre contribution.\n\nLe paradoxe dans votre ciel : vous avez peur de demander ce que vous méritez. La Lune en **${moon}** crée cette retenue émotionnelle.\n\nDéfi des 7 prochains jours : formulez clairement votre valeur professionnelle à quelqu'un qui peut l'entendre. Saturne récompense le courage, pas la patience passive.`
+            `**⭐ Guidance de l'Oracle — Carrière & Mission d'Incarnation**\n\nCher(ère) **${name}**, votre Soleil en **${sun}** est votre boussole de réussite. Il vous appelle à briller et à assumer votre pouvoir créatif. Votre Ascendant **${asc}** régit la façon dont vous agissez et dont vous êtes perçu(e) dans le monde professionnel, tandis que votre chemin de vie **${lifeNum}** indique votre destination ultime.\n\n**🔮 Analyse Astrale & Blocages**\n\nLes flux cosmiques actuels de Jupiter favorisent un renouveau dans vos projets de carrière. Cependant, votre défi principal **« ${blocker} »** freine votre expansion. Votre Lune en **${moon}** insuffle des doutes passagers quant à vos capacités réelles, provoquant une dispersion ou une retenue.\n\n**💎 Alignement Vibratoire & Rituel**\n\nPour surmonter cela, l'Oracle vous invite à méditer chaque matin en tenant votre pierre **${gem}** dans la main gauche. Projetez-vous dans votre rôle idéal en visualisant le blocage se dissiper, et posez une action audacieuse et concrète dans les 48 heures.`
           ])
         : pick([
             `**⭐ Oracle Guidance — Career & Mission**\n\n${name}, Jupiter is stimulating your career sector. But your blockage **"${blocker}"** may stop you. Identify a skill you undervalue, highlight it this week. Meditate with your **${gem}** before every key decision.`,
@@ -2389,8 +2552,7 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (msgLower.includes("blocage") || msgLower.includes("obstacle") || msgLower.includes("peur") || msgLower.includes("fear") || msgLower.includes("difficile") || msgLower.includes("aide") || msgLower.includes("surmonter")) {
       response = lang === "fr"
         ? pick([
-            `**🌑 Guidance de l'Oracle — Transmutation des Ombres**\n\n${name}, votre blocage **« ${blocker} »** n'est pas une faiblesse — c'est le reflet de votre zone de croissance la plus puissante. Votre Ascendant **${asc}** a construit des défenses qui vous ont protégé(e) autrefois, mais qui vous retiennent aujourd'hui.\n\nProtocole de transmutation :\n1. **Nommez-le** : Écrivez-le sur papier à la pleine lune.\n2. **Ancrez-le** : Portez votre **${gem}** (${gemDesc}) quotidiennement.\n3. **Libérez-le** : Chaque matin : *« Je choisis la croissance plutôt que la protection. »*`,
-            `**💎 Guidance de l'Oracle — La Clé Cachée**\n\nLe blocage **« ${blocker} »**, ${name}, est lié à une leçon que Saturne vous enseigne depuis plusieurs années. Votre Soleil en **${sun}** possède la force exacte pour dissoudre ce schéma. Il vous manque simplement la *permission* de vous-même.\n\nTenez votre **${gem}** dans la main gauche et posez-vous : *« Qu'est-ce que je gagnerais si je n'avais plus cette peur ? »*\n\nLa première réponse est votre prochaine direction.`
+            `**🌑 Guidance de l'Oracle — Transmutation des Ombres**\n\nCher(ère) **${name}**, le défi majeur qui se dresse sur votre chemin spirituel est le suivant : **« ${blocker} »**. Ce schéma n'est pas une fatalité ni une punition céleste, mais la clé de voûte de votre évolution. Votre Soleil en **${sun}** possède la lumière nécessaire pour éclairer cette zone d'ombre.\n\n**🔮 Analyse Astrale & Blocages**\n\nVotre Lune en **${moon}** conserve des mémoires du passé qui alimentent ce blocage, tandis que votre Ascendant **${asc}** a érigé des barrières de protection pour vous éviter de souffrir. Il est temps de comprendre que ces défenses sont devenues des prisons qui limitent votre potentiel spirituel et terrestre.\n\n**💎 Alignement Vibratoire & Rituel**\n\nL'Oracle vous conseille d'entamer un processus de shadow work. Écrivez cette peur sur un papier à la lune décroissante, puis brûlez-le avec intention. Portez quotidiennement votre pierre de protection, le **${gem}** (${gemDesc}), pour stabiliser votre taux vibratoire pendant cette transition.`
           ])
         : pick([
             `**🌑 Oracle Guidance — Shadow Transmutation**\n\n${name}, your blockage **"${blocker}"** is your most powerful growth zone in disguise. Protocol: name it, ground it with your **${gem}**, say each morning: *"I choose growth over protection."*`,
@@ -2402,8 +2564,7 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (msgLower.includes("pierre") || msgLower.includes("gem") || msgLower.includes("cristal") || msgLower.includes("crystal") || msgLower.includes("minéral")) {
       response = lang === "fr"
         ? pick([
-            `**💠 Guidance de l'Oracle — Sagesse des Gemmes**\n\nVotre pierre céleste, ${name}, est le **${gem}**.\n\n*Vertus* : ${gemDesc}\n\nSpécifiquement choisie pour votre Soleil **${sun}** / Lune **${moon}**, elle amplifie vos énergies lumineuses et filtre vos tensions.\n\nRitual 🌑 : Placez-la sur votre chakra du cœur 11 minutes à la Nouvelle Lune. Chaque matin, tenez-la et répétez : *« Je reçois la lumière de mon âme. »*`,
-            `**🔮 Guidance de l'Oracle — L'Alliance Cristalline**\n\nLe **${gem}** a été tissé dans votre thème pour une raison précise : ${gemDesc}. Votre Ascendant **${asc}** réagit particulièrement bien à son énergie.\n\nPortez-la côté gauche pour attirer ses qualités. Posez-la à droite de votre espace de travail pour projeter sa fréquence. Rechargez-la sous la pleine lune chaque mois.`
+            `**💠 Sagesse des Gemmes — Alignement Minéral**\n\nCher(ère) **${name}**, le cosmos a associé à votre signature astrale la pierre sacrée du **${gem}**. Cette alliance n'est pas fortuite : les vibrations de ce minéral entrent en résonance directe avec votre Soleil en **${sun}** et votre Lune en **${moon}** pour équilibrer vos polarités.\n\n**🔮 Analyse Astrale & Blocages**\n\nLe **${gem}** possède les propriétés parfaites pour filtrer les énergies parasites et dissoudre votre blocage récurrent : **« ${blocker} »**. Cette pierre agit comme un amplificateur de votre intuition et de votre force spirituelle, vous aidant à incarner pleinement les qualités de votre Ascendant **${asc}**.\n\n**💎 Alignement Vibratoire & Rituel**\n\n*Rituel d'harmonisation* : Placez votre pierre sous la lumière de la Pleine Lune pendant une nuit pour la recharger. Le matin, tenez-la contre votre plexus solaire ou votre cœur pendant 11 minutes en répétant : *« Je canalise la force tranquille du cosmos à travers mon être. »*`
           ])
         : `**💠 Oracle Guidance — Gemstone Wisdom**\n\nYour celestial stone is **${gem}** — ${gemDesc}. Ritual: hold it on your heart chakra for 11 minutes at the New Moon. Each morning repeat: *"I receive the light of my soul."*`;
     }
@@ -2411,14 +2572,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // SANTÉ / ÉNERGIE
     else if (msgLower.includes("santé") || msgLower.includes("énergie") || msgLower.includes("fatigue") || msgLower.includes("corps") || msgLower.includes("health") || msgLower.includes("energy")) {
       response = lang === "fr"
-        ? `**🌿 Guidance de l'Oracle — Vitalité & Harmonie**\n\n${name}, votre corps parle un langage astral. Sous votre Soleil **${sun}**, votre énergie suit des cycles que la société ignore souvent. Votre Lune en **${moon}** régit votre système émotionnel — le conflit intérieur se ressent dans le corps avant d'être compris par l'esprit.\n\nRitual de recharge :\n1. 🌊 Buvez de l'eau avec intention chaque matin.\n2. 🌿 10 minutes dans la nature par jour (pieds nus si possible).\n3. 💎 Portez votre **${gem}** lors de vos moments de récupération.\n\nMessage des astres : *votre fatigue est une invitation à rentrer chez vous intérieurement.*`
+        ? `**🌿 Guidance de l'Oracle — Vitalité Céleste & Corps Sacré**\n\nCher(ère) **${name}**, votre corps est le temple de votre incarnation terrestre. Votre Soleil en **${sun}** régit votre vitalité globale, tandis que votre Lune en **${moon}** gère votre équilibre psychosomatique. La fatigue ou les tensions que vous ressentez sont des messages codés de votre âme.\n\n**🔮 Analyse Astrale & Blocages**\n\nVotre blocage énergétique principal **« ${blocker} »** crée des stagnations dans vos corps subtils. Votre Ascendant **${asc}** tente d'extérioriser cette pression, mais sans un ancrage suffisant, l'esprit s'emballe et crée du stress physique.\n\n**💎 Alignement Vibratoire & Rituel**\n\n*Conseils holistiques* : Accordez-vous un bain de pieds à l'eau salée pour libérer les énergies accumulées, et portez votre pierre **${gem}** près de vous lors de vos moments de repos. Prenez le temps de respirer profondément à l'extérieur, pieds nus sur la terre si possible, pour réaligner vos biorhythmes.`
         : `**🌿 Oracle Guidance — Vitality & Harmony**\n\n${name}, your Moon in **${moon}** means inner conflict shows up in the body before the mind understands it. Ground yourself: 10 minutes in nature daily, water with intention, and your **${gem}** during recovery moments.`;
     }
 
     // SPIRITUALITÉ / ÂME
     else if (msgLower.includes("spirit") || msgLower.includes("âme") || msgLower.includes("chemin") || msgLower.includes("destin") || msgLower.includes("soul") || msgLower.includes("mission")) {
       response = lang === "fr"
-        ? `**🌌 Guidance de l'Oracle — Chemin de l'Âme**\n\n${name}, votre chemin de vie **${lifeNum}** révèle votre mission profonde sur Terre. Ce n'est pas une destination — c'est une orientation permanente.\n\nSoleil **${sun}** : votre boussole consciente. Lune **${moon}** : votre moteur inconscient. Ascendant **${asc}** : le véhicule de cette incarnation.\n\nAlignés, ces trois éléments créent une puissance créatrice rare. Les astres observent que vous n'en utilisez qu'une fraction.\n\nLa question de l'Oracle : *« Qu'est-ce que vous feriez si vous saviez que vous ne pouvez pas échouer ? »*\n\nLa réponse est votre prochain pas cosmique.`
+        ? `**🌌 Guidance de l'Oracle — Alignement Céleste & Mission de l'Âme**\n\nCher(ère) **${name}**, votre chemin de vie **${lifeNum}** est la signature sacrée de votre incarnation actuelle. Il indique que vous êtes venu(e) pour expérimenter l'introspection spirituelle, la recherche de vérité et l'éveil de conscience. Votre Soleil en **${sun}** est votre boussole de feu, et votre Lune en **${moon}** est votre source d'intuition.\n\n**🔮 Analyse Astrale & Blocages**\n\nPour progresser sur cette voie sacrée, vous devez transmuter l'obstacle majeur : **« ${blocker} »**. Votre Ascendant **${asc}** vous dote des outils nécessaires pour relever ce défi, mais vous devez consciemment accepter de lâcher prise sur vos peurs anciennes pour fusionner avec votre moi supérieur.\n\n**💎 Alignement Vibratoire & Rituel**\n\n*Pratique de centrage* : Asseyez-vous en silence, placez votre pierre **${gem}** devant vous et visualisez un canal de lumière dorée descendant des cieux, traversant votre couronne et vous connectant au noyau de la Terre. Répétez ce mantra : *« Je suis aligné(e) avec mon plan divin originel. »*`
         : `**🌌 Oracle Guidance — Soul Path**\n\n${name}, your life path **${lifeNum}** is a permanent orientation. Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — aligned, they create rare power. The Oracle asks: *"What would you do if you knew you couldn't fail?"* That answer is your next cosmic step.`;
     }
 
@@ -2426,8 +2587,14 @@ document.addEventListener("DOMContentLoaded", () => {
     else {
       response = lang === "fr"
         ? pick([
-            `**🔮 Guidance de l'Oracle**\n\n${name}, les astres reçoivent votre question avec bienveillance. Votre triade — Soleil **${sun}**, Lune **${moon}**, Ascendant **${asc}** — m'indique que vous traversez un cycle d'intégration profonde.\n\nCe que les cieux voient en vous :\n- Une puissance qui attend d'être reconnue.\n- Un schéma **« ${blocker} »** prêt à être transmué.\n- Une intuition qui mérite d'être davantage écoutée.\n\nInterrogez-moi sur votre **vie amoureuse**, votre **potentiel professionnel**, votre **blocage principal** ou votre **pierre céleste**.`,
-            `**✨ L'Oracle vous parle, ${name}**\n\nJe lis dans votre thème une âme en mouvement. Votre Soleil **${sun}** vous pousse vers la lumière ; votre Lune **${moon}** vous rappelle parfois vers vos eaux intérieures. Cette tension est votre plus grande richesse. Votre **${gem}** est votre allié pour naviguer cette dualité avec grâce.\n\nSur quel aspect souhaitez-vous que l'Oracle aille plus loin ?`
+            `**🔮 Révélation de l'Oracle — Guidance Spirituelle**\n\nCher(ère) **${name}**, les gardiens du ciel entendent votre appel. Votre triade sacrée — Soleil en **${sun}**, Lune en **${moon}**, et Ascendant **${asc}** — indique que vous traversez un portail d'intégration énergétique majeur. Vous êtes invité(e) à écouter les murmures de votre intuition.\n\n**🔮 Analyse Astrale & Blocages**\n\nVotre défi majeur actuel réside dans la transmutation du schéma obsolète : **« ${blocker} »**. Ce schéma bloque l'expression authentique de votre lumière. La présence de votre pierre céleste, le **${gem}** (${gemDesc}), dans votre champ énergétique vous aidera à traverser cette phase d'alchimie intérieure.\n\n**💎 Alignement Vibratoire & Rituel**\n\nPosez-vous cette question en tenant votre pierre : *« Quelle part de moi refuse encore de briller de peur d'être vue ? »* Laissez la réponse émerger naturellement. Vous pouvez me questionner sur vos **blocages**, votre **vie sentimentale** ou votre **évolution professionnelle** pour approfondir.`,
+            `**✨ Guidance de l'Oracle — Les Clés Cosmiques**\n\nCher(ère) **${name}**, je lis dans votre thème astrologique une âme dotée d'une grande puissance créatrice, mais qui reste en retrait. Votre Soleil en **${sun}** vous pousse vers l'affirmation, tandis que votre Lune en **${moon}** vous enveloppe de mystère et d'évasion. Trouver l'équilibre entre ces forces est votre œuvre de vie.\n\n**🔮 Analyse Astrale & Blocages**\n\nLe blocage énergétique **« ${blocker} »** est l'épreuve initiatique choisie par votre âme pour ce cycle. En la surmontant grâce à la force tranquille de votre Ascendant **${asc}**, vous débloquerez un potentiel insoupçonné de manifestation spirituelle et matérielle.\n\n**💎 Alignement Vibratoire & Rituel**\n\nPortez votre pierre sacrée, le **${gem}**, sur vous pour consolider votre aura contre les doutes. Quel aspect de votre vie souhaitez-vous que l'Oracle éclaire davantage aujourd'hui ? La **carrière**, l'**amour** ou la **guérison spirituelle** ?`
+          ])
+        : pick([
+            `**🔮 Oracle Guidance**\n\n${name}, your triad — Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — tells me you're in a deep integration cycle. Ask me about your **love life**, **career potential**, **main blockage**, or **celestial stone**.`,
+            `**✨ The Oracle speaks, ${name}**\n\nSun **${sun}** pushes you toward light; Moon **${moon}** calls you inward. This tension is your greatest richness. Your **${gem}** helps you navigate both worlds.`
+          ]);
+    }de richesse. Votre **${gem}** est votre allié pour naviguer cette dualité avec grâce.\n\nSur quel aspect souhaitez-vous que l'Oracle aille plus loin ?`
           ])
         : pick([
             `**🔮 Oracle Guidance**\n\n${name}, your triad — Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — tells me you're in a deep integration cycle. Ask me about your **love life**, **career potential**, **main blockage**, or **celestial stone**.`,

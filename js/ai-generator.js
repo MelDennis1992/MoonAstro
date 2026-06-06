@@ -528,8 +528,11 @@ function computeAstrology(birthDateStr, birthTimeStr, latitude, longitude, birth
 
   return {
     sun: getZodiacSign(sunLong),
+    sunLong: sunLong,
     moon: getZodiacSign(moonLong),
-    ascendant: getZodiacSign(ascLong)
+    moonLong: moonLong,
+    ascendant: getZodiacSign(ascLong),
+    ascLong: ascLong
   };
 }
 
@@ -707,6 +710,7 @@ function generatePersonalizedReport(answers, lang = "fr") {
     zodiac, // Sun sign
     moon,   // Moon sign
     ascendant, // Ascendant string
+    astro, // Raw astro object containing coordinates & signs
     energyProfile,
     energyDescription,
     energyScore,

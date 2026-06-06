@@ -2,9 +2,9 @@ const TRANSLATIONS = {
   fr: {
     // Nav Bar
     "nav.dashboard": "Dashboard",
-    "nav.history": "Mon Thème",
-    "history.title": "Votre Signature Céleste",
-    "history.sub": "Retrouvez les détails permanents de votre thème astral de naissance.",
+    "nav.history": "Thème Astral",
+    "history.title": "Votre Thème Astral Céleste",
+    "history.sub": "La cartographie sacrée du ciel au moment précis de votre naissance.",
     "nav.settings": "Paramètres",
     "nav.client_space": "Espace Client",
     "nav.my_profile": "Mon Profil",
@@ -244,9 +244,9 @@ const TRANSLATIONS = {
   en: {
     // Nav Bar
     "nav.dashboard": "Dashboard",
-    "nav.history": "My Chart",
-    "history.title": "Your Celestial Signature",
-    "history.sub": "Find the permanent details of your natal birth chart.",
+    "nav.history": "Natal Chart",
+    "history.title": "Your Celestial Natal Chart",
+    "history.sub": "The sacred map of the heavens calculated at the exact moment of your birth.",
     "nav.settings": "Settings",
     "nav.client_space": "Client Space",
     "nav.my_profile": "My Profile",
