@@ -1,0 +1,20 @@
+# ----------------------------------------------------------------------
+# 🌙 MoonAstro — Configuration du Cache & Redirections
+# ----------------------------------------------------------------------
+
+# 1. Empêcher la mise en cache de index.html pour que les mises à jour JS/CSS soient instantanées
+<FilesMatch "\.(html|htm)$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+    </IfModule>
+</FilesMatch>
+
+# 2. Configurer le cache pour les fichiers statiques (JS, CSS, images) 
+# Les mises à jour de ces fichiers sont contrôlées par le cache-busting (?v=X) dans index.html
+<FilesMatch "\.(js|css|png|jpg|jpeg|gif|ico|svg|webp)$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "max-age=2592000, public"
+    </IfModule>
+</FilesMatch>
