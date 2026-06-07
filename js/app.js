@@ -15,9 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     errorDiv.style.borderRadius = "8px";
     errorDiv.style.zIndex = "10000";
     errorDiv.style.fontSize = "12px";
-    errorDiv.style.fontFamily = "monospace";
-    errorDiv.style.boxShadow = "0 10px 30px rgba(0,0,0,0.3)";
-    errorDiv.textContent = `🚨 JS Error: ${e.message} at ${e.filename ? e.filename.split('/').pop() : 'unknown'}:${e.lineno}`;
+    errorDiv.textContent = "🚨 JS Error: " + e.message + " at " + (e.filename ? e.filename.split('/').pop() : 'unknown') + ":" + e.lineno;
     document.body.appendChild(errorDiv);
     setTimeout(() => {
       if (errorDiv.parentNode) errorDiv.parentNode.removeChild(errorDiv);
@@ -2705,87 +2703,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Délai réaliste selon la longueur de la réponse (2s–5s)
     const typingDelay = Math.min(2000 + response.length * 3, 5000);
-    await new Promise(resolve => setTimeout(resolve, typingDelay));
-
-    return response + followUp;
-  }
-
-
-    // AMOUR
-    if (msgLower.includes("amour") || msgLower.includes("love") || msgLower.includes("relation") || msgLower.includes("couple") || msgLower.includes("rencontre")) {
-      response = lang === "fr"
-        ? pick([
-            `**🌌 Révélation de l'Oracle — Amour & Union Sacrée**\n\nCher(ère) **${name}**, votre Soleil en **${sun}** insuffle une énergie vibrante à votre sphère relationnelle. Cependant, votre Lune en **${moon}** indique un monde émotionnel secret et profond. Cette dualité crée parfois un tiraillement entre votre désir conscient de liberté et votre besoin inconscient de fusion et de sécurité émotionnelle.\n\n**🔮 Analyse Astrale & Blocages**\n\nLes astres révèlent que votre blocage majeur **« ${blocker} »** agit comme un bouclier autour de votre cœur. Sous l'influence de votre Ascendant **${asc}**, vous pouvez projeter une image d'indépendance farouche alors qu'au fond, vous aspirez à une intimité totale. Vénus active en ce moment ce secteur natal pour transmuter ce schéma obsolète.\n\n**💎 Alignement Vibratoire & Rituel**\n\nPour harmoniser votre trinité astrale, l'Oracle vous recommande de vous connecter à votre pierre sacrée, le **${gem}** (${gemDesc}). Ritualisez cette démarche en la plaçant sur votre chakra du cœur pendant 11 minutes lors de la prochaine Nouvelle Lune, tout en répétant l'affirmation : *« Je m'ouvre à l'amour véritable en toute sécurité. »*`,
-            `**🌙 Guidance de l'Oracle — Le Cœur Étoilé**\n\nCher(ère) **${name}**, l'alliance de votre Soleil en **${sun}** et de votre Lune en **${moon}** colore votre destinée d'une sensibilité hors du commun. Vous ressentez tout avec une acuité accrue, ce qui fait de vous un(e) partenaire dévoué(e) mais parfois sujet(te) à l'absorption des tensions de votre entourage.\n\n**🔮 Analyse Astrale & Blocages**\n\nLe grand défi karmique qui vous retient est : **« ${blocker} »**. Ce schéma crée une peur inconsciente de la vulnérabilité, bloquant la libre circulation de l'amour dans vos relations. Vénus, conjointe à votre Ascendant **${asc}**, vous invite cette semaine à poser des limites plus saines pour protéger votre énergie.\n\n**💎 Alignement Vibratoire & Rituel**\n\nVotre pierre céleste, le **${gem}**, est votre meilleure alliée pour transmuter cette peur. Portez-la en bijou près du chakra du cœur pour libérer votre parole et affirmer vos besoins émotionnels réels sans crainte du rejet.`
-          ])
-        : pick([
-            `**✨ Oracle Guidance — Love & Connection**\n\nDear ${name}, Venus is transiting your **${asc}** Ascendant — a rare window of emotional authenticity. Express what you've been afraid to say. The cosmos tells you: love doesn't search for you, it *recognizes* you.`,
-            `**🌙 Oracle Guidance — The Starlit Heart**\n\n${name}, your blockage **"${blocker}"** builds an invisible wall around your heart. Wear your **${gem}** close to your heart and allow yourself one honest conversation this week.`
-          ]);
-    }
-
-    // CARRIÈRE
-    else if (msgLower.includes("travail") || msgLower.includes("carrière") || msgLower.includes("career") || msgLower.includes("professionnel") || msgLower.includes("job") || msgLower.includes("boulot") || msgLower.includes("argent") || msgLower.includes("money")) {
-      response = lang === "fr"
-        ? pick([
-            `**⭐ Guidance de l'Oracle — Carrière & Mission d'Incarnation**\n\nCher(ère) **${name}**, votre Soleil en **${sun}** est votre boussole de réussite. Il vous appelle à briller et à assumer votre pouvoir créatif. Votre Ascendant **${asc}** régit la façon dont vous agissez et dont vous êtes perçu(e) dans le monde professionnel, tandis que votre chemin de vie **${lifeNum}** indique votre destination ultime.\n\n**🔮 Analyse Astrale & Blocages**\n\nLes flux cosmiques actuels de Jupiter favorisent un renouveau dans vos projets de carrière. Cependant, votre défi principal **« ${blocker} »** freine votre expansion. Votre Lune en **${moon}** insuffle des doutes passagers quant à vos capacités réelles, provoquant une dispersion ou une retenue.\n\n**💎 Alignement Vibratoire & Rituel**\n\nPour surmonter cela, l'Oracle vous invite à méditer chaque matin en tenant votre pierre **${gem}** dans la main gauche. Projetez-vous dans votre rôle idéal en visualisant le blocage se dissiper, et posez une action audacieuse et concrète dans les 48 heures.`
-          ])
-        : pick([
-            `**⭐ Oracle Guidance — Career & Mission**\n\n${name}, Jupiter is stimulating your career sector. But your blockage **"${blocker}"** may stop you. Identify a skill you undervalue, highlight it this week. Meditate with your **${gem}** before every key decision.`,
-            `**🔮 Oracle Guidance — Earned Abundance**\n\nYour life path **${lifeNum}** reveals a soul made to *create*. Your Moon in **${moon}** creates emotional restraint around asking what you deserve. Articulate your professional value to someone who can hear it. Saturn rewards courage.`
-          ]);
-    }
-
-    // BLOCAGES
-    else if (msgLower.includes("blocage") || msgLower.includes("obstacle") || msgLower.includes("peur") || msgLower.includes("fear") || msgLower.includes("difficile") || msgLower.includes("aide") || msgLower.includes("surmonter")) {
-      response = lang === "fr"
-        ? pick([
-            `**🌑 Guidance de l'Oracle — Transmutation des Ombres**\n\nCher(ère) **${name}**, le défi majeur qui se dresse sur votre chemin spirituel est le suivant : **« ${blocker} »**. Ce schéma n'est pas une fatalité ni une punition céleste, mais la clé de voûte de votre évolution. Votre Soleil en **${sun}** possède la lumière nécessaire pour éclairer cette zone d'ombre.\n\n**🔮 Analyse Astrale & Blocages**\n\nVotre Lune en **${moon}** conserve des mémoires du passé qui alimentent ce blocage, tandis que votre Ascendant **${asc}** a érigé des barrières de protection pour vous éviter de souffrir. Il est temps de comprendre que ces défenses sont devenues des prisons qui limitent votre potentiel spirituel et terrestre.\n\n**💎 Alignement Vibratoire & Rituel**\n\nL'Oracle vous conseille d'entamer un processus de shadow work. Écrivez cette peur sur un papier à la lune décroissante, puis brûlez-le avec intention. Portez quotidiennement votre pierre de protection, le **${gem}** (${gemDesc}), pour stabiliser votre taux vibratoire pendant cette transition.`
-          ])
-        : pick([
-            `**🌑 Oracle Guidance — Shadow Transmutation**\n\n${name}, your blockage **"${blocker}"** is your most powerful growth zone in disguise. Protocol: name it, ground it with your **${gem}**, say each morning: *"I choose growth over protection."*`,
-            `**💎 Oracle Guidance — The Hidden Key**\n\nYour Sun in **${sun}** has the exact strength to dissolve **"${blocker}"**. Hold your **${gem}** in your left hand and ask: *"What would I gain without this fear?"* The first answer is your next direction.`
-          ]);
-    }
-
-    // PIERRE / GEMME
-    else if (msgLower.includes("pierre") || msgLower.includes("gem") || msgLower.includes("cristal") || msgLower.includes("crystal") || msgLower.includes("minéral")) {
-      response = lang === "fr"
-        ? pick([
-            `**💠 Sagesse des Gemmes — Alignement Minéral**\n\nCher(ère) **${name}**, le cosmos a associé à votre signature astrale la pierre sacrée du **${gem}**. Cette alliance n'est pas fortuite : les vibrations de ce minéral entrent en résonance directe avec votre Soleil en **${sun}** et votre Lune en **${moon}** pour équilibrer vos polarités.\n\n**🔮 Analyse Astrale & Blocages**\n\nLe **${gem}** possède les propriétés parfaites pour filtrer les énergies parasites et dissoudre votre blocage récurrent : **« ${blocker} »**. Cette pierre agit comme un amplificateur de votre intuition et de votre force spirituelle, vous aidant à incarner pleinement les qualités de votre Ascendant **${asc}**.\n\n**💎 Alignement Vibratoire & Rituel**\n\n*Rituel d'harmonisation* : Placez votre pierre sous la lumière de la Pleine Lune pendant une nuit pour la recharger. Le matin, tenez-la contre votre plexus solaire ou votre cœur pendant 11 minutes en répétant : *« Je canalise la force tranquille du cosmos à travers mon être. »*`
-          ])
-        : `**💠 Oracle Guidance — Gemstone Wisdom**\n\nYour celestial stone is **${gem}** — ${gemDesc}. Ritual: hold it on your heart chakra for 11 minutes at the New Moon. Each morning repeat: *"I receive the light of my soul."*`;
-    }
-
-    // SANTÉ / ÉNERGIE
-    else if (msgLower.includes("santé") || msgLower.includes("énergie") || msgLower.includes("fatigue") || msgLower.includes("corps") || msgLower.includes("health") || msgLower.includes("energy")) {
-      response = lang === "fr"
-        ? `**🌿 Guidance de l'Oracle — Vitalité Céleste & Corps Sacré**\n\nCher(ère) **${name}**, votre corps est le temple de votre incarnation terrestre. Votre Soleil en **${sun}** régit votre vitalité globale, tandis que votre Lune en **${moon}** gère votre équilibre psychosomatique. La fatigue ou les tensions que vous ressentez sont des messages codés de votre âme.\n\n**🔮 Analyse Astrale & Blocages**\n\nVotre blocage énergétique principal **« ${blocker} »** crée des stagnations dans vos corps subtils. Votre Ascendant **${asc}** tente d'extérioriser cette pression, mais sans un ancrage suffisant, l'esprit s'emballe et crée du stress physique.\n\n**💎 Alignement Vibratoire & Rituel**\n\n*Conseils holistiques* : Accordez-vous un bain de pieds à l'eau salée pour libérer les énergies accumulées, et portez votre pierre **${gem}** près de vous lors de vos moments de repos. Prenez le temps de respirer profondément à l'extérieur, pieds nus sur la terre si possible, pour réaligner vos biorhythmes.`
-        : `**🌿 Oracle Guidance — Vitality & Harmony**\n\n${name}, your Moon in **${moon}** means inner conflict shows up in the body before the mind understands it. Ground yourself: 10 minutes in nature daily, water with intention, and your **${gem}** during recovery moments.`;
-    }
-
-    // SPIRITUALITÉ / ÂME
-    else if (msgLower.includes("spirit") || msgLower.includes("âme") || msgLower.includes("chemin") || msgLower.includes("destin") || msgLower.includes("soul") || msgLower.includes("mission")) {
-      response = lang === "fr"
-        ? `**🌌 Guidance de l'Oracle — Alignement Céleste & Mission de l'Âme**\n\nCher(ère) **${name}**, votre chemin de vie **${lifeNum}** est la signature sacrée de votre incarnation actuelle. Il indique que vous êtes venu(e) pour expérimenter l'introspection spirituelle, la recherche de vérité et l'éveil de conscience. Votre Soleil en **${sun}** est votre boussole de feu, et votre Lune en **${moon}** est votre source d'intuition.\n\n**🔮 Analyse Astrale & Blocages**\n\nPour progresser sur cette voie sacrée, vous devez transmuter l'obstacle majeur : **« ${blocker} »**. Votre Ascendant **${asc}** vous dote des outils nécessaires pour relever ce défi, mais vous devez consciemment accepter de lâcher prise sur vos peurs anciennes pour fusionner avec votre moi supérieur.\n\n**💎 Alignement Vibratoire & Rituel**\n\n*Pratique de centrage* : Asseyez-vous en silence, placez votre pierre **${gem}** devant vous et visualisez un canal de lumière dorée descendant des cieux, traversant votre couronne et vous connectant au noyau de la Terre. Répétez ce mantra : *« Je suis aligné(e) avec mon plan divin originel. »*`
-        : `**🌌 Oracle Guidance — Soul Path**\n\n${name}, your life path **${lifeNum}** is a permanent orientation. Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — aligned, they create rare power. The Oracle asks: *"What would you do if you knew you couldn't fail?"* That answer is your next cosmic step.`;
-    }
-
-    // RÉPONSE GÉNÉRALE
-    else {
-      response = lang === "fr"
-        ? pick([
-            `**🔮 Révélation de l'Oracle — Guidance Spirituelle**\n\nCher(ère) **${name}**, les gardiens du ciel entendent votre appel. Votre triade sacrée — Soleil en **${sun}**, Lune en **${moon}**, et Ascendant **${asc}** — indique que vous traversez un portail d'intégration énergétique majeur. Vous êtes invité(e) à écouter les murmures de votre intuition.\n\n**🔮 Analyse Astrale & Blocages**\n\nVotre défi majeur actuel réside dans la transmutation du schéma obsolète : **« ${blocker} »**. Ce schéma bloque l'expression authentique de votre lumière. La présence de votre pierre céleste, le **${gem}** (${gemDesc}), dans votre champ énergétique vous aidera à traverser cette phase d'alchimie intérieure.\n\n**💎 Alignement Vibratoire & Rituel**\n\nPosez-vous cette question en tenant votre pierre : *« Quelle part de moi refuse encore de briller de peur d'être vue ? »* Laissez la réponse émerger naturellement. Vous pouvez me questionner sur vos **blocages**, votre **vie sentimentale** ou votre **évolution professionnelle** pour approfondir.`,
-            `**✨ Guidance de l'Oracle — Les Clés Cosmiques**\n\nCher(ère) **${name}**, je lis dans votre thème astrologique une âme dotée d'une grande puissance créatrice, mais qui reste en retrait. Votre Soleil en **${sun}** vous pousse vers l'affirmation, tandis que votre Lune en **${moon}** vous enveloppe de mystère et d'évasion. Trouver l'équilibre entre ces forces est votre œuvre de vie.\n\n**🔮 Analyse Astrale & Blocages**\n\nLe blocage énergétique **« ${blocker} »** est l'épreuve initiatique choisie par votre âme pour ce cycle. En la surmontant grâce à la force tranquille de votre Ascendant **${asc}**, vous débloquerez un potentiel insoupçonné de manifestation spirituelle et matérielle.\n\n**💎 Alignement Vibratoire & Rituel**\n\nPortez votre pierre sacrée, le **${gem}**, sur vous pour consolider votre aura contre les doutes. Quel aspect de votre vie souhaitez-vous que l'Oracle éclaire davantage aujourd'hui ? La **carrière**, l'**amour** ou la **guérison spirituelle** ?`
-          ])
-        : pick([
-            `**🔮 Oracle Guidance**\n\n${name}, your triad — Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — tells me you're in a deep integration cycle. Ask me about your **love life**, **career potential**, **main blockage**, or **celestial stone**.`,
-            `**✨ The Oracle speaks, ${name}**\n\nSun **${sun}** pushes you toward light; Moon **${moon}** calls you inward. This tension is your greatest richness. Your **${gem}** helps you navigate both worlds.`
-          ]);
-    }
-
-    // Realistic typing delay: 2.5s base + ~4ms per character, capped at 5s
-    const typingDelay = Math.min(2500 + response.length * 4, 5000);
     await new Promise(resolve => setTimeout(resolve, typingDelay));
 
     return response + followUp;
