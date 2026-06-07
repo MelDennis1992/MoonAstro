@@ -2077,8 +2077,8 @@ input:checked + .slider:before {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  height: 550px;
-  max-width: 680px;
+  height: 680px;
+  max-width: 100%;
   margin: 0 auto;
   position: relative;
   overflow: hidden;
@@ -2235,27 +2235,128 @@ input:checked + .slider:before {
 .chat-typing-indicator {
   align-self: flex-start;
   display: flex;
-  gap: 5px;
+  align-items: center;
+  gap: 10px;
   padding: 12px 18px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 20px;
+  background: linear-gradient(135deg, #0d1326 0%, #1a2544 100%);
+  border-radius: 18px;
   border-bottom-left-radius: 4px;
-  border: 1.5px solid rgba(197, 160, 89, 0.15);
+  border: 1.5px solid rgba(197, 160, 89, 0.35);
   margin-left: 5px;
   margin-bottom: 8px;
   animation: bubbleAppear 0.3s ease both;
+  box-shadow: 0 4px 15px rgba(13, 19, 38, 0.15);
+}
+
+.tarot-mini-card-back {
+  width: 18px;
+  height: 25px;
+  background: var(--grad-gold);
+  border: 1px solid var(--accent-gold-light);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-midnight);
+  font-size: 9px;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  animation: cardPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes cardPulse {
+  0%, 100% { transform: scale(1) rotate(0deg); box-shadow: 0 2px 5px rgba(0,0,0,0.25); }
+  50% { transform: scale(1.08) rotate(3deg); box-shadow: 0 4px 12px rgba(197, 160, 89, 0.4); }
+}
+
+.typing-text {
+  font-size: 12px;
+  color: var(--accent-gold-light);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
 
 .typing-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--accent-gold-dark);
+  width: 5px;
+  height: 5px;
+  background: var(--accent-gold-light);
   border-radius: 50%;
   animation: typingBounce 1.4s infinite ease-in-out both;
 }
 
 .typing-dot:nth-child(1) { animation-delay: -0.32s; }
 .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+/* Mystical Tarot Card Bubbles */
+.chat-bubble.oracle.tarot-card {
+  align-self: flex-start;
+  background: linear-gradient(135deg, #090d1a 0%, #16203d 100%);
+  color: #fcfbfa;
+  border-radius: 20px;
+  border: 2px solid var(--accent-gold);
+  padding: 16px;
+  margin-bottom: 8px;
+  box-shadow: 
+    inset 0 0 0 3px rgba(13, 19, 38, 0.9),
+    inset 0 0 0 4px rgba(197, 160, 89, 0.35),
+    0 8px 25px rgba(13, 19, 38, 0.35);
+  perspective: 1000px;
+  animation: tarotCardReveal 0.8s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+@keyframes tarotCardReveal {
+  0% {
+    opacity: 0;
+    transform: rotateY(-70deg) translateZ(-85px) translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateY(0deg) translateZ(0) translateY(0);
+  }
+}
+
+.tarot-card-inner {
+  border: 1px solid rgba(197, 160, 89, 0.25);
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(13, 19, 38, 0.25);
+}
+
+.tarot-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+
+.tarot-card-title {
+  font-family: var(--font-serif-logo);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--accent-gold-light);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tarot-arcana-symbol {
+  color: var(--accent-gold-light);
+  font-size: 11px;
+  animation: pulseStar 2s infinite ease-in-out;
+}
+
+@keyframes pulseStar {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
 
 @keyframes bubbleAppear {
   from {
@@ -2290,7 +2391,7 @@ input:checked + .slider:before {
 /* Mobile responsive adjustments for chat */
 @media (max-width: 480px) {
   .chat-wrapper {
-    height: 480px;
+    height: 580px;
     padding: 12px;
   }
   .chat-bubble {

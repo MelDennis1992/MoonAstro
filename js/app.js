@@ -2490,14 +2490,32 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!messagesEl) return;
 
     const bubble = document.createElement("div");
-    bubble.className = `chat-bubble ${sender}`;
     
     // Parse formatting like **bold text** to HTML
     let formattedText = text;
     formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
     formattedText = formattedText.replace(/\n/g, "<br>");
     
-    bubble.innerHTML = formattedText;
+    if (sender === "oracle") {
+      bubble.className = "chat-bubble oracle tarot-card";
+      const cardTitle = getTranslation(state.lang || "fr", "oracle.card.title") || "L'Oracle du Ciel";
+      bubble.innerHTML = `
+        <div class="tarot-card-inner">
+          <div class="tarot-card-header">
+            <span class="tarot-arcana-symbol">✦</span>
+            <span class="tarot-card-title">${cardTitle}</span>
+            <span class="tarot-arcana-symbol">✦</span>
+          </div>
+          <div class="tarot-card-body">
+            ${formattedText}
+          </div>
+        </div>
+      `;
+    } else {
+      bubble.className = "chat-bubble user";
+      bubble.innerHTML = formattedText;
+    }
+    
     messagesEl.appendChild(bubble);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     
@@ -2545,7 +2563,8 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify({
             message: text,
             history: chatMessagesHistory.slice(0, -1), // exclude the one we just added
-            astrologyData: astrologyData
+            astrologyData: astrologyData,
+            lang: state.lang || "fr"
           })
         });
 
