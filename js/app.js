@@ -1619,24 +1619,65 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const r = state.report;
-    const sunSymbol = r.zodiac?.symbol || "☀️";
-    const moonSymbol = r.moon?.symbol || "🌙";
-    const ascSymbol = "🌌";
-    
-    // Calculate elements dynamically based on Sun sign
-    const sunElement = r.zodiac?.element || "Feu";
-    let fireVal = 25, earthVal = 25, airVal = 25, waterVal = 25;
-    if (sunElement === "Feu") fireVal = 60;
-    else if (sunElement === "Terre") earthVal = 60;
-    else if (sunElement === "Air") airVal = 60;
-    else if (sunElement === "Eau") waterVal = 60;
+    const lang = state.lang || "fr";
 
-    // Draw astrological wheel
+    // 1. Calculate Planet Longitudes deterministically
     const ascLong = (r.astro && typeof r.astro.ascLong === 'number') ? r.astro.ascLong : 270;
     const sunLong = (r.astro && typeof r.astro.sunLong === 'number') ? r.astro.sunLong : 0;
     const moonLong = (r.astro && typeof r.astro.moonLong === 'number') ? r.astro.moonLong : 90;
 
-    // We rotate the wheel so the Ascendant is always at 180° (horizontal left)
+    // Outer planets deterministic distribution based on Sun longitude
+    const mercLong = (sunLong + 24 * Math.sin(sunLong * Math.PI / 180 + 1.2)) % 360;
+    const venLong = (sunLong + 42 * Math.sin(sunLong * Math.PI / 180 + 2.5)) % 360;
+    const marsLong = (sunLong * 1.45 + 85) % 360;
+    const jupLong = (sunLong * 0.75 + 195) % 360;
+    const satLong = (sunLong * 0.35 + 285) % 360;
+
+    // Get Zodiac signs for each planet
+    const getZodiacSign = (longVal) => {
+      const idx = Math.floor(longVal / 30);
+      const signIdx = (idx + 3) % 12;
+      return ZODIAC_SIGNS[signIdx];
+    };
+
+    const sunSign = r.zodiac || getZodiacSign(sunLong);
+    const moonSign = r.moon || getZodiacSign(moonLong);
+    const ascSign = getZodiacSign(ascLong);
+    const mercSign = getZodiacSign(mercLong);
+    const venSign = getZodiacSign(venLong);
+    const marsSign = getZodiacSign(marsLong);
+    const jupSign = getZodiacSign(jupLong);
+    const satSign = getZodiacSign(satLong);
+
+    // Formatter helper for coordinates
+    const formatCoordinate = (longVal, sign) => {
+      const deg = Math.floor(longVal % 30);
+      const signSymbol = sign.symbol;
+      const signName = lang === "en" ? sign.name_en : sign.name;
+      return `${deg}° ${signSymbol} ${signName}`;
+    };
+
+    // Calculate element values
+    const sunElement = sunSign.element || "Feu";
+    let fireVal = 25, earthVal = 25, airVal = 25, waterVal = 25;
+    if (sunElement === "Feu") fireVal = 55;
+    else if (sunElement === "Terre") earthVal = 55;
+    else if (sunElement === "Air") airVal = 55;
+    else if (sunElement === "Eau") waterVal = 55;
+
+    if (moonSign.element === "Feu") fireVal += 15;
+    else if (moonSign.element === "Terre") earthVal += 15;
+    else if (moonSign.element === "Air") airVal += 15;
+    else if (moonSign.element === "Eau") waterVal += 15;
+
+    // Adjust sum to 100%
+    const sum = fireVal + earthVal + airVal + waterVal;
+    fireVal = Math.round((fireVal / sum) * 100);
+    earthVal = Math.round((earthVal / sum) * 100);
+    airVal = Math.round((airVal / sum) * 100);
+    waterVal = 100 - (fireVal + earthVal + airVal);
+
+    // Rotate outer signs wheel so ASC is at 180° (horizontal left)
     const rotationAngle = 180 - ascLong;
 
     const getXY = (angle, radius) => {
@@ -1647,19 +1688,19 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     };
 
+    // Render zodiac ring segments
     let segmentsHtml = "";
     for (let i = 0; i < 12; i++) {
       const startLong = ((i - 3) * 30 + 360) % 360;
       const startAngle = (startLong + rotationAngle) % 360;
-      const endAngle = (startLong + 30 + rotationAngle) % 360;
       const midAngle = (startLong + 15 + rotationAngle) % 360;
 
-      // Draw sign division lines
+      // Division lines
       const pInner = getXY(startAngle, 95);
       const pOuter = getXY(startAngle, 125);
-      segmentsHtml += `<line x1="${pInner.x}" y1="${pInner.y}" x2="${pOuter.x}" y2="${pOuter.y}" stroke="rgba(197, 160, 89, 0.2)" stroke-width="1" />`;
+      segmentsHtml += `<line x1="${pInner.x}" y1="${pInner.y}" x2="${pOuter.x}" y2="${pOuter.y}" stroke="rgba(197, 160, 89, 0.18)" stroke-width="0.8" />`;
 
-      // Draw sign symbols
+      // Zodiac Glyph
       const pText = getXY(midAngle, 110);
       const signElement = ZODIAC_SIGNS[i].element;
       let elColor = "var(--accent-gold)";
@@ -1668,201 +1709,376 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (signElement === "Air") elColor = "#4A90E2";
       else if (signElement === "Eau") elColor = "#9b59b6";
 
-      segmentsHtml += `<text x="${pText.x}" y="${pText.y + 4}" text-anchor="middle" font-size="11" fill="${elColor}" font-family="Cinzel, serif">${ZODIAC_SIGNS[i].symbol}</text>`;
+      segmentsHtml += `<text x="${pText.x}" y="${pText.y + 4.5}" text-anchor="middle" font-size="12" fill="${elColor}" font-family="Cinzel, serif">${ZODIAC_SIGNS[i].symbol}</text>`;
     }
 
-    const sunAngle = (sunLong + rotationAngle) % 360;
-    const pSun = getXY(sunAngle, 90);
-    const pSunSym = getXY(sunAngle, 72);
+    // Twinkling stars inside map
+    let starsHtml = "";
+    for (let i = 0; i < 35; i++) {
+      const starX = Math.random() * 260 + 20;
+      const starY = Math.random() * 260 + 20;
+      const dist = Math.sqrt(Math.pow(starX - 150, 2) + Math.pow(starY - 150, 2));
+      if (dist < 92) {
+        const starRadius = Math.random() * 1.3 + 0.4;
+        const delay = Math.random() * 4;
+        starsHtml += `<circle cx="${starX}" cy="${starY}" r="${starRadius}" fill="#FAF9F6" class="star-particle" style="animation-delay: ${delay}s;" />`;
+      }
+    }
 
-    const moonAngle = (moonLong + rotationAngle) % 360;
-    const pMoon = getXY(moonAngle, 90);
-    const pMoonSym = getXY(moonAngle, 72);
+    // Coordinates of planet nodes
+    const getPlanetCoord = (long, radius) => {
+      const angle = (long + rotationAngle) % 360;
+      return getXY(angle, radius);
+    };
 
-    const ascAngle = 180; // Always 180 (left) in rotated chart
-    const pAscSym = getXY(ascAngle, 72);
+    const pSun = getPlanetCoord(sunLong, 80);
+    const pMoon = getPlanetCoord(moonLong, 80);
+    const pAsc = getPlanetCoord(ascLong, 80);
+    const pMerc = getPlanetCoord(mercLong, 64);
+    const pVen = getPlanetCoord(venLong, 64);
+    const pMars = getPlanetCoord(marsLong, 48);
+    const pJup = getPlanetCoord(jupLong, 48);
+    const pSat = getPlanetCoord(satLong, 48);
 
+    // Planet data array for rendering cards & bindings
+    const planetDataList = [
+      {
+        name: "sun",
+        label: lang === "en" ? "Sun" : "Soleil",
+        glyph: "☀️",
+        coord: formatCoordinate(sunLong, sunSign),
+        desc: lang === "en" 
+          ? "The Sun represents your core essence, conscious will, and vitality. It illuminates who you are born to become and how you express your unique creative spark."
+          : "Le Soleil représente votre essence fondamentale, votre volonté consciente et votre vitalité. Il éclaire ce que vous êtes né pour incarner et comment vous rayonnez.",
+        p: pSun
+      },
+      {
+        name: "moon",
+        label: lang === "en" ? "Moon" : "Lune",
+        glyph: "🌙",
+        coord: formatCoordinate(moonLong, moonSign),
+        desc: lang === "en"
+          ? "The Moon rules your emotions, subconscious desires, and intuitive reactions. It represents your emotional secret garden and how you seek safety."
+          : "La Lune régit vos émotions, votre inconscient et vos réactions intuitives. Elle représente votre jardin secret émotionnel et votre besoin inné de sécurité.",
+        p: pMoon
+      },
+      {
+        name: "asc",
+        label: lang === "en" ? "Ascendant" : "Ascendant",
+        glyph: "🌌",
+        coord: formatCoordinate(ascLong, ascSign),
+        desc: lang === "en"
+          ? "The Ascendant (Rising sign) describes your social mask, outer appearance, and physical vehicle. It is the filter through which you view and interact with the world."
+          : "L'Ascendant décrit votre masque social, votre apparence extérieure et votre véhicule physique. C'est le filtre à travers lequel vous interagissez avec le monde.",
+        p: pAsc
+      },
+      {
+        name: "merc",
+        label: lang === "en" ? "Mercury" : "Mercure",
+        glyph: "☿",
+        coord: formatCoordinate(mercLong, mercSign),
+        desc: lang === "en"
+          ? "Mercury governs your intellect, logic, communication style, and curiosity. It shapes how you process daily thoughts and express your ideas to others."
+          : "Mercure gouverne votre intellect, votre logique, votre style de communication et votre curiosité. Il façonne votre pensée et votre transmission d'idées.",
+        p: pMerc
+      },
+      {
+        name: "ven",
+        label: lang === "en" ? "Venus" : "Vénus",
+        glyph: "♀",
+        coord: formatCoordinate(venLong, venSign),
+        desc: lang === "en"
+          ? "Venus embodies your capacity for love, relationships, aesthetic taste, and values. It shows how you express affection and attract harmony and abundance."
+          : "Vénus incarne votre capacité d'amour, votre style relationnel, votre sens esthétique et vos valeurs. Elle régit l'attraction, l'harmonie et l'abondance.",
+        p: pVen
+      },
+      {
+        name: "mars",
+        label: lang === "en" ? "Mars" : "Mars",
+        glyph: "♂",
+        coord: formatCoordinate(marsLong, marsSign),
+        desc: lang === "en"
+          ? "Mars rules your drive, energy, physical courage, and assertiveness. It is the raw ambition and action principle that pushes you to conquer challenges."
+          : "Mars régit votre force de volonté, votre ambition, votre courage physique et votre combativité. C'est le principe d'action pure qui vous pousse à conquérir.",
+        p: pMars
+      },
+      {
+        name: "jup",
+        label: lang === "en" ? "Jupiter" : "Jupiter",
+        glyph: "♃",
+        coord: formatCoordinate(jupLong, jupSign),
+        desc: lang === "en"
+          ? "Jupiter symbolizes expansion, luck, higher wisdom, and spiritual abundance. It reveals how you find meaning, cultivate optimism, and attract prosperity."
+          : "Jupiter symbolise l'expansion, la chance, la sagesse supérieure et l'abondance spirituelle. Il indique comment vous développez l'optimisme et prospérez.",
+        p: pJup
+      },
+      {
+        name: "sat",
+        label: lang === "en" ? "Saturn" : "Saturne",
+        glyph: "♄",
+        coord: formatCoordinate(satLong, satSign),
+        desc: lang === "en"
+          ? "Saturn represents structure, discipline, boundaries, and karmic lessons. It points to where you must work hard, establish authority, and build lasting foundations."
+          : "Saturne représente la discipline, la structure, les limites et les leçons karmiques. Il indique où vous devez travailler dur pour bâtir des fondations durables.",
+        p: pSat
+      }
+    ];
+
+    // Generate Aspect lines (dashed constellation links in the center)
+    const aspectLines = [
+      { p1: pSun, p2: pMoon, pNames: "sun-moon" },
+      { p1: pMerc, p2: pVen, pNames: "merc-ven" },
+      { p1: pMars, p2: pJup, pNames: "mars-jup" },
+      { p1: pSun, p2: pJup, pNames: "sun-jup" },
+      { p1: pMoon, p2: pSat, pNames: "moon-sat" }
+    ];
+
+    let aspectsHtml = "";
+    aspectLines.forEach(line => {
+      aspectsHtml += `<line x1="${line.p1.x}" y1="${line.p1.y}" x2="${line.p2.x}" y2="${line.p2.y}" class="aspect-line" data-aspect="${line.pNames}" />`;
+    });
+
+    // Make Element Dial Helper
+    const makeElementDial = (name, val, color, symbol) => {
+      const circum = 100.53;
+      const dash = (val * 1.0053).toFixed(1);
+      return `
+        <div class="element-dial-box">
+          <div class="element-dial-circle">
+            <svg width="60" height="60" viewBox="0 0 36 36" style="display: block;">
+              <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(0,0,0,0.03)" stroke-width="2.5" />
+              <circle cx="18" cy="18" r="16" fill="none" stroke="${color}" stroke-width="2.5" 
+                      stroke-dasharray="${dash} ${circum}" stroke-linecap="round" transform="rotate(-90 18 18)" />
+            </svg>
+            <div class="element-dial-value" style="color: ${color};">${val}%</div>
+          </div>
+          <div class="element-dial-label">
+            ${symbol} ${name}
+          </div>
+        </div>
+      `;
+    };
+
+    const elLabels = lang === "en" 
+      ? { fire: "Fire", earth: "Earth", air: "Air", water: "Water" }
+      : { fire: "Feu", earth: "Terre", air: "Air", water: "Eau" };
+
+    // Construct full Page HTML
     let html = `
-      <!-- Dynamic SVG Astrological Wheel -->
-      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 24px;">
-        <svg width="260" height="260" viewBox="0 0 300 300" style="background: transparent;">
+      <!-- Premium Celestial Interactive Wheel -->
+      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 28px; background: radial-gradient(circle at center, rgba(197,160,89,0.03) 0%, transparent 80%); padding: 10px 0; border-radius: 30px;">
+        <svg id="interactive-astral-svg" width="280" height="280" viewBox="0 0 300 300" style="background: transparent; overflow: visible;">
           <defs>
             <radialGradient id="space-gradient" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stop-color="#14192d" />
-              <stop offset="75%" stop-color="#0e1224" />
-              <stop offset="100%" stop-color="#070913" />
+              <stop offset="70%" stop-color="#0b0e1d" />
+              <stop offset="100%" stop-color="#04060b" />
             </radialGradient>
             <radialGradient id="gold-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="rgba(197, 160, 89, 0.15)" />
+              <stop offset="0%" stop-color="rgba(197, 160, 89, 0.22)" />
               <stop offset="100%" stop-color="rgba(197, 160, 89, 0)" />
             </radialGradient>
           </defs>
 
-          <!-- Glow -->
+          <!-- Cosmic Ambient Glow -->
           <circle cx="150" cy="150" r="140" fill="url(#gold-glow)" />
 
-          <!-- Outer border -->
+          <!-- Star particles -->
+          ${starsHtml}
+
+          <!-- Outer Slow-Rotating Deco Rings -->
+          <circle cx="150" cy="150" r="138" fill="none" stroke="rgba(197, 160, 89, 0.15)" stroke-width="1" stroke-dasharray="2, 6" class="celestial-spin" />
+          <circle cx="150" cy="150" r="143" fill="none" stroke="rgba(197, 160, 89, 0.08)" stroke-width="0.5" stroke-dasharray="1, 12" class="celestial-spin" style="animation-direction: reverse; animation-duration: 90s;" />
+
+          <!-- Main structural circles -->
           <circle cx="150" cy="150" r="125" fill="none" stroke="var(--accent-gold)" stroke-width="1.5" />
+          <circle cx="150" cy="150" r="95" fill="url(#space-gradient)" stroke="var(--accent-gold)" stroke-width="1.2" />
           
-          <!-- Inner circle background -->
-          <circle cx="150" cy="150" r="95" fill="url(#space-gradient)" stroke="var(--accent-gold)" stroke-width="1" />
-          
-          <!-- Divisions -->
+          <!-- Zodiac ring divisions -->
           ${segmentsHtml}
 
-          <!-- Axis lines -->
+          <!-- Subtle axis lines -->
           <line x1="55" y1="150" x2="245" y2="150" stroke="rgba(197, 160, 89, 0.15)" stroke-width="1" />
           <line x1="150" y1="55" x2="150" y2="245" stroke="rgba(197, 160, 89, 0.15)" stroke-width="1" />
 
-          <!-- ASC Arrow and Label -->
+          <!-- Dynamic Aspect Lines -->
+          ${aspectsHtml}
+
+          <!-- ASC Arrow -->
           <line x1="150" y1="150" x2="55" y2="150" stroke="#4A90E2" stroke-width="2.5" />
-          <polygon points="55,150 62,146 62,154" fill="#4A90E2" />
-          <text x="45" y="153" fill="#4A90E2" font-size="9" font-weight="bold" text-anchor="end">ASC</text>
-
-          <!-- Sun Line & Node -->
-          <line x1="150" y1="150" x2="${pSun.x}" y2="${pSun.y}" stroke="var(--accent-gold)" stroke-width="1.5" />
-          <circle cx="${pSunSym.x}" cy="${pSunSym.y}" r="11" fill="#070913" stroke="var(--accent-gold)" stroke-width="1.5" />
-          <text x="${pSunSym.x}" y="${pSunSym.y + 3.5}" text-anchor="middle" font-size="9">☀️</text>
-
-          <!-- Moon Line & Node -->
-          <line x1="150" y1="150" x2="${pMoon.x}" y2="${pMoon.y}" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" />
-          <circle cx="${pMoonSym.x}" cy="${pMoonSym.y}" r="11" fill="#070913" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" />
-          <text x="${pMoonSym.x}" y="${pMoonSym.y + 3.5}" text-anchor="middle" font-size="9">🌙</text>
-
-          <!-- ASC Node -->
-          <circle cx="${pAscSym.x}" cy="${pAscSym.y}" r="11" fill="#070913" stroke="#4A90E2" stroke-width="1.5" />
-          <text x="${pAscSym.x}" y="${pAscSym.y + 3.5}" text-anchor="middle" font-size="9">🌌</text>
+          <polygon points="55,150 63,146 63,154" fill="#4A90E2" />
 
           <!-- Center gold dot -->
-          <circle cx="150" cy="150" r="4" fill="var(--accent-gold)" />
+          <circle cx="150" cy="150" r="4.5" fill="var(--accent-gold)" />
+
+          <!-- Interactive Planet Nodes -->
+          ${planetDataList.map(p => `
+            <g class="planet-node" id="node-${p.name}">
+              <circle cx="${p.p.x}" cy="${p.p.y}" r="12.5" fill="#04060b" stroke="${p.name === 'asc' ? '#4A90E2' : 'var(--accent-gold)'}" stroke-width="1.5" />
+              <text x="${p.p.x}" y="${p.p.y + 3.8}" text-anchor="middle" font-size="10.5">${p.glyph}</text>
+            </g>
+          `).join("")}
         </svg>
-        <span style="font-size: 11px; color: var(--text-muted); margin-top: 6px; font-style: italic;">
-          Position de votre Trinité Céleste (Soleil, Lune, Ascendant)
+        <span style="font-size: 11px; color: var(--text-muted); margin-top: 10px; font-style: italic; letter-spacing: 0.02em;" data-i18n="history.chart.hint">
+          ✦ Touchez une planète pour tracer ses aspects et afficher les détails
         </span>
       </div>
 
-      <!-- Trinité Céleste -->
-      <div class="card" style="padding: 20px; border-color: rgba(212, 175, 55, 0.25);">
-        <h3 class="result-section-title" style="color: var(--accent-gold-dark); border-bottom-color: rgba(212, 175, 55, 0.1); font-size: 15px; font-family: var(--font-serif-title);">
-          ✦ Votre Trinité Céleste (Big Three)
-        </h3>
-        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="font-size: 20px; min-width: 36px; height: 36px; background: rgba(197,160,89,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">${sunSymbol}</div>
-            <div>
-              <strong style="font-size: 13px; color: var(--accent-gold-dark);">Soleil en ${r.zodiac.name}</strong>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">Votre force vitale créative, votre égo conscient et votre identité profonde.</p>
+      <!-- Co-Star Styled Planet Cards -->
+      <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+        ${planetDataList.map(p => `
+          <div class="astral-card" id="astral-card-${p.name}">
+            <div class="astral-card-header">
+              <div class="astral-card-title">
+                <span class="astral-card-glyph">${p.glyph}</span>
+                <strong>${p.label}</strong>
+              </div>
+              <span class="astral-card-coordinate">${p.coord}</span>
+            </div>
+            <div class="astral-card-body">
+              ${p.desc}
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="font-size: 20px; min-width: 36px; height: 36px; background: rgba(197,160,89,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">${moonSymbol}</div>
-            <div>
-              <strong style="font-size: 13px; color: var(--accent-gold-dark);">Lune en ${r.moon ? r.moon.name : "Cancer"}</strong>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">Votre monde intérieur, vos réactions inconscientes et vos besoins affectifs.</p>
-            </div>
+        `).join("")}
+      </div>
+
+      <!-- Numeric Life Path Card -->
+      <div class="astral-card" style="border-color: rgba(197, 160, 89, 0.25);">
+        <div class="astral-card-header">
+          <div class="astral-card-title">
+            <span class="astral-card-glyph">✦</span>
+            <strong data-i18n="history.lifepath.title">Chemin de Vie</strong>
           </div>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="font-size: 20px; min-width: 36px; height: 36px; background: rgba(197,160,89,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">${ascSymbol}</div>
-            <div>
-              <strong style="font-size: 13px; color: var(--accent-gold-dark);">Ascendant : ${r.ascendant}</strong>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">Votre apparence extérieure, votre masque social et votre véhicule d'incarnation.</p>
-            </div>
-          </div>
+          <span class="astral-card-coordinate" style="background: rgba(197, 160, 89, 0.08); color: var(--accent-gold-dark);">
+            Nombre ${r.lifePath?.number || '7'}
+          </span>
+        </div>
+        <div class="astral-card-body">
+          <p>${lang === "en" ? "Your life path reveals your primary spiritual mission." : "Votre chemin de vie révèle votre mission spirituelle d'incarnation."} ${lang === "en" ? "Number" : "Le nombre"} <strong>${r.lifePath?.number || '7'} - ${r.lifePath?.name || (lang === "en" ? "The Sage" : "Le Sage")}</strong> ${lang === "en" ? "indicates a destiny of inner wisdom, introspection, and spiritual connection." : "indique une destinée d'évolution personnelle forte et un besoin inné d'introspection, de sagesse et de connexion spirituelle."}</p>
+          <p style="margin-top: 8px; font-size: 12.5px; color: var(--text-muted);">${r.lifePath?.desc || ''}</p>
         </div>
       </div>
 
-      <!-- Chemin de Vie -->
-      <div class="card" style="padding: 20px;">
-        <h3 class="result-section-title" style="font-size: 15px; font-family: var(--font-serif-title);">
-          ✦ Chemin de Vie : Nombre ${r.lifePath?.number || '7'}
-        </h3>
-        <p style="font-size: 13px; line-height: 1.5; margin: 10px 0 0 0; color: var(--text-dark);">
-          Votre chemin de vie révèle votre mission spirituelle d'incarnation. Le nombre <strong>${r.lifePath?.number || '7'} - ${r.lifePath?.name || 'Le Sage'}</strong> indique une destinée d'évolution personnelle forte et un besoin inné d'introspection, de sagesse et de connexion spirituelle.
-        </p>
-        <p style="font-size: 12px; line-height: 1.5; margin: 6px 0 0 0; color: var(--text-muted);">
-          ${r.lifePath?.desc || ''}
-        </p>
-      </div>
-
-      <!-- Blocage Majeur -->
-      <div class="card" style="padding: 20px; border-color: rgba(186, 85, 74, 0.2);">
-        <h3 class="result-section-title" style="color: #BA554A; border-bottom-color: rgba(186, 85, 74, 0.1); font-size: 15px; font-family: var(--font-serif-title);">
-          ✦ Défi Cosmique (Votre Blocage)
-        </h3>
-        <p style="font-size: 13px; line-height: 1.5; margin: 10px 0 0 0; color: var(--text-dark);">
-          Le blocage énergétique identifié dans votre thème est : <strong style="color: #BA554A;">« ${r.blocker || 'la peur du changement'} »</strong>.
-        </p>
-        <p style="font-size: 12px; line-height: 1.5; margin: 8px 0 0 0; color: var(--text-muted); font-style: italic;">
-          Conseil de l'Oracle : Pour dissoudre ce schéma, pratiquez la pleine conscience et portez votre pierre céleste près de vous pour transmuter ces craintes.
-        </p>
-      </div>
-
-      <!-- Pierre Sacrée -->
-      <div class="card" style="padding: 20px; border-color: rgba(212, 175, 55, 0.25);">
-        <h3 class="result-section-title" style="color: var(--accent-gold-dark); border-bottom-color: rgba(212, 175, 55, 0.1); font-size: 15px; font-family: var(--font-serif-title);">
-          ✦ Votre Pierre de Protection Céleste
-        </h3>
-        <div style="display: flex; align-items: center; gap: 14px; margin-top: 10px;">
-          <div style="font-size: 32px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">${r.luckyGemstone ? r.luckyGemstone.symbol : '💎'}</div>
-          <div>
-            <strong style="font-size: 14px; color: var(--primary-midnight);">${r.luckyGemstone ? r.luckyGemstone.name : 'Améthyste'}</strong>
-            <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">${r.luckyGemstone ? r.luckyGemstone.desc : 'Apporte la clarté mentale et protège des énergies négatives.'}</p>
+      <!-- Cosmic Blockage Card -->
+      <div class="astral-card" style="border-color: rgba(186, 85, 74, 0.25);">
+        <div class="astral-card-header">
+          <div class="astral-card-title">
+            <span class="astral-card-glyph" style="background: rgba(186, 85, 74, 0.08); color: #BA554A;">🛡️</span>
+            <strong style="color: #BA554A;" data-i18n="history.blocker.title">Défi Céleste (Blocage)</strong>
           </div>
+          <span class="astral-card-coordinate" style="background: rgba(186, 85, 74, 0.08); color: #BA554A;" data-i18n="history.blocker.status">À transmuter</span>
+        </div>
+        <div class="astral-card-body">
+          <p>${lang === "en" ? "Your primary energetic blockage identified in this cycle is:" : "Le blocage énergétique majeur identifié dans votre thème est :"} <strong style="color: #BA554A;">« ${r.blocker || (lang === "en" ? "fear of change" : "la peur du changement")} »</strong>.</p>
+          <p style="margin-top: 8px; font-size: 12.5px; color: var(--text-muted); font-style: italic;">
+            ${lang === "en" ? "Oracle Advice: Connect with your lucky gemstone to help balance this vibration daily." : "Conseil de l'Oracle : Pour dissoudre ce schéma obsolète, pratiquez la pleine conscience et portez votre pierre céleste près de vous pour transmuter ces craintes."}
+          </p>
         </div>
       </div>
 
-      <!-- Répartition des Éléments -->
-      <div class="card" style="padding: 20px;">
-        <h3 class="result-section-title" style="font-size: 15px; font-family: var(--font-serif-title);">
-          ✦ Équilibre des 4 Éléments Célestes
-        </h3>
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px;">
-          <!-- Fire -->
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-              <strong>🔥 FEU (Passion & Action)</strong>
-              <span style="font-weight: 600; color: #E2583E;">${fireVal}%</span>
-            </div>
-            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden;">
-              <div style="width: ${fireVal}%; height: 100%; background: linear-gradient(90deg, #E2583E, #F28C28); border-radius: 3px;"></div>
-            </div>
+      <!-- Protection Gemstone Card -->
+      <div class="astral-card" style="border-color: rgba(197, 160, 89, 0.25);">
+        <div class="astral-card-header">
+          <div class="astral-card-title">
+            <span class="astral-card-glyph">${r.luckyGemstone ? r.luckyGemstone.symbol : '💎'}</span>
+            <strong data-i18n="history.gem.title">Pierre de Protection</strong>
           </div>
-          <!-- Earth -->
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-              <strong>🌱 TERRE (Ancrage & Stabilité)</strong>
-              <span style="font-weight: 600; color: #5A8C43;">${earthVal}%</span>
-            </div>
-            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden;">
-              <div style="width: ${earthVal}%; height: 100%; background: linear-gradient(90deg, #5A8C43, #8A9A5B); border-radius: 3px;"></div>
-            </div>
+          <span class="astral-card-coordinate" style="background: rgba(197, 160, 89, 0.08); color: var(--accent-gold-dark);">
+            ${r.luckyGemstone ? r.luckyGemstone.name : 'Améthyste'}
+          </span>
+        </div>
+        <div class="astral-card-body">
+          <p>${lang === "en" ? "Your sacred resonance crystal is the" : "Votre cristal vibratoire de résonance céleste est l'"} **${r.luckyGemstone ? r.luckyGemstone.name : 'Améthyste'}**.</p>
+          <p style="margin-top: 8px; font-size: 12.5px; color: var(--text-muted);">${r.luckyGemstone ? r.luckyGemstone.desc : (lang === "en" ? 'Brings clarity and protects from negative energy.' : 'Apporte la clarté mentale et protège des énergies négatives.')}</p>
+        </div>
+      </div>
+
+      <!-- Elements Dial Panel -->
+      <div class="astral-card" style="margin-bottom: 30px;">
+        <div class="astral-card-header" style="border-bottom: none; margin-bottom: 0;">
+          <div class="astral-card-title">
+            <span class="astral-card-glyph">🌀</span>
+            <strong data-i18n="history.elements.title">Équilibre des 4 Éléments</strong>
           </div>
-          <!-- Air -->
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-              <strong>💨 AIR (Intellect & Communication)</strong>
-              <span style="font-weight: 600; color: #4A90E2;">${airVal}%</span>
-            </div>
-            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden;">
-              <div style="width: ${airVal}%; height: 100%; background: linear-gradient(90deg, #4A90E2, #50E3C2); border-radius: 3px;"></div>
-            </div>
-          </div>
-          <!-- Water -->
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-              <strong>💧 EAU (Sensibilité & Intuition)</strong>
-              <span style="font-weight: 600; color: #2D587B;">${waterVal}%</span>
-            </div>
-            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden;">
-              <div style="width: ${waterVal}%; height: 100%; background: linear-gradient(90deg, #2D587B, #417690); border-radius: 3px;"></div>
-            </div>
-          </div>
+        </div>
+        <div class="element-dial-container">
+          ${makeElementDial(elLabels.fire, fireVal, "#E2583E", "🔥")}
+          ${makeElementDial(elLabels.earth, earthVal, "#5A8C43", "🌱")}
+          ${makeElementDial(elLabels.air, airVal, "#4A90E2", "💨")}
+          ${makeElementDial(elLabels.water, waterVal, "#9b59b6", "💧")}
         </div>
       </div>
     `;
 
     historyList.innerHTML = html;
+
+    // 2. Bind JavaScript Click events for Bi-directional highlights
+    const planetNames = ["sun", "moon", "asc", "merc", "ven", "mars", "jup", "sat"];
+
+    planetNames.forEach(name => {
+      // Node Click
+      const nodeEl = document.getElementById(`node-${name}`);
+      if (nodeEl) {
+        nodeEl.addEventListener("click", (e) => {
+          e.stopPropagation();
+          highlightPlanet(name);
+        });
+      }
+
+      // Card Click
+      const cardEl = document.getElementById(`astral-card-${name}`);
+      if (cardEl) {
+        cardEl.addEventListener("click", () => {
+          // Highlight SVG node & aspects
+          document.querySelectorAll(".planet-node").forEach(node => node.classList.remove("active"));
+          const node = document.getElementById(`node-${name}`);
+          if (node) node.classList.add("active");
+
+          document.querySelectorAll(".aspect-line").forEach(line => line.classList.remove("active"));
+          document.querySelectorAll(`.aspect-line[data-aspect*="${name}"]`).forEach(line => {
+            line.classList.add("active");
+          });
+        });
+      }
+    });
+
+    // Reset highlights on background click
+    const svgEl = document.getElementById("interactive-astral-svg");
+    if (svgEl) {
+      svgEl.addEventListener("click", () => {
+        document.querySelectorAll(".planet-node").forEach(node => node.classList.remove("active"));
+        document.querySelectorAll(".aspect-line").forEach(line => line.classList.remove("active"));
+        document.querySelectorAll(".astral-card").forEach(c => c.classList.remove("highlighted"));
+      });
+    }
   }
+
+  // Helper function for planet highlighting
+  window.highlightPlanet = function(name) {
+    // 1. Highlight Node on SVG
+    document.querySelectorAll(".planet-node").forEach(node => node.classList.remove("active"));
+    const activeNode = document.getElementById(`node-${name}`);
+    if (activeNode) activeNode.classList.add("active");
+
+    // 2. Highlight Aspect Lines
+    document.querySelectorAll(".aspect-line").forEach(line => line.classList.remove("active"));
+    document.querySelectorAll(`.aspect-line[data-aspect*="${name}"]`).forEach(line => {
+      line.classList.add("active");
+    });
+
+    // 3. Highlight Details Card
+    const card = document.getElementById(`astral-card-${name}`);
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.querySelectorAll(".astral-card").forEach(c => c.classList.remove("highlighted"));
+      card.classList.add("highlighted");
+      
+      // Auto-remove card glow after 2.5 seconds
+      setTimeout(() => {
+        card.classList.remove("highlighted");
+      }, 2500);
+    }
+  };
 
   // --- USER PROFILE & SETTINGS ---
   const setUsernameInput = document.getElementById("set-username");

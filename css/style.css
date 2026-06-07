@@ -3003,3 +3003,190 @@ input:checked + .slider:before {
   color: #ffffff;
   box-shadow: 0 1px 3px rgba(197, 160, 89, 0.15);
 }
+
+/* --- INTERACTIVE CELESTIAL CHART (CO-STAR & LOVELAB STYLE) --- */
+.celestial-spin {
+  animation: celestialRotate 180s linear infinite;
+  transform-origin: 150px 150px;
+}
+
+@keyframes celestialRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.planet-node {
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+  transform-origin: center;
+}
+
+.planet-node:hover {
+  transform: scale(1.3) !important;
+  filter: drop-shadow(0 0 8px var(--accent-gold)) drop-shadow(0 0 3px #ffffff);
+}
+
+.planet-node.active {
+  transform: scale(1.4) !important;
+  filter: drop-shadow(0 0 12px var(--accent-gold-light)) drop-shadow(0 0 4px #ffffff);
+}
+
+.aspect-line {
+  stroke: rgba(197, 160, 89, 0.18);
+  stroke-width: 1;
+  stroke-dasharray: 4, 4;
+  animation: dash 60s linear infinite;
+  transition: stroke 0.4s ease, stroke-width 0.4s ease, filter 0.4s ease;
+  pointer-events: none;
+}
+
+.aspect-line.active {
+  stroke: var(--accent-gold-light);
+  stroke-width: 1.8;
+  stroke-dasharray: 3, 2;
+  filter: drop-shadow(0 0 4px rgba(229, 195, 132, 0.7));
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+.star-particle {
+  animation: starTwinkle 4s infinite ease-in-out;
+}
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.9; }
+}
+
+/* Premium Co-Star/Lovelab styled cards */
+.astral-card {
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: 20px;
+  border: 1.5px solid rgba(197, 160, 89, 0.12);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-luna);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.astral-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 18px;
+  border: 1.5px solid rgba(229, 195, 132, 0);
+  pointer-events: none;
+  transition: border-color 0.4s ease;
+}
+
+.astral-card.highlighted {
+  border-color: var(--accent-gold);
+  box-shadow: 0 10px 30px rgba(197, 160, 89, 0.15);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.astral-card.highlighted::before {
+  border-color: rgba(229, 195, 132, 0.5);
+}
+
+.astral-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1.5px solid rgba(197, 160, 89, 0.1);
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+.astral-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-serif-title);
+  color: var(--accent-gold-dark);
+  font-size: 15px;
+}
+
+.astral-card-glyph {
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  background: rgba(197,160,89,0.08);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.astral-card-coordinate {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-sans);
+  background: rgba(0, 0, 0, 0.03);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.astral-card-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dark);
+}
+
+.astral-card-role {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* Elements Dial Wheel */
+.element-dial-container {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.element-dial-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80px;
+}
+
+.element-dial-circle {
+  width: 60px;
+  height: 60px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.element-dial-value {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-midnight);
+}
+
+.element-dial-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 6px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-align: center;
+}
