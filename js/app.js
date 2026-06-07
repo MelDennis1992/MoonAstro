@@ -1326,11 +1326,11 @@ document.addEventListener("DOMContentLoaded", () => {
     dashZodiacName.textContent = sunName;
     
     // Inject Custom Zodiac Icon SVG
-    dashZodiacIcon.outerHTML = `
-      <svg class="dash-zodiac-icon" viewBox="0 0 24 24" id="dash-zodiac-icon">
+    if (dashZodiacIcon) {
+      dashZodiacIcon.innerHTML = `
         <text x="50%" y="65%" text-anchor="middle" font-size="14" font-family="sans-serif">${r.zodiac.symbol}</text>
-      </svg>
-    `;
+      `;
+    }
  
     // Dynamic Circular Energy Gauge Chart
     const score = r.energyScore;
