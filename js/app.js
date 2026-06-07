@@ -1688,28 +1688,53 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     };
 
-    // Render zodiac ring segments
-    let segmentsHtml = "";
+    // Render coordinate grid lines (faint lines radiating from center)
+    let gridLinesHtml = "";
+    // Concentric circle grids
+    gridLinesHtml += `<circle cx="150" cy="150" r="135" class="constellation-grid-line" />`;
+    gridLinesHtml += `<circle cx="150" cy="150" r="105" class="constellation-grid-line" />`;
+    gridLinesHtml += `<circle cx="150" cy="150" r="75" class="constellation-grid-line" />`;
+    gridLinesHtml += `<circle cx="150" cy="150" r="45" class="constellation-grid-line" />`;
+
+    // Radiating lines
+    for (let angle = 0; angle < 360; angle += 30) {
+      const p1 = getXY(angle, 15);
+      const p2 = getXY(angle, 135);
+      gridLinesHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="constellation-grid-line" />`;
+    }
+
+    // Outer ticks
+    let ticksHtml = "";
+    for (let angle = 0; angle < 360; angle += 5) {
+      const isMajor = angle % 30 === 0;
+      const rInner = isMajor ? 132 : 134;
+      const p1 = getXY(angle, rInner);
+      const p2 = getXY(angle, 136);
+      ticksHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="rgba(255, 255, 255, ${isMajor ? 0.15 : 0.06})" stroke-width="0.5" />`;
+    }
+
+    // Faint zodiac abbreviations around the ring
+    const ZODIAC_ABBRS = [
+      { symbol: "♈", name: "Ari" },
+      { symbol: "♉", name: "Tau" },
+      { symbol: "♊", name: "Gem" },
+      { symbol: "♋", name: "Can" },
+      { symbol: "♌", name: "Leo" },
+      { symbol: "♍", name: "Vir" },
+      { symbol: "♎", name: "Lib" },
+      { symbol: "♏", name: "Sco" },
+      { symbol: "♐", name: "Sag" },
+      { symbol: "♑", name: "Cap" },
+      { symbol: "♒", name: "Aqu" },
+      { symbol: "♓", name: "Pis" }
+    ];
+
+    let zodiacLabelsHtml = "";
     for (let i = 0; i < 12; i++) {
       const startLong = ((i - 3) * 30 + 360) % 360;
-      const startAngle = (startLong + rotationAngle) % 360;
       const midAngle = (startLong + 15 + rotationAngle) % 360;
-
-      // Division lines
-      const pInner = getXY(startAngle, 95);
-      const pOuter = getXY(startAngle, 125);
-      segmentsHtml += `<line x1="${pInner.x}" y1="${pInner.y}" x2="${pOuter.x}" y2="${pOuter.y}" stroke="rgba(197, 160, 89, 0.18)" stroke-width="0.8" />`;
-
-      // Zodiac Glyph
-      const pText = getXY(midAngle, 110);
-      const signElement = ZODIAC_SIGNS[i].element;
-      let elColor = "var(--accent-gold)";
-      if (signElement === "Feu") elColor = "#E2583E";
-      else if (signElement === "Terre") elColor = "#5A8C43";
-      else if (signElement === "Air") elColor = "#4A90E2";
-      else if (signElement === "Eau") elColor = "#9b59b6";
-
-      segmentsHtml += `<text x="${pText.x}" y="${pText.y + 4.5}" text-anchor="middle" font-size="12" fill="${elColor}" font-family="Cinzel, serif">${ZODIAC_SIGNS[i].symbol}</text>`;
+      const pText = getXY(midAngle, 144);
+      zodiacLabelsHtml += `<text x="${pText.x}" y="${pText.y + 3}" text-anchor="middle" font-size="7" fill="rgba(255, 255, 255, 0.25)" font-family="Cinzel, serif">${ZODIAC_SIGNS[i].symbol} ${ZODIAC_ABBRS[i].name}</text>`;
     }
 
     // Twinkling stars inside map
@@ -1835,26 +1860,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let aspectsHtml = "";
     aspectLines.forEach(line => {
-      aspectsHtml += `<line x1="${line.p1.x}" y1="${line.p1.y}" x2="${line.p2.x}" y2="${line.p2.y}" class="aspect-line" data-aspect="${line.pNames}" />`;
+      aspectsHtml += `<line x1="${line.p1.x}" y1="${line.p1.y}" x2="${line.p2.x}" y2="${line.p2.y}" class="constellation-aspect-line" data-aspect="${line.pNames}" />`;
     });
 
-    // Make Element Dial Helper
-    const makeElementDial = (name, val, color, symbol) => {
-      const circum = 100.53;
-      const dash = (val * 1.0053).toFixed(1);
+    // Make Element Row Helper (Minimalist style)
+    const makeElementRow = (name, val, color, symbol) => {
       return `
-        <div class="element-dial-box">
-          <div class="element-dial-circle">
-            <svg width="60" height="60" viewBox="0 0 36 36" style="display: block;">
-              <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(0,0,0,0.03)" stroke-width="2.5" />
-              <circle cx="18" cy="18" r="16" fill="none" stroke="${color}" stroke-width="2.5" 
-                      stroke-dasharray="${dash} ${circum}" stroke-linecap="round" transform="rotate(-90 18 18)" />
-            </svg>
-            <div class="element-dial-value" style="color: ${color};">${val}%</div>
+        <div class="minimalist-element-row">
+          <span class="minimalist-element-name">${symbol} ${name}</span>
+          <div class="minimalist-element-bar-bg">
+            <div class="minimalist-element-bar-fill" style="width: ${val}%; background: ${color};"></div>
           </div>
-          <div class="element-dial-label">
-            ${symbol} ${name}
-          </div>
+          <span class="minimalist-element-val" style="color: ${color};">${val}%</span>
         </div>
       `;
     };
@@ -1866,7 +1883,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Construct full Page HTML
     let html = `
       <!-- Premium Celestial Interactive Wheel -->
-      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 28px; background: radial-gradient(circle at center, rgba(197,160,89,0.03) 0%, transparent 80%); padding: 10px 0; border-radius: 30px;">
+      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 28px; background: radial-gradient(circle at center, rgba(255,255,255,0.03) 0%, transparent 80%); padding: 10px 0; border-radius: 30px;">
         <svg id="interactive-astral-svg" width="280" height="280" viewBox="0 0 300 300" style="background: transparent; overflow: visible;">
           <defs>
             <radialGradient id="space-gradient" cx="50%" cy="50%" r="50%">
@@ -1874,50 +1891,46 @@ document.addEventListener("DOMContentLoaded", () => {
               <stop offset="70%" stop-color="#0b0e1d" />
               <stop offset="100%" stop-color="#04060b" />
             </radialGradient>
-            <radialGradient id="gold-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="rgba(197, 160, 89, 0.22)" />
-              <stop offset="100%" stop-color="rgba(197, 160, 89, 0)" />
+            <radialGradient id="star-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(255, 255, 255, 0.2)" />
+              <stop offset="100%" stop-color="rgba(255, 255, 255, 0)" />
             </radialGradient>
           </defs>
 
           <!-- Cosmic Ambient Glow -->
-          <circle cx="150" cy="150" r="140" fill="url(#gold-glow)" />
+          <circle cx="150" cy="150" r="140" fill="url(#star-glow)" />
 
           <!-- Star particles -->
           ${starsHtml}
 
           <!-- Outer Slow-Rotating Deco Rings -->
-          <circle cx="150" cy="150" r="138" fill="none" stroke="rgba(197, 160, 89, 0.15)" stroke-width="1" stroke-dasharray="2, 6" class="celestial-spin" />
-          <circle cx="150" cy="150" r="143" fill="none" stroke="rgba(197, 160, 89, 0.08)" stroke-width="0.5" stroke-dasharray="1, 12" class="celestial-spin" style="animation-direction: reverse; animation-duration: 90s;" />
+          <circle cx="150" cy="150" r="138" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" stroke-dasharray="2, 6" class="celestial-spin" />
+          <circle cx="150" cy="150" r="143" fill="none" stroke="rgba(255, 255, 255, 0.04)" stroke-width="0.5" stroke-dasharray="1, 12" class="celestial-spin" style="animation-direction: reverse; animation-duration: 90s;" />
 
-          <!-- Main structural circles -->
-          <circle cx="150" cy="150" r="125" fill="none" stroke="var(--accent-gold)" stroke-width="1.5" />
-          <circle cx="150" cy="150" r="95" fill="url(#space-gradient)" stroke="var(--accent-gold)" stroke-width="1.2" />
-          
-          <!-- Zodiac ring divisions -->
-          ${segmentsHtml}
-
-          <!-- Subtle axis lines -->
-          <line x1="55" y1="150" x2="245" y2="150" stroke="rgba(197, 160, 89, 0.15)" stroke-width="1" />
-          <line x1="150" y1="55" x2="150" y2="245" stroke="rgba(197, 160, 89, 0.15)" stroke-width="1" />
+          <!-- Celestial Grid Lines -->
+          ${gridLinesHtml}
+          ${ticksHtml}
+          ${zodiacLabelsHtml}
 
           <!-- Dynamic Aspect Lines -->
           ${aspectsHtml}
 
-          <!-- ASC Arrow -->
-          <line x1="150" y1="150" x2="55" y2="150" stroke="#4A90E2" stroke-width="2.5" />
-          <polygon points="55,150 63,146 63,154" fill="#4A90E2" />
+          <!-- ASC Line (Sleek minimalist indicator) -->
+          <line x1="150" y1="150" x2="45" y2="150" stroke="rgba(255, 255, 255, 0.4)" stroke-width="1" stroke-dasharray="2, 2" />
+          <polygon points="45,150 51,147 51,153" fill="rgba(255, 255, 255, 0.5)" />
 
-          <!-- Center gold dot -->
-          <circle cx="150" cy="150" r="4.5" fill="var(--accent-gold)" />
+          <!-- Center star point -->
+          <circle cx="150" cy="150" r="3.5" fill="#FAF9F6" stroke="rgba(255, 255, 255, 0.5)" stroke-width="1" />
 
-          <!-- Interactive Planet Nodes -->
-          ${planetDataList.map(p => `
-            <g class="planet-node" id="node-${p.name}">
-              <circle cx="${p.p.x}" cy="${p.p.y}" r="12.5" fill="#04060b" stroke="${p.name === 'asc' ? '#4A90E2' : 'var(--accent-gold)'}" stroke-width="1.5" />
-              <text x="${p.p.x}" y="${p.p.y + 3.8}" text-anchor="middle" font-size="10.5">${p.glyph}</text>
-            </g>
-          `).join("")}
+          <!-- Interactive Constellation Star Nodes -->
+          ${planetDataList.map(p => {
+            const dx = p.p.x > 150 ? 10 : -10;
+            const textAnchor = p.p.x > 150 ? "start" : "end";
+            return `
+              <circle cx="${p.p.x}" cy="${p.p.y}" r="4.5" fill="#FAF9F6" class="constellation-star-node" id="node-${p.name}" />
+              <text x="${p.p.x + dx}" y="${p.p.y + 3}" text-anchor="${textAnchor}" class="constellation-label">${p.glyph} ${p.label}</text>
+            `;
+          }).join("")}
         </svg>
         <span style="font-size: 11px; color: var(--text-muted); margin-top: 10px; font-style: italic; letter-spacing: 0.02em;" data-i18n="history.chart.hint">
           ✦ Touchez une planète pour tracer ses aspects et afficher les détails
@@ -1943,19 +1956,19 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
 
       <!-- Numeric Life Path Card -->
-      <div class="astral-card" style="border-color: rgba(197, 160, 89, 0.25);">
+      <div class="astral-card" style="border-color: rgba(255, 255, 255, 0.1);">
         <div class="astral-card-header">
           <div class="astral-card-title">
             <span class="astral-card-glyph">✦</span>
             <strong data-i18n="history.lifepath.title">Chemin de Vie</strong>
           </div>
-          <span class="astral-card-coordinate" style="background: rgba(197, 160, 89, 0.08); color: var(--accent-gold-dark);">
+          <span class="astral-card-coordinate" style="border-color: rgba(255, 255, 255, 0.2); color: #FAF9F6;">
             Nombre ${r.lifePath?.number || '7'}
           </span>
         </div>
         <div class="astral-card-body">
           <p>${lang === "en" ? "Your life path reveals your primary spiritual mission." : "Votre chemin de vie révèle votre mission spirituelle d'incarnation."} ${lang === "en" ? "Number" : "Le nombre"} <strong>${r.lifePath?.number || '7'} - ${r.lifePath?.name || (lang === "en" ? "The Sage" : "Le Sage")}</strong> ${lang === "en" ? "indicates a destiny of inner wisdom, introspection, and spiritual connection." : "indique une destinée d'évolution personnelle forte et un besoin inné d'introspection, de sagesse et de connexion spirituelle."}</p>
-          <p style="margin-top: 8px; font-size: 12.5px; color: var(--text-muted);">${r.lifePath?.desc || ''}</p>
+          <p style="margin-top: 8px; font-size: 12.5px; color: rgba(250, 249, 246, 0.5);">${r.lifePath?.desc || ''}</p>
         </div>
       </div>
 
@@ -1966,46 +1979,46 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="astral-card-glyph" style="background: rgba(186, 85, 74, 0.08); color: #BA554A;">🛡️</span>
             <strong style="color: #BA554A;" data-i18n="history.blocker.title">Défi Céleste (Blocage)</strong>
           </div>
-          <span class="astral-card-coordinate" style="background: rgba(186, 85, 74, 0.08); color: #BA554A;" data-i18n="history.blocker.status">À transmuter</span>
+          <span class="astral-card-coordinate" style="background: rgba(186, 85, 74, 0.08); border-color: rgba(186, 85, 74, 0.3); color: #BA554A;" data-i18n="history.blocker.status">À transmuter</span>
         </div>
         <div class="astral-card-body">
           <p>${lang === "en" ? "Your primary energetic blockage identified in this cycle is:" : "Le blocage énergétique majeur identifié dans votre thème est :"} <strong style="color: #BA554A;">« ${r.blocker || (lang === "en" ? "fear of change" : "la peur du changement")} »</strong>.</p>
-          <p style="margin-top: 8px; font-size: 12.5px; color: var(--text-muted); font-style: italic;">
+          <p style="margin-top: 8px; font-size: 12.5px; color: rgba(250, 249, 246, 0.5); font-style: italic;">
             ${lang === "en" ? "Oracle Advice: Connect with your lucky gemstone to help balance this vibration daily." : "Conseil de l'Oracle : Pour dissoudre ce schéma obsolète, pratiquez la pleine conscience et portez votre pierre céleste près de vous pour transmuter ces craintes."}
           </p>
         </div>
       </div>
 
       <!-- Protection Gemstone Card -->
-      <div class="astral-card" style="border-color: rgba(197, 160, 89, 0.25);">
+      <div class="astral-card" style="border-color: rgba(255, 255, 255, 0.1);">
         <div class="astral-card-header">
           <div class="astral-card-title">
             <span class="astral-card-glyph">${r.luckyGemstone ? r.luckyGemstone.symbol : '💎'}</span>
             <strong data-i18n="history.gem.title">Pierre de Protection</strong>
           </div>
-          <span class="astral-card-coordinate" style="background: rgba(197, 160, 89, 0.08); color: var(--accent-gold-dark);">
+          <span class="astral-card-coordinate" style="border-color: rgba(255, 255, 255, 0.2); color: #FAF9F6;">
             ${r.luckyGemstone ? r.luckyGemstone.name : 'Améthyste'}
           </span>
         </div>
         <div class="astral-card-body">
-          <p>${lang === "en" ? "Your sacred resonance crystal is the" : "Votre cristal vibratoire de résonance céleste est l'"} **${r.luckyGemstone ? r.luckyGemstone.name : 'Améthyste'}**.</p>
-          <p style="margin-top: 8px; font-size: 12.5px; color: var(--text-muted);">${r.luckyGemstone ? r.luckyGemstone.desc : (lang === "en" ? 'Brings clarity and protects from negative energy.' : 'Apporte la clarté mentale et protège des énergies négatives.')}</p>
+          <p>${lang === "en" ? "Your sacred resonance crystal is the" : "Votre cristal vibratoire de résonance céleste est l'"} <strong>${r.luckyGemstone ? r.luckyGemstone.name : 'Améthyste'}</strong>.</p>
+          <p style="margin-top: 8px; font-size: 12.5px; color: rgba(250, 249, 246, 0.5);">${r.luckyGemstone ? r.luckyGemstone.desc : (lang === "en" ? 'Brings clarity and protects from negative energy.' : 'Apporte la clarté mentale et protège des énergies négatives.')}</p>
         </div>
       </div>
 
-      <!-- Elements Dial Panel -->
+      <!-- Elements Minimalist Panel -->
       <div class="astral-card" style="margin-bottom: 30px;">
-        <div class="astral-card-header" style="border-bottom: none; margin-bottom: 0;">
+        <div class="astral-card-header" style="border-bottom: none; margin-bottom: 8px;">
           <div class="astral-card-title">
             <span class="astral-card-glyph">🌀</span>
             <strong data-i18n="history.elements.title">Équilibre des 4 Éléments</strong>
           </div>
         </div>
-        <div class="element-dial-container">
-          ${makeElementDial(elLabels.fire, fireVal, "#E2583E", "🔥")}
-          ${makeElementDial(elLabels.earth, earthVal, "#5A8C43", "🌱")}
-          ${makeElementDial(elLabels.air, airVal, "#4A90E2", "💨")}
-          ${makeElementDial(elLabels.water, waterVal, "#9b59b6", "💧")}
+        <div class="minimalist-element-container">
+          ${makeElementRow(elLabels.fire, fireVal, "#E2583E", "🔥")}
+          ${makeElementRow(elLabels.earth, earthVal, "#5A8C43", "🌱")}
+          ${makeElementRow(elLabels.air, airVal, "#4A90E2", "💨")}
+          ${makeElementRow(elLabels.water, waterVal, "#9b59b6", "💧")}
         </div>
       </div>
     `;
@@ -2030,12 +2043,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (cardEl) {
         cardEl.addEventListener("click", () => {
           // Highlight SVG node & aspects
-          document.querySelectorAll(".planet-node").forEach(node => node.classList.remove("active"));
+          document.querySelectorAll(".constellation-star-node").forEach(node => node.classList.remove("active"));
           const node = document.getElementById(`node-${name}`);
           if (node) node.classList.add("active");
 
-          document.querySelectorAll(".aspect-line").forEach(line => line.classList.remove("active"));
-          document.querySelectorAll(`.aspect-line[data-aspect*="${name}"]`).forEach(line => {
+          document.querySelectorAll(".constellation-aspect-line").forEach(line => line.classList.remove("active"));
+          document.querySelectorAll(`.constellation-aspect-line[data-aspect*="${name}"]`).forEach(line => {
             line.classList.add("active");
           });
         });
@@ -2046,8 +2059,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const svgEl = document.getElementById("interactive-astral-svg");
     if (svgEl) {
       svgEl.addEventListener("click", () => {
-        document.querySelectorAll(".planet-node").forEach(node => node.classList.remove("active"));
-        document.querySelectorAll(".aspect-line").forEach(line => line.classList.remove("active"));
+        document.querySelectorAll(".constellation-star-node").forEach(node => node.classList.remove("active"));
+        document.querySelectorAll(".constellation-aspect-line").forEach(line => line.classList.remove("active"));
         document.querySelectorAll(".astral-card").forEach(c => c.classList.remove("highlighted"));
       });
     }
@@ -2056,13 +2069,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Helper function for planet highlighting
   window.highlightPlanet = function(name) {
     // 1. Highlight Node on SVG
-    document.querySelectorAll(".planet-node").forEach(node => node.classList.remove("active"));
+    document.querySelectorAll(".constellation-star-node").forEach(node => node.classList.remove("active"));
     const activeNode = document.getElementById(`node-${name}`);
     if (activeNode) activeNode.classList.add("active");
 
     // 2. Highlight Aspect Lines
-    document.querySelectorAll(".aspect-line").forEach(line => line.classList.remove("active"));
-    document.querySelectorAll(`.aspect-line[data-aspect*="${name}"]`).forEach(line => {
+    document.querySelectorAll(".constellation-aspect-line").forEach(line => line.classList.remove("active"));
+    document.querySelectorAll(`.constellation-aspect-line[data-aspect*="${name}"]`).forEach(line => {
       line.classList.add("active");
     });
 

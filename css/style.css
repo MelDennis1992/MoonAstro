@@ -3004,9 +3004,9 @@ input:checked + .slider:before {
   box-shadow: 0 1px 3px rgba(197, 160, 89, 0.15);
 }
 
-/* --- INTERACTIVE CELESTIAL CHART (CO-STAR & LOVELAB STYLE) --- */
+/* --- INTERACTIVE CELESTIAL CONSTELLATION MAP (CO-STAR MINIMALIST STYLE) --- */
 .celestial-spin {
-  animation: celestialRotate 180s linear infinite;
+  animation: celestialRotate 240s linear infinite;
   transform-origin: 150px 150px;
 }
 
@@ -3015,36 +3015,36 @@ input:checked + .slider:before {
   to { transform: rotate(360deg); }
 }
 
-.planet-node {
+.constellation-star-node {
   cursor: pointer;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
   transform-origin: center;
 }
 
-.planet-node:hover {
-  transform: scale(1.3) !important;
-  filter: drop-shadow(0 0 8px var(--accent-gold)) drop-shadow(0 0 3px #ffffff);
-}
-
-.planet-node.active {
+.constellation-star-node:hover {
   transform: scale(1.4) !important;
-  filter: drop-shadow(0 0 12px var(--accent-gold-light)) drop-shadow(0 0 4px #ffffff);
+  filter: drop-shadow(0 0 10px #ffffff) drop-shadow(0 0 4px var(--accent-gold-light));
 }
 
-.aspect-line {
-  stroke: rgba(197, 160, 89, 0.18);
-  stroke-width: 1;
-  stroke-dasharray: 4, 4;
-  animation: dash 60s linear infinite;
-  transition: stroke 0.4s ease, stroke-width 0.4s ease, filter 0.4s ease;
+.constellation-star-node.active {
+  transform: scale(1.5) !important;
+  filter: drop-shadow(0 0 16px #ffffff) drop-shadow(0 0 8px var(--accent-gold-light));
+}
+
+.constellation-aspect-line {
+  stroke: rgba(255, 255, 255, 0.09);
+  stroke-width: 0.8;
+  stroke-dasharray: 3, 4;
+  animation: dash 65s linear infinite;
+  transition: stroke 0.4s ease, stroke-width 0.4s ease, filter 0.4s ease, stroke-dasharray 0.4s ease;
   pointer-events: none;
 }
 
-.aspect-line.active {
-  stroke: var(--accent-gold-light);
-  stroke-width: 1.8;
-  stroke-dasharray: 3, 2;
-  filter: drop-shadow(0 0 4px rgba(229, 195, 132, 0.7));
+.constellation-aspect-line.active {
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 1.5;
+  stroke-dasharray: none;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
 }
 
 @keyframes dash {
@@ -3058,18 +3058,43 @@ input:checked + .slider:before {
 }
 
 @keyframes starTwinkle {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.9; }
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.85; }
 }
 
-/* Premium Co-Star/Lovelab styled cards */
+/* Faint Grid Lines */
+.constellation-grid-line {
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 0.5;
+  pointer-events: none;
+}
+
+/* Planet text label styling on SVG */
+.constellation-label {
+  font-family: var(--font-sans);
+  font-size: 8px;
+  font-weight: 300;
+  fill: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  transition: fill 0.3s ease, font-weight 0.3s ease;
+}
+
+.constellation-star-node:hover + .constellation-label,
+.constellation-star-node.active + .constellation-label {
+  fill: #faf9f6;
+  font-weight: 500;
+}
+
+/* Premium Co-Star styled dark translucent cards */
 .astral-card {
   padding: 20px;
-  background: var(--bg-card);
-  border-radius: 20px;
-  border: 1.5px solid rgba(197, 160, 89, 0.12);
+  background: var(--primary-midnight-light);
+  background: linear-gradient(135deg, rgba(26, 37, 68, 0.85) 0%, rgba(13, 19, 38, 0.95) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: var(--shadow-luna);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   position: relative;
   overflow: hidden;
   margin-bottom: 16px;
@@ -3079,28 +3104,28 @@ input:checked + .slider:before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  border-radius: 18px;
-  border: 1.5px solid rgba(229, 195, 132, 0);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0);
   pointer-events: none;
   transition: border-color 0.4s ease;
 }
 
 .astral-card.highlighted {
-  border-color: var(--accent-gold);
-  box-shadow: 0 10px 30px rgba(197, 160, 89, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 12px 40px rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, rgba(30, 42, 78, 0.95) 0%, rgba(16, 23, 46, 0.98) 100%);
 }
 
 .astral-card.highlighted::before {
-  border-color: rgba(229, 195, 132, 0.5);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .astral-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1.5px solid rgba(197, 160, 89, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 10px;
   margin-bottom: 12px;
 }
@@ -3110,83 +3135,92 @@ input:checked + .slider:before {
   align-items: center;
   gap: 10px;
   font-family: var(--font-serif-title);
-  color: var(--accent-gold-dark);
-  font-size: 15px;
+  color: #FAF9F6;
+  font-size: 14.5px;
+  letter-spacing: 0.02em;
 }
 
 .astral-card-glyph {
-  font-size: 20px;
-  width: 32px;
-  height: 32px;
-  background: rgba(197,160,89,0.08);
+  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--accent-gold-light);
 }
 
 .astral-card-coordinate {
-  font-size: 10px;
-  color: var(--text-muted);
+  font-size: 9.5px;
+  color: var(--accent-gold-light);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   font-family: var(--font-sans);
-  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(229, 195, 132, 0.2);
   padding: 2px 8px;
-  border-radius: 20px;
+  border-radius: 12px;
 }
 
 .astral-card-body {
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--text-dark);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: rgba(250, 249, 246, 0.75);
 }
 
-.astral-card-role {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  margin-top: 4px;
-  font-style: italic;
+.astral-card-body p {
+  margin-bottom: 8px;
+}
+.astral-card-body p:last-child {
+  margin-bottom: 0;
 }
 
-/* Elements Dial Wheel */
-.element-dial-container {
-  display: flex;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 16px;
+.astral-card-body strong {
+  color: #FAF9F6;
+  font-weight: 600;
 }
 
-.element-dial-box {
+/* Minimalist Co-Star Element Row */
+.minimalist-element-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  width: 80px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
-.element-dial-circle {
-  width: 60px;
-  height: 60px;
-  position: relative;
+.minimalist-element-row {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  font-size: 11px;
 }
 
-.element-dial-value {
-  position: absolute;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--primary-midnight);
-}
-
-.element-dial-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  margin-top: 6px;
-  color: var(--text-muted);
+.minimalist-element-name {
+  color: rgba(250, 249, 246, 0.7);
+  font-weight: 400;
   letter-spacing: 0.05em;
-  text-align: center;
+  text-transform: uppercase;
+  width: 150px;
+}
+
+.minimalist-element-bar-bg {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  margin: 0 16px;
+  overflow: hidden;
+}
+
+.minimalist-element-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.minimalist-element-val {
+  font-weight: 600;
+  width: 35px;
+  text-align: right;
+  font-family: var(--font-sans);
 }
