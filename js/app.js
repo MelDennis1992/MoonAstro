@@ -2782,12 +2782,6 @@ document.addEventListener("DOMContentLoaded", () => {
             `**🔮 Oracle Guidance**\n\n${name}, your triad — Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — tells me you're in a deep integration cycle. Ask me about your **love life**, **career potential**, **main blockage**, or **celestial stone**.`,
             `**✨ The Oracle speaks, ${name}**\n\nSun **${sun}** pushes you toward light; Moon **${moon}** calls you inward. This tension is your greatest richness. Your **${gem}** helps you navigate both worlds.`
           ]);
-    }de richesse. Votre **${gem}** est votre allié pour naviguer cette dualité avec grâce.\n\nSur quel aspect souhaitez-vous que l'Oracle aille plus loin ?`
-          ])
-        : pick([
-            `**🔮 Oracle Guidance**\n\n${name}, your triad — Sun **${sun}**, Moon **${moon}**, Ascendant **${asc}** — tells me you're in a deep integration cycle. Ask me about your **love life**, **career potential**, **main blockage**, or **celestial stone**.`,
-            `**✨ The Oracle speaks, ${name}**\n\nSun **${sun}** pushes you toward light; Moon **${moon}** calls you inward. This tension is your greatest richness. Your **${gem}** helps you navigate both worlds.`
-          ]);
     }
 
     // Realistic typing delay: 2.5s base + ~4ms per character, capped at 5s
