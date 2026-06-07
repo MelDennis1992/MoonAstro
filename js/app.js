@@ -299,6 +299,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.addEventListener("hashchange", router);
 
+  // --- LANGUAGE SWITCHER BINDINGS ---
+  const langBtns = document.querySelectorAll(".lang-switcher .lang-btn");
+  langBtns.forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const targetLang = btn.getAttribute("data-lang");
+      translatePage(targetLang);
+    });
+  });
+
   // --- LANDING PAGE LOGIC ---
   const btnStartQuiz = document.getElementById("btn-start-quiz");
   btnStartQuiz.addEventListener("click", () => {
@@ -3039,9 +3049,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- INITIALIZE APPLICATION STATE ---
   loadState();
-  state.lang = "fr";
+  const initialLang = safeStorage.getItem("moon_astro_lang") || "fr";
+  state.lang = initialLang;
   updateCarteDot();
-  translatePage("fr"); // Run translation and routing immediately on load in French
+  translatePage(initialLang); // Run translation and routing immediately on load
   
   setTimeout(() => {
     showToast("Application MoonAstro chargée (v1.0.2) 🌙");

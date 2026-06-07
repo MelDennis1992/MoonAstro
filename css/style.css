@@ -2866,3 +2866,39 @@ input:checked + .slider:before {
     font-size: 14px;
   }
 }
+
+/* --- Language Switcher --- */
+.lang-switcher {
+  display: flex;
+  background: rgba(197, 160, 89, 0.05);
+  border: 1px solid rgba(197, 160, 89, 0.12);
+  border-radius: 14px;
+  padding: 2px;
+  gap: 2px;
+  align-items: center;
+}
+
+.lang-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: var(--font-sans);
+  outline: none;
+  line-height: 1;
+}
+
+.lang-btn:hover {
+  color: var(--accent-gold-dark);
+}
+
+.lang-btn.active {
+  background: var(--accent-gold-dark);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(197, 160, 89, 0.15);
+}
