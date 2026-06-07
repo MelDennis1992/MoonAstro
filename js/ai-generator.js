@@ -734,47 +734,113 @@ function generateDailyHoroscope(name, zodiac, answers, lifePath, lang = "fr") {
   const lpNum = lifePath ? lifePath.number : 7;
   const activeRuler = lang === "en" ? zodiac.ruler_en : zodiac.ruler;
 
-  // 1. General Section
-  let general = lang === "en"
-    ? `Today, the influence of your ruling planet, ${activeRuler}, combined with your vibrational signature of **Life Path ${lpNum}**, creates an atmosphere conducive to personal revelations. ${name}, you will feel a powerful inner drive to reorganize your core priorities and realize your soul's aspirations.`
-    : `Aujourd'hui, l'influence de votre planète régente, ${activeRuler}, conjuguée à votre signature vibratoire du **Chemin de Vie ${lpNum}**, crée une atmosphère propice aux révélations personnelles. ${name}, vous ressentirez un puissant élan intérieur pour réorganiser vos priorités fondamentales et concrétiser vos aspirations d'âme.`;
-  
-  if (currentEnergy === "explosive") {
-    general = lang === "en"
-      ? `Your sky ignites with superb vitality under the impulse of your ruling planet, ${activeRuler}. It is a highly magnetic day, ${name}. Your attraction force, carried by your **Life Path ${lpNum}**, is multiplied: use this spark to launch brave initiatives or clarify persistent unspoken issues. The stars conspire in your favor.`
-      : `Votre ciel s'embrase d'une superbe vitalité sous l'impulsion de votre planète régente, ${activeRuler}. C'est une journée hautement magnétique, ${name}. Votre force d'attraction, portée par votre **Chemin de Vie ${lpNum}**, est décuplée : utilisez cette étincelle pour lancer des initiatives courageuses ou clarifier des non-dits persistants. Les astres conspirent en votre faveur.`;
-  } else if (currentEnergy === "tired") {
-    general = lang === "en"
-      ? `Today's cosmic influxes solemnly invite you to a benevolent retreat, ${name}. Your planet ${activeRuler} forms a slowing aspect. Do not force any events. Use this moment to regenerate, purify your thoughts, and grant your mind the rest it silently craves. Your **Life Path ${lpNum}** vibrations support you in grounding.`
-      : `Les influx cosmiques d'aujourd'hui vous invitent solennellement au repli bienveillant, ${name}. Votre planète ${activeRuler} forme un aspect de ralentissement. Ne forcez aucun événement. Utilisez ce moment pour vous régénérer, purifier vos pensées et accorder à votre esprit le repos qu'il réclame silencieusement depuis plusieurs jours. Votre vibrations de **Chemin de Vie ${lpNum}** vous soutiennent dans l'ancrage.`;
+  // Compute a deterministic seed based on today's date and the user's name/life path
+  const today = new Date();
+  const daySeed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  const userName = name || "moon";
+  let nameVal = 0;
+  for (let i = 0; i < userName.length; i++) {
+    nameVal += userName.charCodeAt(i);
   }
-  
-  // 2. Love Section
-  let love = lang === "en"
-    ? "Your relationships are placed under the sign of sweetness and constructive dialogue. Open your heart to unexpected opportunities."
-    : "Vos relations sont placées sous le signe de la douceur et du dialogue constructif. Ouvrez votre cœur aux opportunités inattendues.";
-  let loveStars = 4;
+  const seed = daySeed + nameVal + lpNum;
 
+  // Fluctuate daily star ratings dynamically (from 3 to 5 stars) based on seed
+  const loveStars = 3 + (seed % 3);
+  const careerStars = 3 + ((seed + 1) % 3);
+  const wellbeingStars = 3 + ((seed + 2) % 3);
+
+  // 1. General Section (3 variations for each case)
+  let general = "";
+  const varIndex = seed % 3;
+
+  if (currentEnergy === "explosive") {
+    const generalExplosive_fr = [
+      `Votre ciel s'embrase d'une superbe vitalité sous l'impulsion de votre planète régente, ${activeRuler}. C'est une journée hautement magnétique, ${name}. Votre force d'attraction, portée par votre **Chemin de Vie ${lpNum}**, est décuplée : utilisez cette étincelle pour lancer des initiatives courageuses ou clarifier des non-dits persistants. Les astres conspirent en votre faveur.`,
+      `Un élan cosmique puissant sous la gouverne de ${activeRuler} décuple votre enthousiasme aujourd'hui, ${name}. Porté(e) par l'énergie de votre **Chemin de Vie ${lpNum}**, vous possédez une audace naturelle pour briser les routines et franchir les barrières. C'est le moment idéal pour foncer.`,
+      `Sous l'égide lumineuse de votre planète régente ${activeRuler}, cette journée s'annonce électrique et pleine de promesses pour vous, ${name}. Votre signature vibratoire du **Chemin de Vie ${lpNum}** favorise des rencontres stimulantes et des opportunités soudaines : suivez votre feu intérieur sans hésitation.`
+    ];
+    const generalExplosive_en = [
+      `Your sky ignites with superb vitality under the impulse of your ruling planet, ${activeRuler}. It is a highly magnetic day, ${name}. Your attraction force, carried by your **Life Path ${lpNum}**, is multiplied: use this spark to launch brave initiatives or clarify persistent unspoken issues. The stars conspire in your favor.`,
+      `A powerful cosmic momentum under the governance of ${activeRuler} multiplies your enthusiasm today, ${name}. Carried by the energy of your **Life Path ${lpNum}**, you possess a natural audacity to break routines and cross barriers. It is the perfect time to go for it.`,
+      `Under the luminous aegis of your ruling planet ${activeRuler}, this day promises to be electrical and full of promises for you, ${name}. Your vibrational signature of **Life Path ${lpNum}** favors stimulating encounters and sudden opportunities: follow your inner fire without hesitation.`
+    ];
+    general = lang === "en" ? generalExplosive_en[varIndex] : generalExplosive_fr[varIndex];
+  } else if (currentEnergy === "tired") {
+    const generalTired_fr = [
+      `Les influx cosmiques d'aujourd'hui vous invitent solennellement au repli bienveillant, ${name}. Votre planète ${activeRuler} forme un aspect de ralentissement. Ne forcez aucun événement. Utilisez ce moment pour vous régénérer, purifier vos pensées et accorder à votre esprit le repos qu'il réclame silencieusement depuis plusieurs jours. Votre vibrations de **Chemin de Vie ${lpNum}** vous soutiennent dans l'ancrage.`,
+      `Votre ciel du jour suggère une pause nécessaire, ${name}. Avec le ralentissement de votre planète régente ${activeRuler}, l'heure est à l'introspection douce. Les vibrations de votre **Chemin de Vie ${lpNum}** vous invitent à vous recentrer et à recharger vos batteries loin du bruit du monde.`,
+      `Une journée de ressourcement spirituel s'offre à vous sous l'influence apaisée de ${activeRuler}. ${name}, ne cherchez pas à accélérer les choses aujourd'hui. Profitez de l'ancrage procuré par votre **Chemin de Vie ${lpNum}** pour cultiver le calme intérieur et régénérer vos forces vitales.`
+    ];
+    const generalTired_en = [
+      `Today's cosmic influxes solemnly invite you to a benevolent retreat, ${name}. Your planet ${activeRuler} forms a slowing aspect. Do not force any events. Use this moment to regenerate, purify your thoughts, and grant your mind the rest it silently craves. Your **Life Path ${lpNum}** vibrations support you in grounding.`,
+      `Your sky of the day suggests a necessary pause, ${name}. With the slowing of your ruling planet ${activeRuler}, the hour is for gentle introspection. The vibrations of your **Life Path ${lpNum}** invite you to refocus and recharge your batteries far from the world's noise.`,
+      `A day of spiritual rejuvenation offers itself to you under the calmed influence of ${activeRuler}. ${name}, do not seek to speed things up today. Take advantage of the grounding provided by your **Life Path ${lpNum}** to cultivate inner calm and regenerate your vital strengths.`
+    ];
+    general = lang === "en" ? generalTired_en[varIndex] : generalTired_fr[varIndex];
+  } else {
+    const generalDefault_fr = [
+      `Aujourd'hui, l'influence de votre planète régente, ${activeRuler}, conjuguée à votre signature vibratoire du **Chemin de Vie ${lpNum}**, crée une atmosphère propice aux révélations personnelles. ${name}, vous ressentirez un puissant élan intérieur pour réorganiser vos priorités fondamentales et concrétiser vos aspirations d'âme.`,
+      `Les transits planétaires d'aujourd'hui mettent en lumière votre planète régente ${activeRuler} en harmonie avec votre **Chemin de Vie ${lpNum}**. ${name}, c'est une excellente journée pour prendre du recul, écouter les murmures de votre intuition et poser des intentions constructives pour l'avenir.`,
+      `Sous la guidance subtile de votre planète régente ${activeRuler}, la journée favorise un réalignement de vos énergies. En syntonisation avec votre **Chemin de Vie ${lpNum}**, ${name}, vous trouverez la clarté nécessaire pour harmoniser vos relations et progresser sereinement dans votre cheminement.`
+    ];
+    const generalDefault_en = [
+      `Today, the influence of your ruling planet, ${activeRuler}, combined with your vibrational signature of **Life Path ${lpNum}**, creates an atmosphere conducive to personal revelations. ${name}, you will feel a powerful inner drive to reorganize your core priorities and realize your soul's aspirations.`,
+      `Today's planetary transits bring your ruling planet ${activeRuler} into harmony with your **Life Path ${lpNum}**. ${name}, it is an excellent day to step back, listen to the whispers of your intuition, and set constructive intentions for the future.`,
+      `Under the subtle guidance of your ruling planet ${activeRuler}, the day favors a realignment of your energies. In tuning with your **Life Path ${lpNum}**, ${name}, you will find the clarity needed to harmonize your relationships and progress peacefully in your journey.`
+    ];
+    general = lang === "en" ? generalDefault_en[varIndex] : generalDefault_fr[varIndex];
+  }
+
+  // 2. Love Section (3 variations per relationship status)
+  let love = "";
   if (relationship === "single") {
-    love = lang === "en"
-      ? `Single, the current planetary alignment invites you to love yourself fully first to radiate outward. A glance, an ordinary discussion, or a troubling synchronicity might pique your curiosity. Do not close any doors for fear of being vulnerable.`
-      : `Célibataire, l'alignement planétaire actuel vous invite à vous aimer d'abord pleinement pour rayonner à l'extérieur. Un regard, une discussion anodine ou une synchronicité troublante au détour d'un chemin pourrait éveiller votre curiosité. Ne fermez aucune porte par peur d'être vulnérable. Vos guides vous conseillent de soigner vos blessures d'amour passées.`;
-    loveStars = 4;
+    const loveSingle_fr = [
+      `Célibataire, l'alignement planétaire actuel vous invite à vous aimer d'abord pleinement pour rayonner à l'extérieur. Un regard, une discussion anodine ou une synchronicité troublante au détour d'un chemin pourrait éveiller votre curiosité. Ne fermez aucune porte par peur d'être vulnérable. Vos guides vous conseillent de soigner vos blessures d'amour passées.`,
+      `Célibataire, les astres soufflent aujourd'hui un vent de fraîcheur sur votre vie sociale. Une rencontre amicale pourrait prendre une tournure inattendue et spirituelle. Exprimez votre authenticité sans fard, c'est ce qui fait votre charme cosmique unique.`,
+      `Célibataire, prenez aujourd'hui le temps de clarifier vos intentions amoureuses. L'univers entend vos désirs mais attend que vous fassiez de la place dans votre esprit pour accueillir le renouveau. Une synchronicité marquante se prépare.`
+    ];
+    const loveSingle_en = [
+      `Single, the current planetary alignment invites you to love yourself fully first to radiate outward. A glance, an ordinary discussion, or a troubling synchronicity might pique your curiosity. Do not close any doors for fear of being vulnerable. Your guides advise you to heal your past love wounds.`,
+      `Single, the stars blow a wind of freshness on your social life today. A friendly encounter could take an unexpected and spiritual turn. Express your authenticity without mask, this is what makes your unique cosmic charm.`,
+      `Single, take time today to clarify your romantic intentions. The universe hears your desires but waits for you to make space in your mind to welcome renewal. A striking synchronicity is preparing.`
+    ];
+    love = lang === "en" ? loveSingle_en[varIndex] : loveSingle_fr[varIndex];
   } else if (relationship === "couple") {
-    love = lang === "en"
-      ? `In a relationship, the astral climate is favorable for renewed intimacy. However, be careful not to project your unexpressed expectations onto your partner. An authentic discussion will deeply strengthen your soul connections.`
-      : `En couple, le climat astral est propice à une complicité renouvelée. Cependant, veillez à ne pas projeter vos attentes inexprimées sur votre partenaire. Une discussion authentique autour d'un projet commun ou d'une émotion partagée renforcera profondément vos liens d'âme.`;
-    loveStars = 5;
+    const loveCouple_fr = [
+      `En couple, le climat astral est propice à une complicité renouvelée. Cependant, veillez à ne pas projeter vos attentes inexprimées sur votre partenaire. Une discussion authentique autour d'un projet commun ou d'une émotion partagée renforcera profondément vos liens d'âme.`,
+      `En couple, l'heure est au partage d'activités insolites ou à des confidences sincères. Laissez de côté le quotidien pour raviver la flamme spirituelle qui vous unit. Un mot doux ou une attention délicate aujourd'hui renforcera durablement votre complicité.`,
+      `En couple, des transits harmonieux facilitent la compréhension mutuelle. Si des tensions existaient, c'est le jour idéal pour les dissiper grâce à une écoute attentive. Misez sur la tendresse et la bienveillance pour embellir votre foyer.`
+    ];
+    const loveCouple_en = [
+      `In a relationship, the astral climate is favorable for renewed intimacy. However, be careful not to project your unexpressed expectations onto your partner. An authentic discussion about a common project or shared emotion will deeply strengthen your soul connections.`,
+      `In a relationship, the hour is for sharing unusual activities or sincere confidences. Leave daily life aside to revive the spiritual flame that unites you. A sweet word or delicate attention today will durably strengthen your intimacy.`,
+      `In a relationship, harmonious transits facilitate mutual understanding. If tensions existed, this is the perfect day to dissipate them thanks to attentive listening. Bet on tenderness and kindness to beautify your home.`
+    ];
+    love = lang === "en" ? loveCouple_en[varIndex] : loveCouple_fr[varIndex];
   } else if (relationship === "complicated") {
-    love = lang === "en"
-      ? `The emotional blur surrounding you is starting to clear up gently. The planets recommend you stop over-intellectualizing your feelings. Let your body and intuition speak. Set healthy boundaries.`
-      : `Le flou affectif qui vous entoure commence à se dissiper doucement. Les planètes vous recommandent d'arrêter d'intellectualiser vos sentiments. Laissez parler votre corps et votre intuition. Fixez des limites saines : vous méritez une relation fluide et sereine, libre de toute ambiguïté.`;
-    loveStars = 3;
+    const loveComplicated_fr = [
+      `Le flou affectif qui vous entoure commence à se dissiper doucement. Les planètes vous recommandent d'arrêter d'intellectualiser vos sentiments. Laissez parler votre corps et votre intuition. Fixez des limites saines : vous méritez une relation fluide et sereine, libre de toute ambiguïté.`,
+      `Une situation confuse requiert aujourd'hui votre calme et votre recul. Ne prenez pas de décision hâtive sous le coup de l'émotion. L'univers vous conseille d'attendre que le voile du mystère se lève pour y voir plus clair. Restez centré(e).`,
+      `Les astres vous invitent à faire le point sur vos besoins affectifs réels. N'acceptez pas moins que le respect et la clarté. Exprimez vos limites avec bienveillance mais fermeté. C'est en vous respectant que les autres vous respecteront.`
+    ];
+    const loveComplicated_en = [
+      `The emotional blur surrounding you is starting to clear up gently. The planets recommend you stop over-intellectualizing your feelings. Let your body and intuition speak. Set healthy boundaries: you deserve a fluid and peaceful relation, free of any ambiguity.`,
+      `A confusing situation requires your calm and stepping back today. Do not make any hasty decision under emotional pressure. The universe advises you to wait for the veil of mystery to lift to see clearer. Stay centered.`,
+      `The stars invite you to assess your real emotional needs. Do not accept less than respect and clarity. Express your boundaries with kindness but firmness. It is by respecting yourself that others will respect you.`
+    ];
+    love = lang === "en" ? loveComplicated_en[varIndex] : loveComplicated_fr[varIndex];
   } else if (relationship === "healing") {
-    love = lang === "en"
-      ? `You are in a wonderful phase of emotional reconstruction. The cosmos heals your wounds with patience. Take time to savor your freedom and personal space. True love will arrive naturally once this cycle is complete.`
-      : `Vous êtes dans une merveilleuse phase de reconstruction sentimentale. Le cosmos panse vos plaies affectives avec patience. Prenez le temps de savourer votre liberté et votre espace personnel. L'amour authentique arrivera naturellement lorsque vous aurez parachevé ce cycle de régénération.`;
-    loveStars = 3;
+    const loveHealing_fr = [
+      `Vous êtes dans une merveilleuse phase de reconstruction sentimentale. Le cosmos panse vos plaies affectives avec patience. Prenez le temps de savourer votre liberté et votre espace personnel. L'amour authentique arrivera naturellement lorsque vous aurez parachevé ce cycle de régénération.`,
+      `Votre cœur guérit à son propre rythme. Aujourd'hui, offrez-vous un moment de douceur et de pardon envers vous-même. Le passé n'a plus d'emprise sur la personne lumineuse que vous devenez chaque jour.`,
+      `Les astres soutiennent votre renaissance émotionnelle. Une paix profonde s'installe. Profitez de cette journée pour cultiver l'amour de soi en faisant des activités qui nourrissent profondément votre esprit.`
+    ];
+    const loveHealing_en = [
+      `You are in a wonderful phase of emotional reconstruction. The cosmos heals your wounds with patience. Take time to savor your freedom and personal space. True love will arrive naturally once this cycle of regeneration is complete.`,
+      `Your heart heals at its own pace. Today, offer yourself a moment of sweetness and self-forgiveness. The past no longer holds power over the luminous person you are becoming each day.`,
+      `The stars support your emotional rebirth. A deep peace is settling in. Take advantage of this day to cultivate self-love by doing activities that deeply nourish your spirit.`
+    ];
+    love = lang === "en" ? loveHealing_en[varIndex] : loveHealing_fr[varIndex];
   }
 
   if (answers.relationshipDifficulty === "boundaries") {
@@ -783,101 +849,200 @@ function generateDailyHoroscope(name, zodiac, answers, lifePath, lang = "fr") {
       : " Point d'attention céleste aujourd'hui : osez dire 'non' à votre entourage amoureux pour préserver votre précieux espace intérieur.";
   }
 
-  // 3. Career Section
-  let career = lang === "en"
-    ? "A beautiful opportunity for organization presents itself. Focus on the essential and leave aside the superfluous."
-    : "Une belle opportunité d'organisation s'offre à vous. Concentrez-vous sur l'essentiel et laissez de côté le superflu.";
-  let careerStars = 4;
-
+  // 3. Career Section (3 variations per main goal)
+  let career = "";
   if (mainGoal === "career") {
-    career = lang === "en"
-      ? `Your professional ambitions receive a helping hand from fate. It is the ideal time to propose your creative ideas, request a meeting, or restructure your priorities. Do not hold back, your sky indicates you have the resources.`
-      : `Vos ambitions professionnelles reçoivent un coup de pouce du destin. C'est le moment idéal pour proposer vos idées créatives, solliciter un entretien ou restructurer vos priorités. Ne reculez pas devant les défis : votre ciel indique que vous disposez de toutes les ressources nécessaires pour franchir un nouveau palier.`;
-    careerStars = 5;
+    const careerJob_fr = [
+      `Vos ambitions professionnelles reçoivent un coup de pouce du destin. C'est le moment idéal pour proposer vos idées créatives, solliciter un entretien ou restructurer vos priorités. Ne reculez pas devant les défis : votre ciel indique que vous disposez de toutes les ressources nécessaires pour franchir un nouveau palier.`,
+      `Aujourd'hui, l'influx d'énergies créatrices favorise les initiatives audacieuses. Présentez vos projets ou organisez des réunions clés. Votre charisme professionnel est à son apogée, soutenu par votre planète régente ${activeRuler}.`,
+      `Une belle opportunité de collaboration ou de reconnaissance se profile au travail. Restez attentif(ve) aux discussions informelles, car une graine de succès pourrait y être plantée aujourd'hui.`
+    ];
+    const careerJob_en = [
+      `Your professional ambitions receive a helping hand from fate. It is the ideal time to propose your creative ideas, request a meeting, or restructure your priorities. Do not hold back, your sky indicates you have the resources to cross a new step.`,
+      `Today, the influx of creative energies favors bold initiatives. Present your projects or organize key meetings. Your professional charisma is at its peak, supported by your ruling planet ${activeRuler}.`,
+      `A beautiful opportunity for collaboration or recognition is emerging at work. Stay attentive to informal discussions, as a seed of success could be planted there today.`
+    ];
+    career = lang === "en" ? careerJob_en[varIndex] : careerJob_fr[varIndex];
   } else if (mainGoal === "love") {
-    career = lang === "en"
-      ? `At work, be careful not to let yourself be overwhelmed by your emotions or the mood of colleagues. Keep focused on tasks while maintaining a healthy distance. Your sensitivity is a strength, but today it requires a protective shield.`
-      : `Au travail, veillez à ne pas vous laisser déborder par vos émotions ou l'humeur de vos collaborateurs. Restez concentré(e) sur vos tâches tout en maintenant une distance saine. Votre sensibilité est une force, mais aujourd'hui, elle requiert un bouclier protecteur pour éviter de disperser votre précieuse énergie.`;
-    careerStars = 4;
+    const careerLove_fr = [
+      `Au travail, veillez à ne pas vous laisser déborder par vos émotions ou l'humeur de vos collaborateurs. Restez concentré(e) sur vos tâches tout en maintenant une distance saine. Votre sensibilité est une force, mais aujourd'hui, elle requiert un bouclier protecteur pour éviter de disperser votre précieuse énergie.`,
+      `Une atmosphère parfois agitée au travail demande du calme. Ne prenez pas à cœur les remarques de vos collègues. Concentrez-vous sur vos tâches et offrez-vous des pauses de silence pour préserver votre paix.`,
+      `Les transits du jour vous invitent à équilibrer vie professionnelle et aspirations personnelles. Ne laissez pas le travail empiéter sur votre cocon affectif. Mettez en place des limites saines.`
+    ];
+    const careerLove_en = [
+      `At work, be careful not to let yourself be overwhelmed by your emotions or the mood of colleagues. Keep focused on tasks while maintaining a healthy distance. Your sensitivity is a strength, but today it requires a protective shield to avoid scattering your energy.`,
+      `A sometimes agitated workspace demands calm. Do not take your colleagues' remarks to heart. Focus on your tasks and grant yourself silence breaks to preserve your peace.`,
+      `Today's transits invite you to balance professional life and personal aspirations. Do not let work encroach on your emotional cocoon. Set up healthy boundaries.`
+    ];
+    career = lang === "en" ? careerLove_en[varIndex] : careerLove_fr[varIndex];
   } else if (mainGoal === "peace") {
-    career = lang === "en"
-      ? `A calm day professionally. It is the perfect opportunity to clean up your workspace, sort ongoing files, and plan with detachment. Avoid office conflicts and prioritize silent diplomacy.`
-      : `Une journée calme sur le plan professionnel. C'est l'occasion parfaite d'épurer votre espace de travail, de trier vos dossiers en cours et de planifier la suite avec détachement. Évitez les conflits stériles de bureau et privilégiez la diplomatie silencieuse pour garder votre paix intérieure.`;
-    careerStars = 4;
-  } else if (mainGoal === "growth") {
-    career = lang === "en"
-      ? `You are beginning to perceive the close link between your inner fears and professional choices. A situation today will act as a mirror, inviting you to move past impostor syndrome. Raise your head: your skills are real.`
-      : `Vous commencez à percevoir le lien étroit entre vos peurs intérieures et vos choix professionnels. Une situation d'aujourd'hui va agir comme un miroir, vous invitant à dépasser le syndrome de l'imposteur. Relevez la tête : vos compétences sont réelles et attendent d'être pleinement assumées.`;
-    careerStars = 4;
+    const careerPeace_fr = [
+      `Une journée calme sur le plan professionnel. C'est l'occasion parfaite d'épurer votre espace de travail, de trier vos dossiers en cours et de planifier la suite avec détachement. Évitez les conflits stériles de bureau et privilégiez la diplomatie silencieuse pour garder votre paix intérieure.`,
+      `Au bureau, optez pour la discrétion et le travail de fond aujourd'hui. Loin du tumulte et des bavardages, vous gagnerez en efficacité. C'est une excellente journée pour structurer vos idées dans l'ombre.`,
+      `Votre ciel professionnel favorise la résolution sereine de vieux dossiers. Abordez vos tâches avec méthodologie et calme. Le silence sera votre meilleur allié pour avancer sans stress.`
+    ];
+    const careerPeace_en = [
+      `A calm day professionally. It is the perfect opportunity to clean up your workspace, sort ongoing files, and plan with detachment. Avoid office conflicts and prioritize silent diplomacy to keep your inner peace.`,
+      `At the office, opt for discretion and background work today. Far from noise and gossip, you will gain efficiency. It is an excellent day to structure your ideas in the shadows.`,
+      `Your professional sky favors the serene resolution of old files. Approach your tasks with methodology and calm. Silence will be your best ally to progress stress-free.`
+    ];
+    career = lang === "en" ? careerPeace_en[varIndex] : careerPeace_fr[varIndex];
+  } else { // growth / other
+    const careerGrowth_fr = [
+      `Vous commencez à percevoir le lien étroit entre vos peurs intérieures et vos choix professionnels. Une situation d'aujourd'hui va agir comme un miroir, vous invitant à dépasser le syndrome de l'imposteur. Relevez la tête : vos compétences sont réelles et attendent d'être pleinement assumées.`,
+      `Le travail se présente aujourd'hui comme un terrain d'apprentissage personnel. Relevez les défis avec curiosité plutôt qu'avec crainte. Une discussion constructive avec un mentor ou supérieur vous ouvrira de nouveaux horizons de sagesse.`,
+      `Les transits du jour stimulent vos capacités d'assimilation et d'analyse. C'est le moment parfait pour vous former, lire sur vos domaines d'intérêt professionnel, ou repenser votre cheminement de carrière à long terme.`
+    ];
+    const careerGrowth_en = [
+      `You are beginning to perceive the close link between your inner fears and professional choices. A situation today will act as a mirror, inviting you to move past impostor syndrome. Raise your head: your skills are real and wait to be assumed.`,
+      `Work presents itself today as a ground for personal learning. Meet challenges with curiosity rather than fear. A constructive discussion with a mentor or superior will open new horizons of wisdom.`,
+      `Today's transits stimulate your learning and analytical skills. It is the perfect time to train, read about your professional fields of interest, or rethink your long-term career path.`
+    ];
+    career = lang === "en" ? careerGrowth_en[varIndex] : careerGrowth_fr[varIndex];
   }
 
-  // 4. Wellbeing Section
-  let wellbeing = lang === "en"
-    ? "Your body talks to you, learn to listen. A walk in nature or a gentle stretching session will work wonders."
-    : "Votre corps vous parle, sachez l'écouter. Une marche en nature ou une séance d'étirements doux fera des miracles.";
-  let wellbeingStars = 4;
-
+  // 4. Wellbeing Section (3 variations based on dominantEmotion)
+  let wellbeing = "";
   if (dominantEmotion === "anxiety" || answers.stressLevel >= "4") {
-    wellbeing = lang === "en"
-      ? `Your mind is running at full speed, creating tension in your shoulders or breathing. Stop for a few minutes. Practice deep belly breathing, expelling breath through your mouth. Hydrate well and stay away from screens tonight.`
-      : `Votre mental tourne à plein régime, créant une tension dans vos trapèzes ou votre respiration. Stoppez tout quelques minutes. Pratiquez une respiration ventrale profonde en expirant par la bouche. Hydratez-vous abondamment et éloignez-vous des écrans ce soir pour reposer vos yeux et votre esprit.`;
-    wellbeingStars = 3;
+    const wellbeingAnxious_fr = [
+      `Votre mental tourne à plein régime, créant une tension dans vos trapèzes ou votre respiration. Stoppez tout quelques minutes. Pratiquez une respiration ventrale profonde en expirant par la bouche. Hydratez-vous abondamment et éloignez-vous des écrans ce soir pour reposer vos yeux et votre esprit.`,
+      `L'anxiété passagère peut être transmutée par le mouvement. Offrez-vous une marche rapide de 15 minutes, un étirement doux du dos, ou écoutez une musique relaxante. Écoutez le rythme de votre corps et ralentissez le pas aujourd'hui.`,
+      `Vos énergies du jour réclament un retour au calme physique. Allégez votre programme de la soirée. Une tasse d'infusion apaisante et un coucher précoce seront essentiels pour purifier vos vibrations nerveuses.`
+    ];
+    const wellbeingAnxious_en = [
+      `Your mind is running at full speed, creating tension in your shoulders or breathing. Stop for a few minutes. Practice deep belly breathing, expelling breath through your mouth. Hydrate well and stay away from screens tonight to rest your eyes and mind.`,
+      `Passing anxiety can be transmuted through movement. Offer yourself a 15-minute brisk walk, gentle back stretches, or listen to relaxing music. Listen to your body's rhythm and slow down today.`,
+      `Your energies today demand a return to physical calm. Lighten your evening schedule. A cup of soothing herbal tea and an early bedtime will be essential to purify your nervous vibrations.`
+    ];
+    wellbeing = lang === "en" ? wellbeingAnxious_en[varIndex] : wellbeingAnxious_fr[varIndex];
   } else if (dominantEmotion === "joy" || currentEnergy === "explosive") {
-    wellbeing = lang === "en"
-      ? `Your body-mind harmony is excellent today! You radiate a healthy vitality. Enjoy this flow to practice a fulfilling sport, dance, or simply spread positive vibes. Be careful not to deplete all your reserves at once.`
-      : `Votre harmonie corps-esprit est excellente aujourd'hui ! Vous rayonnez d'une vitalité saine. Profitez de ce flux pour pratiquer une activité sportive épanouissante, danser ou simplement propager vos ondes positives. Veillez toutefois à ne pas épuiser toutes vos réserves en une fois.`;
-    wellbeingStars = 5;
-  } else if (dominantEmotion === "introspection") {
-    wellbeing = lang === "en"
-      ? `A gentle melancholy or an intense need for solitude resides in you. Welcome this inner weather without judgment. A relaxing herbal tea, an inspiring book, or a warm bath will help nourish your interiority.`
-      : `Une douce mélancolie ou un besoin intense de solitude vous habite. Accueillez cette météo intérieure sans jugement. Une infusion relaxante, la lecture d'un livre inspirant ou un bain chaud aromatique vous aideront à aligner vos chakras et à nourrir votre intériorité.`;
-    wellbeingStars = 4;
+    const wellbeingJoy_fr = [
+      `Votre harmonie corps-esprit est excellente aujourd'hui ! Vous rayonnez d'une vitalité saine. Profitez de ce flux pour pratiquer une activité sportive épanouissante, danser ou simplement propager vos ondes positives. Veillez toutefois à ne pas épuiser toutes vos réserves en une fois.`,
+      `Une superbe vitalité physique vous accompagne. C'est le moment idéal pour vous dépenser en extérieur ou commencer une nouvelle routine bien-être stimulante. Votre force vitale est un cadeau précieux : partagez cette joie communicative.`,
+      `Votre rayonnement énergétique est très élevé. Vous vous sentez léger(e) et serein(e). Profitez-en pour nourrir vos sens : un bon repas sain, des rires partagés et un contact avec la nature démultiplieront votre bien-être.`
+    ];
+    const wellbeingJoy_en = [
+      `Your body-mind harmony is excellent today! You radiate a healthy vitality. Enjoy this flow to practice a fulfilling sport, dance, or simply spread positive vibes. Be careful not to deplete all your reserves at once.`,
+      `A superb physical vitality accompanies you. It is the perfect time to exercise outdoors or start a new stimulating well-being routine. Your vital force is a precious gift: share this communicative joy.`,
+      `Your energetic radiance is very high. You feel light and serene. Take advantage of it to nourish your senses: a good healthy meal, shared laughter, and contact with nature will multiply your well-being.`
+    ];
+    wellbeing = lang === "en" ? wellbeingJoy_en[varIndex] : wellbeingJoy_fr[varIndex];
+  } else { // introspection / default
+    const wellbeingIntro_fr = [
+      `Une douce mélancolie ou un besoin intense de solitude vous habite. Accueillez cette météo intérieure sans jugement. Une infusion relaxante, la lecture d'un livre inspirant ou un bain chaud aromatique vous aideront à aligner vos chakras et à nourrir votre intériorité.`,
+      `L'introspection est le chemin naturel vers la sagesse de votre **Chemin de Vie ${lpNum}**. Aujourd'hui, préférez le silence aux bavardages mondains. Écrire dans votre journal intime vous permettra de libérer d'importants messages de votre inconscient.`,
+      `Votre corps vous demande de ralentir et de vous recentrer. Offrez-vous un rituel simple de soin : des étirements doux, de la méditation assise ou une balade contemplative. L'univers communique avec vous dans le calme.`
+    ];
+    const wellbeingIntro_en = [
+      `A gentle melancholy or an intense need for solitude resides in you. Welcome this inner weather without judgment. A relaxing herbal tea, an inspiring book, or a warm bath will help align your chakras and nourish your interiority.`,
+      `Introspection is the natural path to your **Life Path ${lpNum}** wisdom. Today, prefer silence over mundane chatter. Writing in your journal will allow you to release important messages from your unconscious.`,
+      `Your body asks you to slow down and refocus. Offer yourself a simple self-care ritual: gentle stretching, seated meditation, or a contemplative walk. The universe communicates with you in the quiet.`
+    ];
+    wellbeing = lang === "en" ? wellbeingIntro_en[varIndex] : wellbeingIntro_fr[varIndex];
   }
 
-  // 5. Warning Section
-  let warning = lang === "en"
-    ? "Be careful not to absorb the anger or stress of others today. Set clear, loving boundaries."
-    : "Attention à ne pas absorber la colère ou le stress d'autrui aujourd'hui. Fixez des limites claires et bienveillantes.";
-  
+  // 5. Warning Section (3 variations based on answers)
+  let warning = "";
   if (answers.projectBlockage === "procrastination") {
-    warning = lang === "en"
-      ? "Beware of the temptation to put off until tomorrow what can be accomplished in five minutes. Procrastination is often the hidden fear of doing poorly."
-      : "Méfiez-vous de la tentation de remettre à demain ce qui peut être accompli en temps voulu. La procrastination est souvent la peur cachée de mal faire.";
+    const warnProc_fr = [
+      "Méfiez-vous de la tentation de remettre à demain ce qui peut être accompli en temps voulu. La procrastination est souvent la peur cachée de mal faire. Faites le premier pas aujourd'hui, aussi petit soit-il.",
+      "Avertissement céleste : ne laissez pas la paresse ou la peur du jugement bloquer votre élan. Un projet commencé à moitié vaut mieux qu'une idée parfaite restée dans votre esprit. Agissez maintenant.",
+      "Le piège du jour : repousser vos corvées ou décisions importantes. La lune vous conseille de vous atteler à votre tâche prioritaire dès ce matin pour libérer votre esprit pour le reste de la journée."
+    ];
+    const warnProc_en = [
+      "Beware of the temptation to put off until tomorrow what can be accomplished in due time. Procrastination is often the hidden fear of doing poorly. Take the first step today, however small it may be.",
+      "Celestial warning: do not let laziness or fear of judgment block your momentum. A half-started project is better than a perfect idea left in your mind. Act now.",
+      "Today's trap: postponing your chores or important decisions. The moon advises you to tackle your priority task early this morning to free your mind for the rest of the day."
+    ];
+    warning = lang === "en" ? warnProc_en[varIndex] : warnProc_fr[varIndex];
   } else if (answers.projectBlockage === "dispersion") {
-    warning = lang === "en"
-      ? "Watch out for night overthinking and scattering. Note your ideas down in a journal before sleeping to free your mind."
-      : "Attention au piège de l'overthinking nocturne et de la dispersion. Notez vos idées sur un carnet avant de dormir pour libérer définitivement votre charge mentale.";
+    const warnDisp_fr = [
+      "Attention au piège de l'overthinking nocturne et de la dispersion. Notez vos idées sur un carnet avant de dormir pour libérer définitivement votre charge mentale.",
+      "Mise en garde cosmique : vouloir tout faire en même temps va diviser votre force de réussite. Choisissez une seule priorité aujourd'hui et menez-la à bien sans regarder ailleurs.",
+      "Attention aux distractions faciles (écrans, réseaux) qui vident votre batterie énergétique. Cadrez vos temps de concentration et restez imperméable aux sollicitations inutiles."
+    ];
+    const warnDisp_en = [
+      "Watch out for night overthinking and scattering. Note your ideas down in a journal before sleeping to permanently free your mind.",
+      "Cosmic warning: wanting to do everything at the same time will divide your success strength. Choose a single priority today and carry it out without looking elsewhere.",
+      "Beware of easy distractions (screens, social networks) that drain your energetic battery. Frame your concentration times and remain impervious to useless solicitations."
+    ];
+    warning = lang === "en" ? warnDisp_en[varIndex] : warnDisp_fr[varIndex];
   } else if (answers.relationshipDifficulty === "trust") {
-    warning = lang === "en"
-      ? "Do not let your past fears or betrayals ruin today's opportunities for trust. The stars push you toward opening your soul."
-      : "Ne laissez pas vos peurs ou trahisons passées gâcher les opportunités de confiance d'aujourd'hui. Les astres vous poussent vers l'ouverture d'âme.";
-  } else if (answers.procheDistress === "sponge") {
-    warning = lang === "en"
-      ? "You absorb surrounding stress too easily. Imagine a bubble of golden light around you to filter out negative energies."
-      : "Vous absorbez trop facilement le stress ambiant de vos proches. Imaginez une bulle de lumière dorée autour de vous pour filtrer leurs énergies.";
+    const warnTrust_fr = [
+      "Ne laissez pas vos peurs ou trahisons passées gâcher les opportunités de confiance d'aujourd'hui. Les astres vous poussent vers l'ouverture d'âme, tout en maintenant un discernement sain.",
+      "Attention à la tentation de vous fermer ou de suspecter les intentions d'autrui sans preuve. Accordez le bénéfice du doute tout en observant avec calme. Votre intuition sait faire la différence.",
+      "Le ciel vous conseille de libérer les vieux ressentiments. Garder une rancœur revient à boire du poison en espérant que l'autre en souffre. Pardonnez pour votre propre libération vibratoire."
+    ];
+    const warnTrust_en = [
+      "Do not let your past fears or betrayals ruin today's opportunities for trust. The stars push you toward opening your soul, while maintaining healthy discernment.",
+      "Beware of the temptation to shut down or suspect others' intentions without proof. Grant the benefit of the doubt while observing calmly. Your intuition knows the difference.",
+      "The sky advises you to release old resentments. Keeping a grudge is like drinking poison and expecting the other to suffer. Forgive for your own vibrational liberation."
+    ];
+    warning = lang === "en" ? warnTrust_en[varIndex] : warnTrust_fr[varIndex];
+  } else { // sponge / other default
+    const warnSponge_fr = [
+      "Vous absorbez trop facilement le stress ambiant de vos proches aujourd'hui. Imaginez une bulle de lumière dorée autour de vous pour filtrer leurs énergies et préserver votre cocon.",
+      "Avertissement céleste : attention aux vampires énergétiques dans votre entourage. Ne vous sentez pas obligé(e) de résoudre tous les problèmes du monde. Protégez votre propre taux vibratoire.",
+      "Ne vous laissez pas contaminer par les ondes négatives ou les plaintes répétatives d'autrui. Sachez écouter mais aussi écourter les discussions qui plombent votre moral. Posez vos limites."
+    ];
+    const warnSponge_en = [
+      "You absorb surrounding stress too easily today. Imagine a bubble of golden light around you to filter out negative energies and preserve your cocoon.",
+      "Celestial warning: beware of energy vampires in your surroundings. Do not feel obligated to solve all the world's problems. Protect your own vibration rate.",
+      "Do not let yourself be contaminated by negative waves or repetitive complaints from others. Know how to listen but also cut short discussions that weigh on your morale. Set your boundaries."
+    ];
+    warning = lang === "en" ? warnSponge_en[varIndex] : warnSponge_fr[varIndex];
   }
 
-  // 6. Affirmation Section
-  let affirmation = lang === "en"
-    ? "I am centered, aligned, and I fully trust in the perfect unfolding of my life."
-    : "Je suis centré(e), aligné(e) et je fais pleinement confiance au déroulement parfait de ma vie.";
-  
+  // 6. Affirmation Section (3 variations based on mainGoal)
+  let affirmation = "";
   if (mainGoal === "love") {
-    affirmation = lang === "en"
-      ? "I deserve to love and be loved unconditionally for who I truly am."
-      : "Je mérite d'aimer et d'être aimé(e) inconditionnellement pour qui je suis vraiment.";
+    const affirmLove_fr = [
+      "Je mérite d'aimer et d'être aimé(e) inconditionnellement pour qui je suis vraiment.",
+      "Mon cœur est ouvert, purifié et prêt à accueillir une harmonie relationnelle sincère.",
+      "Je diffuse de l'amour bienveillant et l'univers me le renvoie au centuple aujourd'hui."
+    ];
+    const affirmLove_en = [
+      "I deserve to love and be loved unconditionally for who I truly am.",
+      "My heart is open, purified, and ready to welcome a sincere relational harmony.",
+      "I radiate benevolent love and the universe returns it to me a hundredfold today."
+    ];
+    affirmation = lang === "en" ? affirmLove_en[varIndex] : affirmLove_fr[varIndex];
   } else if (mainGoal === "career") {
-    affirmation = lang === "en"
-      ? "I attract abundance, success, and professional fulfillment with disconcerting ease."
-      : "J'attire l'abondance, le succès et l'accomplissement professionnel avec une facilité déconcertante.";
+    const affirmCareer_fr = [
+      "J'attire l'abondance, le succès et l'accomplissement professionnel avec une facilité déconcertante.",
+      "Je possède toutes les compétences nécessaires pour matérialiser mes visions les plus nobles.",
+      "Chaque action professionnelle que je pose aujourd'hui me rapproche de ma liberté financière."
+    ];
+    const affirmCareer_en = [
+      "I attract abundance, success, and professional fulfillment with disconcerting ease.",
+      "I possess all the skills necessary to materialize my noblest visions.",
+      "Every professional action I take today brings me closer to my financial freedom."
+    ];
+    affirmation = lang === "en" ? affirmCareer_en[varIndex] : affirmCareer_fr[varIndex];
   } else if (mainGoal === "peace") {
-    affirmation = lang === "en"
-      ? "My mind is an ocean of calm. I breathe in serenity and repel chaos effortlessly."
-      : "Mon esprit est un océan de calme. Je respire la sérénité et je repousse le chaos sans effort.";
-  } else if (mainGoal === "growth") {
-    affirmation = lang === "en"
-      ? "Every challenge is a celestial gift designed to awaken my inner strength and divine wisdom."
-      : "Chaque défi est un cadeau céleste conçu pour éveiller ma force intérieure et ma sagesse divine.";
+    const affirmPeace_fr = [
+      "Mon esprit est un océan de calme. Je respire la sérénité et je repousse le chaos sans effort.",
+      "Je lâche prise sur ce que je ne peux contrôler. J'ai une confiance absolue dans le plan de l'univers.",
+      "La paix intérieure est ma boussole. Rien dans le monde extérieur ne peut perturber mon calme divin."
+    ];
+    const affirmPeace_en = [
+      "My mind is an ocean of calm. I breathe in serenity and repel chaos effortlessly.",
+      "I let go of what I cannot control. I have absolute trust in the universe's plan.",
+      "Inner peace is my compass. Nothing in the outer world can disturb my divine calm."
+    ];
+    affirmation = lang === "en" ? affirmPeace_en[varIndex] : affirmPeace_fr[varIndex];
+  } else { // growth / other
+    const affirmGrowth_fr = [
+      "Chaque défi est un cadeau céleste conçu pour éveiller ma force intérieure et ma sagesse divine.",
+      "Je m'aligne chaque jour davantage sur mon chemin de vie et ma mission d'âme sacrée.",
+      "Je remercie l'univers pour les leçons d'aujourd'hui qui font grandir ma conscience."
+    ];
+    const affirmGrowth_en = [
+      "Every challenge is a celestial gift designed to awaken my inner strength and divine wisdom.",
+      "I align myself more each day with my life path and my sacred soul mission.",
+      "I thank the universe for today's lessons that expand my consciousness."
+    ];
+    affirmation = lang === "en" ? affirmGrowth_en[varIndex] : affirmGrowth_fr[varIndex];
   }
 
   return {

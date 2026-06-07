@@ -2869,13 +2869,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const lang = state.lang || "fr";
     const today = new Date();
     const dateEl = document.getElementById("carte-date-display");
-    const cardEl = document.getElementById("carte-card");
-    const sceneEl = document.getElementById("carte-scene");
-    const btnDraw = document.getElementById("btn-draw-carte");
-    const actionsEl = document.getElementById("carte-actions");
-    const reflectionEl = document.getElementById("carte-reflection-panel");
-    const alreadyEl = document.getElementById("carte-already-drawn");
-    const navDot = document.getElementById("nav-carte-dot");
     const todayKey = getTodayKey();
     const journalKey = `${todayKey}_journal`;
 
@@ -2907,79 +2900,99 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // Clone interactive elements to clear existing listeners
+    const sceneEl = document.getElementById("carte-scene");
+    let newScene = null;
+    if (sceneEl) {
+      newScene = sceneEl.cloneNode(true);
+      sceneEl.parentNode.replaceChild(newScene, sceneEl);
+    }
+
+    const btnDraw = document.getElementById("btn-draw-carte");
+    let newBtn = null;
+    if (btnDraw) {
+      newBtn = btnDraw.cloneNode(true);
+      btnDraw.parentNode.replaceChild(newBtn, btnDraw);
+    }
+
+    const btnSave = document.getElementById("btn-save-carte-journal");
+    let newSaveBtn = null;
+    if (btnSave) {
+      newSaveBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newSaveBtn, btnSave);
+    }
+
+    // Now query the active DOM elements after replacements
+    const currentCardEl = document.getElementById("carte-card");
+    const currentActionsEl = document.getElementById("carte-actions");
+    const currentReflectionEl = document.getElementById("carte-reflection-panel");
+    const currentAlreadyEl = document.getElementById("carte-already-drawn");
+    const currentNavDot = document.getElementById("nav-carte-dot");
+
     // Check if already drawn today (uses safeStorage for private/incognito compatibility)
     const alreadyDrawn = !!safeStorage.getItem(todayKey);
 
     if (alreadyDrawn) {
       // Show card flipped, hide button, show already drawn notice and reflection
-      if (cardEl) cardEl.classList.add("flipped");
-      if (actionsEl) actionsEl.style.display = "none";
-      if (alreadyEl) alreadyEl.style.display = "block";
-      if (reflectionEl) {
-        reflectionEl.style.display = "block";
+      if (currentCardEl) currentCardEl.classList.add("flipped");
+      if (currentActionsEl) currentActionsEl.style.display = "none";
+      if (currentAlreadyEl) currentAlreadyEl.style.display = "block";
+      if (currentReflectionEl) {
+        currentReflectionEl.style.display = "block";
         const savedJournal = safeStorage.getItem(journalKey) || "";
         const textarea = document.getElementById("carte-journal-entry");
         if (textarea && savedJournal) textarea.value = savedJournal;
       }
-      if (navDot) navDot.classList.remove("visible");
+      if (currentNavDot) currentNavDot.classList.remove("visible");
     } else {
       // Show draw button, hide already drawn notice
-      if (cardEl) cardEl.classList.remove("flipped");
-      if (actionsEl) actionsEl.style.display = "flex";
-      if (alreadyEl) alreadyEl.style.display = "none";
-      if (reflectionEl) reflectionEl.style.display = "none";
-      if (navDot) navDot.classList.add("visible");
+      if (currentCardEl) currentCardEl.classList.remove("flipped");
+      if (currentActionsEl) currentActionsEl.style.display = "flex";
+      if (currentAlreadyEl) currentAlreadyEl.style.display = "none";
+      if (currentReflectionEl) currentReflectionEl.style.display = "none";
+      if (currentNavDot) currentNavDot.classList.add("visible");
     }
 
     // Draw button handler
-    if (btnDraw) {
-      // Remove old listeners by cloning
-      const newBtn = btnDraw.cloneNode(true);
-      btnDraw.parentNode.replaceChild(newBtn, btnDraw);
+    if (newBtn) {
       newBtn.addEventListener("click", () => {
         // Flip animation
-        if (cardEl) cardEl.classList.add("flipped");
-        // Store drawn today (safeStorage works in private/incognito mode)
+        if (currentCardEl) currentCardEl.classList.add("flipped");
+        // Store drawn today
         safeStorage.setItem(todayKey, "1");
         // Hide button
-        if (actionsEl) actionsEl.style.display = "none";
+        if (currentActionsEl) currentActionsEl.style.display = "none";
         // Show popup after flip animation completes, then show reflection
         setTimeout(() => {
           showCartePopup(card, lang);
         }, 850);
         setTimeout(() => {
-          if (reflectionEl) reflectionEl.style.display = "block";
-          if (navDot) navDot.classList.remove("visible");
+          if (currentReflectionEl) currentReflectionEl.style.display = "block";
+          if (currentNavDot) currentNavDot.classList.remove("visible");
         }, 900);
       });
     }
 
     // Card click to flip (if not drawn yet)
-    if (sceneEl) {
-      const newScene = sceneEl.cloneNode(true);
-      sceneEl.parentNode.replaceChild(newScene, sceneEl);
+    if (newScene) {
       newScene.addEventListener("click", () => {
-        const c = document.getElementById("carte-card");
-        if (!c || c.classList.contains("flipped")) return;
-        c.classList.add("flipped");
+        if (!currentCardEl || currentCardEl.classList.contains("flipped")) return;
+        currentCardEl.classList.add("flipped");
         safeStorage.setItem(todayKey, "1");
-        if (actionsEl) actionsEl.style.display = "none";
+        if (currentActionsEl) currentActionsEl.style.display = "none";
         // Show popup after flip animation completes
         setTimeout(() => {
           showCartePopup(card, lang);
         }, 850);
         setTimeout(() => {
-          if (reflectionEl) reflectionEl.style.display = "block";
-          if (navDot) navDot.classList.remove("visible");
+          if (currentReflectionEl) currentReflectionEl.style.display = "block";
+          if (currentNavDot) currentNavDot.classList.remove("visible");
         }, 900);
       });
     }
 
     // Save journal entry
-    const btnSave = document.getElementById("btn-save-carte-journal");
-    if (btnSave) {
-      const newSaveBtn = btnSave.cloneNode(true);
-      btnSave.parentNode.replaceChild(newSaveBtn, btnSave);
+    if (newSaveBtn) {
       newSaveBtn.addEventListener("click", () => {
         const textarea = document.getElementById("carte-journal-entry");
         if (!textarea) return;

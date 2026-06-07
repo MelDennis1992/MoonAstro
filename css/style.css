@@ -2353,12 +2353,15 @@ input:checked + .slider:before {
   height: 100%;
   position: relative;
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-transition: -webkit-transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 20px;
 }
 
 .carte-card.flipped {
   transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg);
 }
 
 .carte-face {
