@@ -18,6 +18,7 @@ serve(async (req) => {
     
     // User key falls back to the verified valid key
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY") || "AQ.Ab8RN6LiyEoM6Z1ZQ2Z7FCudd6xINJR5hwBT6U6JRLi6Z6mvjg";
+    const tavilyApiKey = Deno.env.get("TAVILY_API_KEY");
 
     // 1. Authenticate user from Authorization header
     const authHeader = req.headers.get("Authorization");
@@ -71,6 +72,27 @@ serve(async (req) => {
       );
     }
 
+    // 4.5 Tavily Web Search Integration
+    let searchContext = "";
+    if (tavilyApiKey) {
+      const msgLower = message.toLowerCase();
+      // Search keywords indicating real-time / astrology queries
+      const searchKeywords = [
+        "aujourd", "ce jour", "cette semaine", "ce mois", "actuel", "today", "now", "current",
+        "transit", "planète", "position", "conjonction", "alignement", "éclips", "lune", "soleil",
+        "ciel", "météo astro", "météo", "horoscope"
+      ];
+      
+      const shouldSearch = searchKeywords.some(keyword => msgLower.includes(keyword));
+      
+      if (shouldSearch) {
+        console.log(`[Tavily] Executing search for user query: "${message}"`);
+        const searchQuery = `${message} transits astrologie`;
+        const searchResults = await fetchTavilySearch(searchQuery, tavilyApiKey);
+        searchContext = `\n\n[CONTEXTE DE RECHERCHE WEB TEMPS RÉEL (TAVILY AI)]\nLes résultats suivants proviennent d'une recherche en temps réel sur le web concernant la question de l'utilisateur :\n${searchResults}\n\nRÈGLES SUPPLÉMENTAIRES :\nUtilise ces résultats de recherche en temps réel pour enrichir ta réponse et fournir des détails précis et actuels sur les transits planétaires. Cite les éléments importants si nécessaire.`;
+      }
+    }
+
     // 5. Build dynamic system prompt based on user's birth chart & client calculated details
     const name = profile.firstname || "Ami(e) Céleste";
     const sun = profile.sun_sign || "Bélier";
@@ -106,7 +128,7 @@ serve(async (req) => {
        - 💎 PARTIE 3 : RITUEL D'ALIGNEMENT ET ACTIONS CONCRÈTES (Donne un rituel précis, une méditation ou un exercice de shadow work à faire, en utilisant sa pierre céleste : "${gemstone}" - ${gemstoneDesc}, et comment l'intégrer au quotidien).
     2. LONGUEUR ET RICHESSE : La réponse doit être extrêmement riche, détaillée et développée, faisant entre 500 et 750 mots. Évite les réponses courtes ou génériques. Va au fond des choses, comme une consultation professionnelle payante.
     3. STYLE ET TON : Reste chaleureux, mystique, enveloppant et hautement poétique. Utilise un vocabulaire astrologique et psychologique riche (transits, aspects célestes, maisons, résonance vibratoire).
-    4. LANGUE : Rédige exclusivement en français. Utilise le gras (**texte**) pour mettre en valeur les concepts et mots-clés spirituels cruciaux. Rends les paragraphes bien espacés pour une lecture fluide.`;
+    4. LANGUE : Rédige exclusivement en français. Utilise le gras (**texte**) pour mettre en valeur les concepts et mots-clés spirituels cruciaux. Rends les paragraphes bien espacés pour une lecture fluide.${searchContext}`;
 
     // 6. Execute model query
     let reply = "";
@@ -198,4 +220,35 @@ async function generateMockReplyInEdge(profile: any, message: string, astrologyD
   }
 
   return `Cher(ère) **${name}**, l'Oracle cosmique a bien reçu votre question. Vos alignements sacrés (Soleil en **${sun}**, Lune en **${moon}**, et Ascendant **${asc}**) indiquent un transit propice à l'introspection et à l'ancrage spirituel.\n\nFaites confiance au tempo divin. Pour approfondir, n'hésitez pas à me questionner sur votre **vie amoureuse**, votre **blocage : ${blocker}**, ou l'impact de votre pierre **${gemstone}**.`;
+}
+
+// Fetch results from Tavily Search API
+async function fetchTavilySearch(query: string, apiKey: string): Promise<string> {
+  try {
+    const response = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: apiKey,
+        query: query,
+        search_depth: "basic",
+        max_results: 3
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const results = data.results || [];
+      if (results.length === 0) return "Aucun résultat trouvé.";
+      return results
+        .map((r: any, idx: number) => `[Résultat ${idx + 1}] Title: ${r.title}\nURL: ${r.url}\nContent: ${r.content}`)
+        .join("\n\n");
+    } else {
+      console.error("Tavily API error status:", response.status, await response.text());
+      return "Erreur lors de la récupération de la recherche Tavily.";
+    }
+  } catch (e) {
+    console.error("Tavily fetch error:", e);
+    return "Erreur de connexion avec le moteur de recherche Tavily.";
+  }
 }
