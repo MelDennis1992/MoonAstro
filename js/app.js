@@ -2064,6 +2064,49 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".astral-card").forEach(c => c.classList.remove("highlighted"));
       });
     }
+
+    // 3. GSAP Entrance Animations (if GSAP is loaded)
+    if (window.gsap) {
+      // Prevent running multiple overlapping tweens
+      gsap.killTweensOf("#interactive-astral-svg *");
+      gsap.killTweensOf(".astral-card");
+
+      const tl = gsap.timeline();
+
+      // Faint grids scale up and fade in
+      tl.fromTo(".constellation-grid-line", 
+        { scale: 0.8, opacity: 0, transformOrigin: "center" },
+        { scale: 1, opacity: 1, duration: 1.0, ease: "power2.out", stagger: 0.05 }
+      );
+
+      // Star nodes pop in with a bounce
+      tl.fromTo(".constellation-star-node",
+        { scale: 0, opacity: 0, transformOrigin: "center" },
+        { scale: 1, opacity: 1, duration: 0.7, ease: "back.out(2)", stagger: 0.04 },
+        "-=0.5"
+      );
+
+      // Labels fade in gently from left/right depending on their alignment
+      tl.fromTo(".constellation-label",
+        { opacity: 0, x: (i, el) => el.getAttribute("text-anchor") === "start" ? -6 : 6 },
+        { opacity: 1, x: 0, duration: 0.5, ease: "power1.out", stagger: 0.03 },
+        "-=0.3"
+      );
+
+      // Aspect lines fade and trace in
+      tl.fromTo(".constellation-aspect-line",
+        { opacity: 0, strokeDasharray: "3, 20" },
+        { opacity: 1, strokeDasharray: "3, 4", duration: 1.0, ease: "power1.inOut", stagger: 0.08 },
+        "-=0.5"
+      );
+
+      // Cards slide up and fade in
+      tl.fromTo(".astral-card",
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", stagger: 0.06 },
+        "-=0.7"
+      );
+    }
   }
 
   // Helper function for planet highlighting
