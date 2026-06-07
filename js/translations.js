@@ -21,6 +21,7 @@ const TRANSLATIONS = {
     "landing.btn.start": "Découvrir mon énergie",
     "landing.btn.client": "Espace Client (Se connecter)",
     "landing.footer": "Propulsé par Moon Astro — Astrologie & Bien-être",
+    "landing.pricing.title": "Nos Formules Premium",
 
     // Auth / Register Page
     "auth.title.signup": "Créer votre profil",
@@ -282,6 +283,7 @@ const TRANSLATIONS = {
     "landing.btn.start": "Discover my energy",
     "landing.btn.client": "Client Space (Log In)",
     "landing.footer": "Powered by Moon Astro — Astrology & Well-being",
+    "landing.pricing.title": "Our Premium Plans",
 
     // Auth / Register Page
     "auth.title.signup": "Create Your Profile",
