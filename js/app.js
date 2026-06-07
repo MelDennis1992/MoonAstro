@@ -2,6 +2,28 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   
+  // --- GLOBAL ERROR HANDLER FOR MOBILE DEBUGGING ---
+  window.addEventListener("error", (e) => {
+    const errorDiv = document.createElement("div");
+    errorDiv.style.position = "fixed";
+    errorDiv.style.bottom = "80px";
+    errorDiv.style.left = "20px";
+    errorDiv.style.right = "20px";
+    errorDiv.style.background = "rgba(186, 85, 74, 0.95)";
+    errorDiv.style.color = "white";
+    errorDiv.style.padding = "12px";
+    errorDiv.style.borderRadius = "8px";
+    errorDiv.style.zIndex = "10000";
+    errorDiv.style.fontSize = "12px";
+    errorDiv.style.fontFamily = "monospace";
+    errorDiv.style.boxShadow = "0 10px 30px rgba(0,0,0,0.3)";
+    errorDiv.textContent = `🚨 JS Error: ${e.message} at ${e.filename ? e.filename.split('/').pop() : 'unknown'}:${e.lineno}`;
+    document.body.appendChild(errorDiv);
+    setTimeout(() => {
+      if (errorDiv.parentNode) errorDiv.parentNode.removeChild(errorDiv);
+    }, 10000);
+  });
+
   // --- SUPABASE INITIALIZATION ---
   const SUPABASE_URL = "https://oorlsqxfwhozmciktljf.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vcmxzcXhmd2hvem1jaWt0bGpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMjgyMDIsImV4cCI6MjA5NTkwNDIwMn0.LyyeYMpg1WFX6fsx_VY1qdy_qeO29luRlc12ZojAG2s";
@@ -2956,8 +2978,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Draw button handler
     if (newBtn) {
       newBtn.addEventListener("click", () => {
+        showToast("Tirage en cours... 🌌");
+        console.log("Draw button clicked. todayKey:", todayKey, "currentCardEl:", currentCardEl);
         // Flip animation
-        if (currentCardEl) currentCardEl.classList.add("flipped");
+        if (currentCardEl) {
+          currentCardEl.classList.add("flipped");
+        } else {
+          console.error("currentCardEl is null!");
+        }
         // Store drawn today
         safeStorage.setItem(todayKey, "1");
         // Hide button
@@ -2977,6 +3005,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (newScene) {
       newScene.addEventListener("click", () => {
         if (!currentCardEl || currentCardEl.classList.contains("flipped")) return;
+        showToast("Tirage en cours... 🌌");
+        console.log("Card scene clicked. todayKey:", todayKey, "currentCardEl:", currentCardEl);
         currentCardEl.classList.add("flipped");
         safeStorage.setItem(todayKey, "1");
         if (currentActionsEl) currentActionsEl.style.display = "none";
@@ -3101,4 +3131,8 @@ document.addEventListener("DOMContentLoaded", () => {
   state.lang = "fr";
   updateCarteDot();
   translatePage("fr"); // Run translation and routing immediately on load in French
+  
+  setTimeout(() => {
+    showToast("Application MoonAstro chargée (v1.0.2) 🌙");
+  }, 1000);
 });
