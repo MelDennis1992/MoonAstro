@@ -3114,27 +3114,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const cardIndex = getTodayCardIndex();
     const card = ORACLE_CARDS[cardIndex];
 
-    // Fill card face content
-    const symbolEl = document.getElementById("carte-symbol");
-    const nameEl = document.getElementById("carte-name");
-    const affirmEl = document.getElementById("carte-affirmation");
-    const keywordRow = document.getElementById("carte-keyword-row");
+    // Helper to fill card data
+    const fillCardData = (container) => {
+      if (!container) return;
+      const symbolEl = container.querySelector(".carte-symbol");
+      const nameEl = container.querySelector(".carte-name");
+      const affirmEl = container.querySelector(".carte-affirmation");
+      const keywordRow = container.querySelector(".carte-keyword-row");
 
-    if (symbolEl) symbolEl.textContent = card.symbol;
-    if (nameEl) nameEl.textContent = lang === "en" ? card.name_en : card.name_fr;
-    if (affirmEl) affirmEl.textContent = lang === "en" ? card.affirmation_en : card.affirmation_fr;
-    if (keywordRow) {
-      keywordRow.innerHTML = "";
-      const keywords = lang === "en" ? card.keywords_en : card.keywords_fr;
-      keywords.forEach(kw => {
-        const pill = document.createElement("span");
-        pill.className = "carte-keyword-pill";
-        pill.textContent = kw;
-        keywordRow.appendChild(pill);
-      });
-    }
+      if (symbolEl) symbolEl.textContent = card.symbol;
+      if (nameEl) nameEl.textContent = lang === "en" ? card.name_en : card.name_fr;
+      if (affirmEl) affirmEl.textContent = lang === "en" ? card.affirmation_en : card.affirmation_fr;
+      if (keywordRow) {
+        keywordRow.innerHTML = "";
+        const keywords = lang === "en" ? card.keywords_en : card.keywords_fr;
+        keywords.forEach(kw => {
+          const pill = document.createElement("span");
+          pill.className = "carte-keyword-pill";
+          pill.textContent = kw;
+          keywordRow.appendChild(pill);
+        });
+      }
+    };
+
+    // Fill all cards (main one + the 3 deck cards)
+    fillCardData(document.getElementById("carte-card"));
+    document.querySelectorAll(".carte-deck-scene").forEach(fillCardData);
 
     // Clone interactive elements to clear existing listeners
+    const deckEl = document.getElementById("carte-deck");
+    let newDeck = null;
+    if (deckEl) {
+      newDeck = deckEl.cloneNode(true);
+      deckEl.parentNode.replaceChild(newDeck, deckEl);
+    }
+
     const sceneEl = document.getElementById("carte-scene");
     let newScene = null;
     if (sceneEl) {
@@ -3157,18 +3171,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Now query the active DOM elements after replacements
+    const currentDeckEl = document.getElementById("carte-deck");
     const currentCardEl = document.getElementById("carte-card");
+    const currentSceneEl = document.getElementById("carte-scene");
     const currentActionsEl = document.getElementById("carte-actions");
     const currentReflectionEl = document.getElementById("carte-reflection-panel");
     const currentAlreadyEl = document.getElementById("carte-already-drawn");
     const currentNavDot = document.getElementById("nav-carte-dot");
 
-    // Check if already drawn today (uses safeStorage for private/incognito compatibility)
+    // Check if already drawn today
     const alreadyDrawn = !!safeStorage.getItem(todayKey);
 
     if (alreadyDrawn) {
-      // Show card flipped, hide button, show already drawn notice and reflection
+      // Show card flipped, hide deck, hide button, show already drawn notice and reflection
       if (currentCardEl) currentCardEl.classList.add("flipped");
+      if (currentSceneEl) currentSceneEl.style.display = "block";
+      if (currentDeckEl) currentDeckEl.style.display = "none";
       if (currentActionsEl) currentActionsEl.style.display = "none";
       if (currentAlreadyEl) currentAlreadyEl.style.display = "block";
       if (currentReflectionEl) {
@@ -3179,57 +3197,114 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (currentNavDot) currentNavDot.classList.remove("visible");
     } else {
-      // Show draw button, hide already drawn notice
+      // Show deck, hide single card scene, show draw button
       if (currentCardEl) currentCardEl.classList.remove("flipped");
+      if (currentSceneEl) currentSceneEl.style.display = "none";
+      if (currentDeckEl) {
+        currentDeckEl.style.display = "flex";
+        // Reset styles for all deck scenes in case they were animated
+        const deckScenes = currentDeckEl.querySelectorAll(".carte-deck-scene");
+        deckScenes.forEach(scene => {
+          scene.style.opacity = "";
+          scene.style.transform = "";
+          scene.style.pointerEvents = "";
+          const innerCard = scene.querySelector(".carte-card");
+          if (innerCard) innerCard.style.transform = "";
+        });
+      }
       if (currentActionsEl) currentActionsEl.style.display = "flex";
       if (currentAlreadyEl) currentAlreadyEl.style.display = "none";
       if (currentReflectionEl) currentReflectionEl.style.display = "none";
       if (currentNavDot) currentNavDot.classList.add("visible");
     }
 
-    // Draw button handler
-    if (newBtn) {
-      newBtn.addEventListener("click", () => {
-        showToast("Tirage en cours... 🌌");
-        console.log("Draw button clicked. todayKey:", todayKey, "currentCardEl:", currentCardEl);
-        // Flip animation
-        if (currentCardEl) {
-          currentCardEl.classList.add("flipped");
-        } else {
-          console.error("currentCardEl is null!");
-        }
-        // Store drawn today
-        safeStorage.setItem(todayKey, "1");
-        // Hide button
+    // Interactive card pull handler (shared function)
+    const pullCardAnimation = (chosenSceneIndex) => {
+      if (!currentDeckEl) return;
+      const scenes = Array.from(currentDeckEl.querySelectorAll(".carte-deck-scene"));
+      const chosenScene = scenes[chosenSceneIndex] || scenes[1]; // default to center card if index is invalid
+      const otherScenes = scenes.filter((_, idx) => idx !== chosenSceneIndex);
+
+      showToast("Tirage en cours... 🌌");
+      
+      // Store drawn today
+      safeStorage.setItem(todayKey, "1");
+
+      if (window.gsap) {
+        // Step 1: Fade out unchosen cards and slide them down
+        gsap.to(otherScenes, {
+          opacity: 0,
+          y: 100,
+          scale: 0.7,
+          duration: 0.5,
+          ease: "power2.in",
+          pointerEvents: "none"
+        });
+
+        // Step 2: Animate chosen card to the center and rotate to 0deg, and scale it up
+        const chosenCardInner = chosenScene.querySelector(".carte-card");
+        
+        // Disable pointer events to prevent double click
+        scenes.forEach(s => s.style.pointerEvents = "none");
         if (currentActionsEl) currentActionsEl.style.display = "none";
-        // Show popup after flip animation completes, then show reflection
+
+        const tl = gsap.timeline({
+          onComplete: () => {
+            // After flip animation completes, show popup and reflection
+            setTimeout(() => {
+              showCartePopup(card, lang);
+              initCarteDuJour();
+            }, 600);
+          }
+        });
+
+        // Animate chosen scene to center
+        tl.to(chosenScene, {
+          x: 0,
+          y: 0,
+          rotation: 0,
+          scale: 1.15,
+          zIndex: 10,
+          duration: 0.7,
+          ease: "power2.out"
+        });
+
+        // Flip the chosen card
+        tl.to(chosenCardInner, {
+          rotationY: 180,
+          duration: 0.8,
+          ease: "back.out(1.2)"
+        }, "-=0.2");
+
+      } else {
+        // Fallback if GSAP is not loaded
+        if (currentCardEl) currentCardEl.classList.add("flipped");
+        if (currentSceneEl) currentSceneEl.style.display = "block";
+        if (currentDeckEl) currentDeckEl.style.display = "none";
+        if (currentActionsEl) currentActionsEl.style.display = "none";
         setTimeout(() => {
           showCartePopup(card, lang);
+          initCarteDuJour();
         }, 850);
-        setTimeout(() => {
-          if (currentReflectionEl) currentReflectionEl.style.display = "block";
-          if (currentNavDot) currentNavDot.classList.remove("visible");
-        }, 900);
+      }
+    };
+
+    // Attach listeners to all deck scenes
+    if (newDeck) {
+      const scenes = newDeck.querySelectorAll(".carte-deck-scene");
+      scenes.forEach((scene, index) => {
+        scene.addEventListener("click", (e) => {
+          e.stopPropagation();
+          pullCardAnimation(index);
+        });
       });
     }
 
-    // Card click to flip (if not drawn yet)
-    if (newScene) {
-      newScene.addEventListener("click", () => {
-        if (!currentCardEl || currentCardEl.classList.contains("flipped")) return;
-        showToast("Tirage en cours... 🌌");
-        console.log("Card scene clicked. todayKey:", todayKey, "currentCardEl:", currentCardEl);
-        currentCardEl.classList.add("flipped");
-        safeStorage.setItem(todayKey, "1");
-        if (currentActionsEl) currentActionsEl.style.display = "none";
-        // Show popup after flip animation completes
-        setTimeout(() => {
-          showCartePopup(card, lang);
-        }, 850);
-        setTimeout(() => {
-          if (currentReflectionEl) currentReflectionEl.style.display = "block";
-          if (currentNavDot) currentNavDot.classList.remove("visible");
-        }, 900);
+    // Draw button handler
+    if (newBtn) {
+      newBtn.addEventListener("click", () => {
+        // Pull center card (index 1)
+        pullCardAnimation(1);
       });
     }
 
