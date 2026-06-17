@@ -1283,7 +1283,7 @@ header.app-header {
 
 .gauge-bg {
   fill: none;
-  stroke: rgba(13, 19, 38, 0.04);
+  stroke: rgba(255, 255, 255, 0.07);
   stroke-width: 8;
 }
 
