@@ -2297,6 +2297,27 @@ document.addEventListener("DOMContentLoaded", () => {
       demoTrigger.addEventListener("click", () => {
         state.isPremium = !state.isPremium;
         saveState();
+
+        // Synchronize with Supabase database if logged in
+        if (supabase) {
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+              const targetStatus = state.isPremium ? "premium" : "free";
+              supabase
+                .from("astrology_profiles")
+                .update({ payment_status: targetStatus })
+                .eq("id", session.user.id)
+                .then(({ error }) => {
+                  if (error) {
+                    console.error("Error updating payment status in DB:", error);
+                  } else {
+                    console.log("Database payment_status updated to:", targetStatus);
+                  }
+                });
+            }
+          });
+        }
+
         const toastMsg = state.isPremium 
           ? (getTranslation(state.lang, "settings.demo.toast.premium") || "Premium activé (Simulation) !")
           : (getTranslation(state.lang, "settings.demo.toast.free") || "Premium désactivé (Simulation) !");
@@ -2856,11 +2877,19 @@ document.addEventListener("DOMContentLoaded", () => {
       if (typingIndicator) typingIndicator.style.display = "none";
       addChatBubble("oracle", reply);
     } catch (e) {
-      if (typingIndicator) typingIndicator.style.display = "none";
-      const errMsg = state.lang === "en" 
-        ? "The stars are currently clouded. Please try again in a few moments."
-        : "Les cieux sont temporairement voilés. Veuillez réessayer dans quelques instants.";
-      addChatBubble("oracle", errMsg);
+      console.warn("Oracle Edge Function error, falling back to client simulator:", e);
+      try {
+        const fallbackReply = await simulateOracleResponse(text);
+        if (typingIndicator) typingIndicator.style.display = "none";
+        addChatBubble("oracle", fallbackReply);
+      } catch (fallbackErr) {
+        console.error("Oracle fallback simulator failed:", fallbackErr);
+        if (typingIndicator) typingIndicator.style.display = "none";
+        const errMsg = state.lang === "en" 
+          ? "The stars are currently clouded. Please try again in a few moments."
+          : "Les cieux sont temporairement voilés. Veuillez réessayer dans quelques instants.";
+        addChatBubble("oracle", errMsg);
+      }
     }
   }
 

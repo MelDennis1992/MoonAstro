@@ -179,8 +179,8 @@ serve(async (req) => {
         parts: [{ text: message }]
       });
 
-      // Call Gemini API (gemini-flash-latest)
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiApiKey}`;
+      // Call Gemini API (gemini-2.5-flash)
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
       
       const response = await fetch(geminiUrl, {
         method: "POST",
